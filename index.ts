@@ -1,7 +1,10 @@
 import express from 'express';
 import dotenv from 'dotenv';
 
+import { ensureSpawnHelperExecutable } from './src/utils/terminals/ensure-spawn-helper';
+
 dotenv.config();
+ensureSpawnHelperExecutable();
 
 const app = express();
 const PORT = Number(process.env.PORT) || 3000;
@@ -15,15 +18,37 @@ import { createHealthRouter } from './src/services/health';
 app.use('/', createHealthRouter());
 app.use('/api/health', createHealthRouter());
 
+// Dev hub services
+import { createStudiosRouter } from './src/services/studios';
+import { createLauncherRouter } from './src/services/launcher';
+import {
+  attachTerminalWebSocket,
+  createTerminalsRouter,
+  killAllSessions,
+} from './src/services/terminals';
+app.use('/api/studios', createStudiosRouter());
+app.use('/api/launcher', createLauncherRouter());
+app.use('/api/terminals', createTerminalsRouter());
+
 // Error handling middleware (must be after all routes)
 import { setupErrorHandling } from './src/services/middleware';
 setupErrorHandling(app);
 
-// Start server
+// Start server + terminal WebSocket
 import { startServer } from './src/services/server';
-startServer(app, {
+const server = startServer(app, {
   port: PORT,
-  environment: process.env.NODE_ENV || 'development'
+  environment: process.env.NODE_ENV || 'development',
+});
+attachTerminalWebSocket(server);
+
+process.on('SIGINT', () => {
+  killAllSessions();
+  process.exit(0);
+});
+process.on('SIGTERM', () => {
+  killAllSessions();
+  process.exit(0);
 });
 
 export default app;

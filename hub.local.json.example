@@ -1,0 +1,63 @@
+{
+  "workspaceParent": "/Users/matthewruiz/github",
+  "nvmSh": "/opt/homebrew/opt/nvm/nvm.sh",
+  "cursorBin": "/Applications/Cursor.app/Contents/Resources/app/bin/cursor",
+  "cursorOpenFlags": "--classic --reuse-window",
+  "useExternalTerminal": false,
+  "studios": {
+    "lead-studio": {
+      "enabled": true,
+      "webDir": "/Users/matthewruiz/github/lead-open-source/lead-studio-web-open-source",
+      "expressDir": "/Users/matthewruiz/github/lead-open-source/lead-studio-express-server",
+      "workspaceFile": "/Users/matthewruiz/github/lead-open-source/lead-studio-web-open-source.code-workspace",
+      "webPortStart": 3033
+    },
+    "my-health": {
+      "enabled": true,
+      "webDir": "/Users/matthewruiz/github/my-health/my-health-open-source",
+      "expressDir": "/Users/matthewruiz/github/my-health/my-health-open-source-express-server",
+      "workspaceFile": "/Users/matthewruiz/github/my-health/my-health-open-source-express-server.code-workspace",
+      "webPortStart": 3010
+    },
+    "personal-finances": {
+      "enabled": true,
+      "webDir": "/Users/matthewruiz/github/personal-finances/personal-finances",
+      "expressDir": "/Users/matthewruiz/github/personal-finances/personal-finances-express-server",
+      "workspaceFile": "/Users/matthewruiz/github/personal-finances/personal-finances.code-workspace",
+      "webPortStart": 3012
+    },
+    "blog-studio": {
+      "enabled": true,
+      "webDir": "/Users/matthewruiz/github/blog-studio/blog-studio-open-source-web",
+      "expressDir": "/Users/matthewruiz/github/blog-studio/blog-studio-open-source-express-server",
+      "webPortStart": 3026
+    },
+    "code-your-resume": {
+      "enabled": true,
+      "webDir": "/Users/matthewruiz/github/code-resume/code-your-resume-open-source",
+      "expressDir": "/Users/matthewruiz/github/code-resume/code-your-resume-open-source-express-server",
+      "workspaceFile": "/Users/matthewruiz/github/code-resume/code-your-resume-open-source.code-workspace",
+      "webPortStart": 3054
+    },
+    "luckee-blueprints": {
+      "enabled": true,
+      "webDir": "/Users/matthewruiz/github/luckee/luckee-blueprints",
+      "expressDir": "/Users/matthewruiz/github/luckee/luckee-blueprints-express-server",
+      "workspaceFile": "/Users/matthewruiz/github/luckee/luckee-blueprints-express-server.code-workspace",
+      "webPortStart": 3041
+    },
+    "luckee-open-source": {
+      "enabled": true,
+      "webDir": "/Users/matthewruiz/github/luckee/luckee-open-source",
+      "webPortStart": 3031
+    },
+    "qr-code-generator": {
+      "enabled": true,
+      "expressDir": "/Users/matthewruiz/github/qr-code-generator/qr-code-generator-open-source-express-server",
+      "workspaceFile": "/Users/matthewruiz/github/qr-code-generator/qr-code-generator-open-source-express-server.code-workspace"
+    },
+    "knowledge-studio": {
+      "enabled": false
+    }
+  }
+}
