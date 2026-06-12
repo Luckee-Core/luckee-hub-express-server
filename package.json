@@ -1,0 +1,28 @@
+{
+  "name": "express-server-template",
+  "version": "1.0.0",
+  "description": "Express API Server Template - Ready-to-use Express server with TypeScript",
+  "main": "index.ts",
+  "scripts": {
+    "start": "ts-node index.ts",
+    "dev": "nodemon --exec ts-node index.ts",
+    "build": "tsc",
+    "build:watch": "tsc --watch"
+  },
+  "dependencies": {
+    "express": "^5.2.1",
+    "cors": "^2.8.6",
+    "dotenv": "^17.4.2"
+  },
+  "devDependencies": {
+    "@types/cors": "^2.8.19",
+    "@types/express": "^5.0.3",
+    "@types/node": "^25.9.1",
+    "typescript": "^6.0.3",
+    "ts-node": "^10.9.2",
+    "nodemon": "^3.1.11"
+  },
+  "engines": {
+    "node": ">=20.0.0"
+  }
+}
