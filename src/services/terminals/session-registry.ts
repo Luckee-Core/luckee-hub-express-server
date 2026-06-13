@@ -17,11 +17,11 @@ export const getSession = (sessionId: string): TerminalSessionRecord | undefined
 };
 
 /**
- * True when a studio already has a terminal tab for the given role.
+ * True when a project already has a terminal tab for the given role.
  */
-export const hasStudioRole = (studioId: string, role: TerminalRole): boolean => {
+export const hasProjectRole = (projectId: string, role: TerminalRole): boolean => {
   return Array.from(sessions.values()).some(
-    (record) => record.studioId === studioId && record.role === role,
+    (record) => record.projectId === projectId && record.role === role,
   );
 };
 
@@ -29,9 +29,9 @@ export const hasStudioRole = (studioId: string, role: TerminalRole): boolean => 
  * List all active terminal sessions.
  */
 export const listSessions = (): TerminalSessionInfo[] => {
-  return Array.from(sessions.values()).map(({ sessionId, studioId, role, label }) => ({
+  return Array.from(sessions.values()).map(({ sessionId, projectId, role, label }) => ({
     sessionId,
-    studioId,
+    projectId,
     role,
     label,
   }));
@@ -55,11 +55,11 @@ export const killSession = (sessionId: string): boolean => {
 };
 
 /**
- * Kill all sessions for a studio.
+ * Kill all sessions for a project.
  */
-export const killStudioSessions = (studioId: string): void => {
+export const killProjectSessions = (projectId: string): void => {
   for (const [sessionId, record] of sessions) {
-    if (record.studioId === studioId) {
+    if (record.projectId === projectId) {
       killSession(sessionId);
     }
   }

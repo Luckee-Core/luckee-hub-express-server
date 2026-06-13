@@ -1,13 +1,13 @@
 import * as pty from 'node-pty';
 
 import { ensureSpawnHelperExecutable } from '../../utils/terminals/ensure-spawn-helper';
-import type { MergedStudioConfig } from '../studios/types';
+import type { MergedProjectConfig } from '../projects/types';
 import { registerSession } from './session-registry';
 import type { TerminalRole, TerminalSessionInfo } from './types';
 
 type PtyEnvInput = {
   cwd: string;
-  /** Studio dev port — hub-express PORT must not leak into child servers. */
+  /** Project dev port — hub-express PORT must not leak into child servers. */
   port: number;
 };
 
@@ -32,7 +32,7 @@ const buildNvmPrefix = (nvmSh: string): string =>
 /**
  * Build shell command to start Express dev server in a PTY.
  */
-export const buildExpressPtyCommand = (merged: MergedStudioConfig): string => {
+export const buildExpressPtyCommand = (merged: MergedProjectConfig): string => {
   const dir = shellEscape(merged.expressDir ?? '');
   const nvm = buildNvmPrefix(merged.nvmSh);
   return (
@@ -44,7 +44,7 @@ export const buildExpressPtyCommand = (merged: MergedStudioConfig): string => {
 /**
  * Build shell command to wait for Express health then start Next.js.
  */
-export const buildWebPtyCommand = (merged: MergedStudioConfig): string => {
+export const buildWebPtyCommand = (merged: MergedProjectConfig): string => {
   const dir = shellEscape(merged.webDir ?? '');
   const nvm = buildNvmPrefix(merged.nvmSh);
   const healthUrl = `http://127.0.0.1:${merged.apiPort}${merged.healthPath}`;
@@ -81,7 +81,7 @@ export const buildRunningStatusPtyCommand = (
 /**
  * Build shell command to start Next.js only (Express already healthy).
  */
-export const buildWebOnlyPtyCommand = (merged: MergedStudioConfig, webPort: number): string => {
+export const buildWebOnlyPtyCommand = (merged: MergedProjectConfig, webPort: number): string => {
   const dir = shellEscape(merged.webDir ?? '');
   const nvm = buildNvmPrefix(merged.nvmSh);
   return (
@@ -90,8 +90,8 @@ export const buildWebOnlyPtyCommand = (merged: MergedStudioConfig, webPort: numb
   );
 };
 
-type SpawnStudioPtyInput = {
-  studioId: string;
+type SpawnProjectPtyInput = {
+  projectId: string;
   role: TerminalRole;
   label: string;
   command: string;
@@ -102,10 +102,10 @@ type SpawnStudioPtyInput = {
 /**
  * Spawn an interactive PTY and register it in the session registry.
  */
-export const spawnStudioPty = (input: SpawnStudioPtyInput): TerminalSessionInfo => {
+export const spawnProjectPty = (input: SpawnProjectPtyInput): TerminalSessionInfo => {
   ensureSpawnHelperExecutable();
 
-  const sessionId = `${input.studioId}-${input.role}-${Date.now()}`;
+  const sessionId = `${input.projectId}-${input.role}-${Date.now()}`;
   let ptyProcess: pty.IPty;
   try {
     ptyProcess = pty.spawn('/bin/zsh', ['-lc', input.command], {
@@ -139,7 +139,7 @@ export const spawnStudioPty = (input: SpawnStudioPtyInput): TerminalSessionInfo 
 
   const record = {
     sessionId,
-    studioId: input.studioId,
+    projectId: input.projectId,
     role: input.role,
     label: input.label,
     pty: ptyProcess,
@@ -151,7 +151,7 @@ export const spawnStudioPty = (input: SpawnStudioPtyInput): TerminalSessionInfo 
 
   return {
     sessionId,
-    studioId: input.studioId,
+    projectId: input.projectId,
     role: input.role,
     label: input.label,
   };

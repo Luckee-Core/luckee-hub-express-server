@@ -1,40 +1,40 @@
 import path from 'path';
 
-import { mergeStudioConfig, readLocalConfig, readRegistry } from '../../utils/studios';
+import { mergeProjectConfig, readLocalConfig, readRegistry } from '../../utils/projects';
 import {
   findNextWebUrl,
   isExpressHealthy,
-} from '../../utils/studios/wait-for-studio-ready';
-import { hasStudioRole, listSessions } from './session-registry';
-import { buildRunningStatusPtyCommand, spawnStudioPty } from './spawn-studio-pty';
+} from '../../utils/projects/wait-for-project-ready';
+import { hasProjectRole, listSessions } from './session-registry';
+import { buildRunningStatusPtyCommand, spawnProjectPty } from './spawn-project-pty';
 import type { TerminalSessionInfo } from './types';
 
 /**
- * Restore in-memory PTY sessions and open status tabs for studios already running on configured ports.
+ * Restore in-memory PTY sessions and open status tabs for projects already running on configured ports.
  */
 export const processSyncTerminalSessions = (): TerminalSessionInfo[] => {
-  console.log('🚀 Syncing terminal sessions with running studio ports...');
+  console.log('🚀 Syncing terminal sessions with running project ports...');
 
   const hubRoot = path.resolve(__dirname, '../../..');
   const registry = readRegistry(hubRoot);
   const localConfig = readLocalConfig(hubRoot);
 
   for (const entry of registry) {
-    const local = localConfig.studios?.[entry.id];
+    const local = localConfig.projects?.[entry.id];
     if (!local || local.enabled === false) {
       continue;
     }
 
-    const merged = mergeStudioConfig(entry, localConfig);
+    const merged = mergeProjectConfig(entry, localConfig);
     if (!merged) {
       continue;
     }
 
     if (!entry.webOnly && merged.expressDir) {
       const expressHealthy = isExpressHealthy(merged.apiPort, merged.healthPath);
-      if (expressHealthy && !hasStudioRole(entry.id, 'express')) {
-        spawnStudioPty({
-          studioId: entry.id,
+      if (expressHealthy && !hasProjectRole(entry.id, 'express')) {
+        spawnProjectPty({
+          projectId: entry.id,
           role: 'express',
           label: `${entry.name} API`,
           command: buildRunningStatusPtyCommand(`${entry.name} API`, merged.apiPort, true),
@@ -46,10 +46,10 @@ export const processSyncTerminalSessions = (): TerminalSessionInfo[] => {
 
     if (!entry.apiOnly && merged.webDir) {
       const webUrl = findNextWebUrl(merged.webPortStart, 1);
-      if (webUrl && !hasStudioRole(entry.id, 'web')) {
+      if (webUrl && !hasProjectRole(entry.id, 'web')) {
         const port = Number(new URL(webUrl).port) || merged.webPortStart;
-        spawnStudioPty({
-          studioId: entry.id,
+        spawnProjectPty({
+          projectId: entry.id,
           role: 'web',
           label: `${entry.name} Web`,
           command: buildRunningStatusPtyCommand(`${entry.name} Web`, port, true),

@@ -3,7 +3,7 @@
   "nvmSh": "/opt/homebrew/opt/nvm/nvm.sh",
   "cursorBin": "/Applications/Cursor.app/Contents/Resources/app/bin/cursor",
   "cursorOpenFlags": "--classic --reuse-window",
-  "studios": {
+  "projects": {
     "lead-studio": {
       "enabled": true,
       "webDir": "/Users/matthewruiz/github/lead-open-source/lead-studio-web-open-source",

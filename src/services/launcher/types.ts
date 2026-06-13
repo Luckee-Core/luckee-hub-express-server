@@ -2,14 +2,14 @@ export type LauncherJobStatus = 'running' | 'completed' | 'failed';
 
 export type LauncherJobSession = {
   sessionId: string;
-  studioId: string;
+  projectId: string;
   role: 'express' | 'web';
   label: string;
 };
 
 export type LauncherJob = {
   jobId: string;
-  studioId: string;
+  projectId: string;
   status: LauncherJobStatus;
   message?: string;
   webUrl?: string;

@@ -7,7 +7,7 @@ const HUB_TMP = '/tmp/luckee-hub/jobs';
 
 export type LauncherJobFile = {
   jobId: string;
-  studioId: string;
+  projectId: string;
   status: 'running' | 'completed' | 'failed';
   message?: string;
   webUrl?: string;

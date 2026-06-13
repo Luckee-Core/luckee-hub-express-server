@@ -1,21 +1,21 @@
 import path from 'path';
 
-import { mergeStudioConfig, readLocalConfig, readRegistry } from '../../utils/studios';
+import { mergeProjectConfig, readLocalConfig, readRegistry } from '../../utils/projects';
 import { openCursorWorkspace } from '../../utils/launcher';
 
 /**
- * Open Cursor workspace for a studio (no server start).
+ * Open Cursor workspace for a project (no server start).
  */
-export const processOpenCursor = (studioId: string): boolean => {
+export const processOpenCursor = (projectId: string): boolean => {
   const hubRoot = path.resolve(__dirname, '../../..');
   const registry = readRegistry(hubRoot);
   const localConfig = readLocalConfig(hubRoot);
-  const entry = registry.find((s) => s.id === studioId);
+  const entry = registry.find((s) => s.id === projectId);
   if (!entry) {
     return false;
   }
 
-  const merged = mergeStudioConfig(entry, localConfig);
+  const merged = mergeProjectConfig(entry, localConfig);
   if (!merged?.workspaceFile) {
     return false;
   }

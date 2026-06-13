@@ -1,26 +1,26 @@
 import path from 'path';
 
-import { mergeStudioConfig, readLocalConfig, readRegistry } from '../../utils/studios';
-import { openInChrome, resolveStudioWebUrl } from '../../utils/launcher';
+import { mergeProjectConfig, readLocalConfig, readRegistry } from '../../utils/projects';
+import { openInChrome, resolveProjectWebUrl } from '../../utils/launcher';
 
 /**
- * Open Chrome for a studio using saved or detected web URL (no server start).
+ * Open Chrome for a project's web URL (no server start).
  */
-export const processOpenChrome = (studioId: string): boolean => {
+export const processOpenChrome = (projectId: string): boolean => {
   const hubRoot = path.resolve(__dirname, '../../..');
   const registry = readRegistry(hubRoot);
   const localConfig = readLocalConfig(hubRoot);
-  const entry = registry.find((s) => s.id === studioId);
+  const entry = registry.find((s) => s.id === projectId);
   if (!entry || entry.apiOnly) {
     return false;
   }
 
-  const merged = mergeStudioConfig(entry, localConfig);
-  if (!merged?.webDir) {
+  const merged = mergeProjectConfig(entry, localConfig);
+  if (!merged) {
     return false;
   }
 
-  const webUrl = resolveStudioWebUrl(studioId, merged.webPortStart);
+  const webUrl = resolveProjectWebUrl(projectId, merged.webPortStart);
   if (!webUrl) {
     return false;
   }

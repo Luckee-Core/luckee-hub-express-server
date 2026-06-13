@@ -1,16 +1,14 @@
-import type { IPty } from 'node-pty';
-
 export type TerminalRole = 'express' | 'web';
 
 export type TerminalSessionInfo = {
   sessionId: string;
-  studioId: string;
+  projectId: string;
   role: TerminalRole;
   label: string;
 };
 
 export type TerminalSessionRecord = TerminalSessionInfo & {
-  pty: IPty;
+  pty: import('node-pty').IPty;
   createdAt: string;
   getReplay: () => string;
 };

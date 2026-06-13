@@ -1,24 +1,24 @@
 import fs from 'fs';
 
-import type { HookStatus, StudioRegistryEntry, StudioLocalEntry } from '../../services/studios/types';
+import type { HookStatus, ProjectRegistryEntry, ProjectLocalEntry } from '../../services/projects/types';
 import { findWebUrlOnPorts, isExpressHealthOk } from './port-probes';
 
 const dirExists = (p?: string): boolean => !!(p && fs.existsSync(p));
 
 const hasNodeModules = (p?: string): boolean => dirExists(p && `${p}/node_modules`);
 
-type ProbeStudioStatusOptions = {
+type ProbeProjectStatusOptions = {
   /** When false, skip curl/lsof health checks (instant catalog load). */
   liveProbe?: boolean;
 };
 
 /**
- * Compute hooked-up status for a studio from registry + local paths + optional live probes.
+ * Compute hooked-up status for a project from registry + local paths + optional live probes.
  */
-export const probeStudioStatus = (
-  registry: StudioRegistryEntry,
-  local?: StudioLocalEntry,
-  options: ProbeStudioStatusOptions = {},
+export const probeProjectStatus = (
+  registry: ProjectRegistryEntry,
+  local?: ProjectLocalEntry,
+  options: ProbeProjectStatusOptions = {},
 ): { hookStatus: HookStatus; webUrl?: string } => {
   const liveProbe = options.liveProbe ?? false;
 

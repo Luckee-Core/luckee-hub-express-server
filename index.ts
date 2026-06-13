@@ -19,14 +19,14 @@ app.use('/', createHealthRouter());
 app.use('/api/health', createHealthRouter());
 
 // Dev hub services
-import { createStudiosRouter } from './src/services/studios';
+import { createProjectsRouter } from './src/services/projects';
 import { createLauncherRouter } from './src/services/launcher';
 import {
   attachTerminalWebSocket,
   createTerminalsRouter,
   killAllSessions,
 } from './src/services/terminals';
-app.use('/api/studios', createStudiosRouter());
+app.use('/api/projects', createProjectsRouter());
 app.use('/api/launcher', createLauncherRouter());
 app.use('/api/terminals', createTerminalsRouter());
 

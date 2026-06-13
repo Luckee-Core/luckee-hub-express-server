@@ -1,17 +1,17 @@
 import type {
   HubLocalConfig,
-  MergedStudioConfig,
-  StudioRegistryEntry,
-} from '../../services/studios/types';
+  MergedProjectConfig,
+  ProjectRegistryEntry,
+} from '../../services/projects/types';
 
 /**
- * Merge registry entry with local studio override and hub defaults.
+ * Merge registry entry with local project override and hub defaults.
  */
-export const mergeStudioConfig = (
-  registry: StudioRegistryEntry,
+export const mergeProjectConfig = (
+  registry: ProjectRegistryEntry,
   localConfig: HubLocalConfig,
-): MergedStudioConfig | null => {
-  const local = localConfig.studios?.[registry.id];
+): MergedProjectConfig | null => {
+  const local = localConfig.projects?.[registry.id];
   if (!local) {
     return null;
   }

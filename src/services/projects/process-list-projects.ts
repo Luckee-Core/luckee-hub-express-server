@@ -1,25 +1,25 @@
 import path from 'path';
 
-import { mergeStudioConfig, probeStudioStatus, readLocalConfig, readRegistry } from '../../utils/studios';
-import type { StudioCard } from './types';
+import { mergeProjectConfig, probeProjectStatus, readLocalConfig, readRegistry } from '../../utils/projects';
+import type { HubProject } from './types';
 
-type ProcessListStudiosOptions = {
-  /** When true, curl/lsof each studio port (slower). Default false — filesystem checks only. */
+type ProcessListProjectsOptions = {
+  /** When true, curl/lsof each project port (slower). Default false — filesystem checks only. */
   liveProbe?: boolean;
 };
 
 /**
- * Build studio cards from registry, local config, and optional live probes.
+ * Build project cards from registry, local config, and optional live probes.
  */
-export const processListStudios = (options: ProcessListStudiosOptions = {}): StudioCard[] => {
+export const processListProjects = (options: ProcessListProjectsOptions = {}): HubProject[] => {
   const liveProbe = options.liveProbe ?? false;
   const hubRoot = path.resolve(__dirname, '../../..');
   const registry = readRegistry(hubRoot);
   const localConfig = readLocalConfig(hubRoot);
 
   return registry.map((entry) => {
-    const local = localConfig.studios?.[entry.id];
-    const { hookStatus, webUrl } = probeStudioStatus(entry, local, { liveProbe });
+    const local = localConfig.projects?.[entry.id];
+    const { hookStatus, webUrl } = probeProjectStatus(entry, local, { liveProbe });
 
     return {
       id: entry.id,
@@ -38,6 +38,7 @@ export const processListStudios = (options: ProcessListStudiosOptions = {}): Stu
             workspaceFile: local.workspaceFile,
           }
         : undefined,
+      localDatabaseSupported: !!entry.localDatabase,
     };
   });
 };

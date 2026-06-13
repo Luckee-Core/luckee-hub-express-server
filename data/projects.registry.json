@@ -21,7 +21,24 @@
     "defaultWebPortStart": 3010,
     "healthPath": "/api/health",
     "webOnly": false,
-    "apiOnly": false
+    "apiOnly": false,
+    "localDatabase": {
+      "kind": "postgres",
+      "databaseName": "my_health",
+      "migrationsDir": "migrations",
+      "migrationFiles": [
+        "001_hospitals_specialties_doctors_appointments.sql",
+        "002_focus_areas_daily_entries.sql"
+      ],
+      "expectedTables": [
+        "hospitals",
+        "specialties",
+        "doctors",
+        "appointments",
+        "focus_areas",
+        "daily_entries"
+      ]
+    }
   },
   {
     "id": "personal-finances",

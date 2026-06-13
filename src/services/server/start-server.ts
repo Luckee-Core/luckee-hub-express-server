@@ -6,11 +6,14 @@
 import http from 'http';
 import { Express } from 'express';
 
-interface ServerConfig {
+type ServerConfig = {
   port: number;
   environment: string;
-}
+};
 
+/**
+ * Initializes and starts the Express server bound to 127.0.0.1.
+ */
 export const startServer = (app: Express, config: ServerConfig): http.Server => {
   const { port, environment } = config;
 

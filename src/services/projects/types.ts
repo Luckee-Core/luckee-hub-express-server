@@ -1,3 +1,7 @@
+import type { LocalDatabaseConfig } from '../local-database/types';
+
+export type { LocalDatabaseConfig, LocalDatabaseProbe, LocalDatabaseSetupResult } from '../local-database/types';
+
 export type HookStatus =
   | 'catalog'
   | 'disabled'
@@ -8,7 +12,7 @@ export type HookStatus =
   | 'web_running'
   | 'ready';
 
-export type StudioRegistryEntry = {
+export type ProjectRegistryEntry = {
   id: string;
   name: string;
   description: string;
@@ -19,9 +23,10 @@ export type StudioRegistryEntry = {
   healthPath: string;
   webOnly: boolean;
   apiOnly: boolean;
+  localDatabase?: LocalDatabaseConfig;
 };
 
-export type StudioLocalEntry = {
+export type ProjectLocalEntry = {
   enabled?: boolean;
   webDir?: string;
   expressDir?: string;
@@ -35,10 +40,10 @@ export type HubLocalConfig = {
   nvmSh?: string;
   cursorBin?: string;
   cursorOpenFlags?: string;
-  studios?: Record<string, StudioLocalEntry>;
+  projects?: Record<string, ProjectLocalEntry>;
 };
 
-export type StudioCard = {
+export type HubProject = {
   id: string;
   name: string;
   description: string;
@@ -53,12 +58,13 @@ export type StudioCard = {
     expressDir?: string;
     workspaceFile?: string;
   };
+  localDatabaseSupported: boolean;
 };
 
-export type MergedStudioConfig = {
+export type MergedProjectConfig = {
   id: string;
-  registry: StudioRegistryEntry;
-  local?: StudioLocalEntry;
+  registry: ProjectRegistryEntry;
+  local?: ProjectLocalEntry;
   webDir?: string;
   expressDir?: string;
   workspaceFile?: string;

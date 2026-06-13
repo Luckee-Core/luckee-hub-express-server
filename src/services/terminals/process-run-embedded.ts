@@ -2,18 +2,18 @@ import { execSync } from 'child_process';
 import path from 'path';
 
 import { openInChrome } from '../../utils/launcher';
-import { mergeStudioConfig, readLocalConfig, readRegistry } from '../../utils/studios';
+import { mergeProjectConfig, readLocalConfig, readRegistry } from '../../utils/projects';
 import {
   findAvailableWebPort,
   findNextWebUrl,
   waitForExpressHealth,
   waitForNextWebUrl,
-} from '../../utils/studios/wait-for-studio-ready';
+} from '../../utils/projects/wait-for-project-ready';
 import {
   buildExpressPtyCommand,
   buildWebOnlyPtyCommand,
-  spawnStudioPty,
-} from './spawn-studio-pty';
+  spawnProjectPty,
+} from './spawn-project-pty';
 import type { RunEmbeddedResult, TerminalSessionInfo } from './types';
 import { writeJobFile } from './write-job-file';
 
@@ -36,8 +36,8 @@ const expressAlreadyHealthy = (apiPort: number, healthPath: string): boolean => 
  */
 const completeEmbeddedJob = async (
   jobId: string,
-  studioId: string,
-  merged: NonNullable<ReturnType<typeof mergeStudioConfig>>,
+  projectId: string,
+  merged: NonNullable<ReturnType<typeof mergeProjectConfig>>,
   sessions: TerminalSessionInfo[],
   needsExpressWait: boolean,
 ): Promise<void> => {
@@ -45,7 +45,7 @@ const completeEmbeddedJob = async (
     if (needsExpressWait) {
       writeJobFile({
         jobId,
-        studioId,
+        projectId,
         status: 'running',
         message: 'Waiting for Express health...',
         sessions,
@@ -56,7 +56,7 @@ const completeEmbeddedJob = async (
       if (!ok) {
         writeJobFile({
           jobId,
-          studioId,
+          projectId,
           status: 'failed',
           message: 'Express health check timed out — check the Express terminal tab',
           sessions,
@@ -73,7 +73,7 @@ const completeEmbeddedJob = async (
       if (webUrl) {
         writeJobFile({
           jobId,
-          studioId,
+          projectId,
           status: 'running',
           message: 'Next.js already running',
           sessions,
@@ -84,7 +84,7 @@ const completeEmbeddedJob = async (
 
         writeJobFile({
           jobId,
-          studioId,
+          projectId,
           status: 'running',
           message: `Starting Web dev server on :${webPort}...`,
           sessions,
@@ -92,10 +92,10 @@ const completeEmbeddedJob = async (
         });
 
         try {
-          const webSession = spawnStudioPty({
-            studioId,
+          const webSession = spawnProjectPty({
+            projectId,
             role: 'web',
-            label: `${studioId} / Web`,
+            label: `${projectId} / Web`,
             command: buildWebOnlyPtyCommand(merged, webPort),
             cwd: merged.webDir,
             port: webPort,
@@ -105,7 +105,7 @@ const completeEmbeddedJob = async (
           const message = error instanceof Error ? error.message : 'Failed to spawn Web terminal';
           writeJobFile({
             jobId,
-            studioId,
+            projectId,
             status: 'failed',
             message,
             sessions,
@@ -116,7 +116,7 @@ const completeEmbeddedJob = async (
 
         writeJobFile({
           jobId,
-          studioId,
+          projectId,
           status: 'running',
           message: 'Waiting for Next.js...',
           sessions,
@@ -131,7 +131,7 @@ const completeEmbeddedJob = async (
       if (webUrl) {
         const { writeFileSync, mkdirSync } = await import('fs');
         mkdirSync(HUB_TMP, { recursive: true });
-        writeFileSync(`${HUB_TMP}/${studioId}-web-url.txt`, `${webUrl}\n`);
+        writeFileSync(`${HUB_TMP}/${projectId}-web-url.txt`, `${webUrl}\n`);
       }
     }
 
@@ -141,7 +141,7 @@ const completeEmbeddedJob = async (
 
     writeJobFile({
       jobId,
-      studioId,
+      projectId,
       status: 'completed',
       message: webUrl ? 'Done' : 'Express running (Web URL not detected)',
       webUrl,
@@ -152,7 +152,7 @@ const completeEmbeddedJob = async (
     const message = error instanceof Error ? error.message : 'Embedded run failed';
     writeJobFile({
       jobId,
-      studioId,
+      projectId,
       status: 'failed',
       message,
       sessions,
@@ -162,23 +162,23 @@ const completeEmbeddedJob = async (
 };
 
 /**
- * Spawn embedded PTYs for a studio Run job; Express first, Web after health (async).
+ * Spawn embedded PTYs for a project Run job; Express first, Web after health (async).
  */
-export const processRunEmbedded = (studioId: string): RunEmbeddedResult | null => {
+export const processRunEmbedded = (projectId: string): RunEmbeddedResult | null => {
   const hubRoot = path.resolve(__dirname, '../../..');
   const registry = readRegistry(hubRoot);
   const localConfig = readLocalConfig(hubRoot);
-  const entry = registry.find((s) => s.id === studioId);
+  const entry = registry.find((s) => s.id === projectId);
   if (!entry) {
     return null;
   }
 
-  const merged = mergeStudioConfig(entry, localConfig);
+  const merged = mergeProjectConfig(entry, localConfig);
   if (!merged) {
     return null;
   }
 
-  const jobId = `${studioId}-${Date.now()}`;
+  const jobId = `${projectId}-${Date.now()}`;
   const sessions: TerminalSessionInfo[] = [];
 
   const expressHealthy =
@@ -188,10 +188,10 @@ export const processRunEmbedded = (studioId: string): RunEmbeddedResult | null =
 
   if (needsExpressWait) {
     try {
-      const session = spawnStudioPty({
-        studioId,
+      const session = spawnProjectPty({
+        projectId,
         role: 'express',
-        label: `${studioId} / Express`,
+        label: `${projectId} / Express`,
         command: buildExpressPtyCommand(merged),
         cwd: merged.expressDir!,
         port: merged.apiPort,
@@ -201,7 +201,7 @@ export const processRunEmbedded = (studioId: string): RunEmbeddedResult | null =
       const message = error instanceof Error ? error.message : 'Failed to spawn Express terminal';
       writeJobFile({
         jobId,
-        studioId,
+        projectId,
         status: 'failed',
         message,
         sessions,
@@ -213,19 +213,19 @@ export const processRunEmbedded = (studioId: string): RunEmbeddedResult | null =
 
   writeJobFile({
     jobId,
-    studioId,
+    projectId,
     status: 'running',
     message: needsExpressWait ? 'Starting Express...' : 'Starting Web...',
     sessions,
     updatedAt: new Date().toISOString(),
   });
 
-  void completeEmbeddedJob(jobId, studioId, merged, sessions, needsExpressWait).catch(
+  void completeEmbeddedJob(jobId, projectId, merged, sessions, needsExpressWait).catch(
     (error: unknown) => {
       const message = error instanceof Error ? error.message : 'Embedded run failed';
       writeJobFile({
         jobId,
-        studioId,
+        projectId,
         status: 'failed',
         message,
         sessions,

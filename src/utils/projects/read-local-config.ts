@@ -1,7 +1,7 @@
 import fs from 'fs';
 import path from 'path';
 
-import type { HubLocalConfig } from '../../services/studios/types';
+import type { HubLocalConfig } from '../../services/projects/types';
 
 /**
  * Load machine-specific hub.local.json (returns empty object if missing).
