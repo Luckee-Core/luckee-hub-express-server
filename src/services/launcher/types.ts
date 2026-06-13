@@ -16,11 +16,3 @@ export type LauncherJob = {
   sessions?: LauncherJobSession[];
   updatedAt: string;
 };
-
-export type SpawnLauncherOptions = {
-  studioId: string;
-  startServers: boolean;
-  openWorkspace: boolean;
-  openChrome: boolean;
-  jobId?: string;
-};

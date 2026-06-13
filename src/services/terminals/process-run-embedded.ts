@@ -1,6 +1,7 @@
-import { exec, execSync } from 'child_process';
+import { execSync } from 'child_process';
 import path from 'path';
 
+import { openInChrome } from '../../utils/launcher';
 import { mergeStudioConfig, readLocalConfig, readRegistry } from '../../utils/studios';
 import {
   findAvailableWebPort,
@@ -28,10 +29,6 @@ const expressAlreadyHealthy = (apiPort: number, healthPath: string): boolean => 
   } catch {
     return false;
   }
-};
-
-const openChrome = (url: string): void => {
-  exec(`open -a "Google Chrome" "${url}"`, () => undefined);
 };
 
 /**
@@ -139,7 +136,7 @@ const completeEmbeddedJob = async (
     }
 
     if (webUrl) {
-      openChrome(webUrl);
+      openInChrome(webUrl);
     }
 
     writeJobFile({

@@ -6,7 +6,7 @@ Accepted
 
 ## Context
 
-Luckee Hub Run should spawn interactive dev-server terminals inside the hub UI (Cursor-style bottom dock), not only macOS Terminal.app windows.
+Luckee Hub Run spawns interactive dev-server terminals inside the hub UI (right-side terminal dock), not macOS Terminal.app windows.
 
 ## Decision
 
@@ -20,12 +20,9 @@ Luckee Hub Run should spawn interactive dev-server terminals inside the hub UI (
 
 `src/services/terminals/` — list/kill HTTP routes + WebSocket attach at `/api/terminals/ws/:sessionId`
 
-### Run modes
+### Run flow
 
-| `hub.local.json` | Behavior |
-|------------------|----------|
-| `useExternalTerminal: false` (default) | Embedded PTYs via `process-run-embedded.ts` |
-| `useExternalTerminal: true` | Legacy `launcher/run-studio.sh` + Terminal.app |
+All **Run** jobs use embedded PTYs via `process-run-embedded.ts` (invoked from `src/services/launcher/process-run-studio.ts`).
 
 ### WebSocket protocol (v1)
 

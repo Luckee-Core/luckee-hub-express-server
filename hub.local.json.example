@@ -3,7 +3,6 @@
   "nvmSh": "/opt/homebrew/opt/nvm/nvm.sh",
   "cursorBin": "/Applications/Cursor.app/Contents/Resources/app/bin/cursor",
   "cursorOpenFlags": "--classic --reuse-window",
-  "useExternalTerminal": false,
   "studios": {
     "lead-studio": {
       "enabled": true,

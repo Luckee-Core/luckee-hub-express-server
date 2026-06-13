@@ -6,14 +6,14 @@ Accepted
 
 ## Context
 
-`luckee-hub-express-server` spawns macOS Terminal windows and opens Cursor/Chrome for hooked-up studios. It is a **local-only** tool, not a cloud API.
+`luckee-hub-express-server` spawns embedded dev-server terminals and opens Cursor/Chrome for hooked-up studios. It is a **local-only** tool, not a cloud API.
 
 ## Decision
 
 ### Security
 
 - Server binds **`127.0.0.1` only** in development.
-- Launcher endpoints spawn `zsh` under `launcher/` — never expose this server to LAN without auth.
+- Launcher endpoints spawn local processes (`node-pty`, `open`) — never expose this server to LAN without auth.
 
 ### No database v1
 
@@ -27,8 +27,8 @@ Accepted
 |---------|------|------|
 | studios | `src/services/studios/` | `GET /api/studios` — merge registry + local + probes |
 | launcher | `src/services/launcher/` | `POST` run / open-cursor / open-chrome; `GET` job status |
+| terminals | `src/services/terminals/` | Embedded PTYs, WebSocket stream, sync |
 
-### Shell
+### macOS helpers
 
-- Zsh modules in `launcher/` at repo root
-- `run-studio.sh` reads studio config from **environment variables** set by Express before spawn
+- `src/utils/launcher/` — open Chrome, open Cursor workspace, resolve web URL

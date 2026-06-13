@@ -35,7 +35,6 @@ export type HubLocalConfig = {
   nvmSh?: string;
   cursorBin?: string;
   cursorOpenFlags?: string;
-  useExternalTerminal?: boolean;
   studios?: Record<string, StudioLocalEntry>;
 };
 
