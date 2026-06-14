@@ -3,4 +3,4 @@ export { probeProjectStatus } from './probe-project-status';
 export { readLocalConfig } from './read-local-config';
 export { readRegistry } from './read-registry';
 export * from './port-probes';
-export * from './wait-for-project-ready';
+export { toGithubRepoUrl, DEFAULT_GITHUB_ORG } from './to-github-repo-url';

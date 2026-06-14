@@ -1,6 +1,6 @@
 import path from 'path';
 
-import { mergeProjectConfig, probeProjectStatus, readLocalConfig, readRegistry } from '../../utils/projects';
+import { probeProjectStatus, readLocalConfig, readRegistry, toGithubRepoUrl, DEFAULT_GITHUB_ORG } from '../../utils/projects';
 import type { HubProject } from './types';
 
 type ProcessListProjectsOptions = {
@@ -16,21 +16,25 @@ export const processListProjects = (options: ProcessListProjectsOptions = {}): H
   const hubRoot = path.resolve(__dirname, '../../..');
   const registry = readRegistry(hubRoot);
   const localConfig = readLocalConfig(hubRoot);
+  const githubOrg = localConfig.githubOrg ?? DEFAULT_GITHUB_ORG;
 
   return registry.map((entry) => {
     const local = localConfig.projects?.[entry.id];
-    const { hookStatus, webUrl } = probeProjectStatus(entry, local, { liveProbe });
+    const { hookStatus, webUrl, hookChecks } = probeProjectStatus(entry, local, { liveProbe });
 
     return {
       id: entry.id,
       name: entry.name,
       description: entry.description,
       hookStatus,
+      hookChecks,
       enabled: local?.enabled !== false,
       apiOnly: entry.apiOnly,
       webOnly: entry.webOnly,
       apiPort: entry.defaultApiPort,
       webUrl,
+      apiRepoUrl: toGithubRepoUrl(githubOrg, entry.apiRepo),
+      webRepoUrl: toGithubRepoUrl(githubOrg, entry.webRepo),
       paths: local
         ? {
             webDir: local.webDir,

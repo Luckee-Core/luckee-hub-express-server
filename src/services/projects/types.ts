@@ -12,6 +12,12 @@ export type HookStatus =
   | 'web_running'
   | 'ready';
 
+export type ProjectHookCheck = {
+  id: string;
+  label: string;
+  ok: boolean;
+};
+
 export type ProjectRegistryEntry = {
   id: string;
   name: string;
@@ -40,6 +46,8 @@ export type HubLocalConfig = {
   nvmSh?: string;
   cursorBin?: string;
   cursorOpenFlags?: string;
+  /** Override default `Luckee-Core` when repos live under another org. */
+  githubOrg?: string;
   projects?: Record<string, ProjectLocalEntry>;
 };
 
@@ -48,11 +56,14 @@ export type HubProject = {
   name: string;
   description: string;
   hookStatus: HookStatus;
+  hookChecks: ProjectHookCheck[];
   enabled: boolean;
   apiOnly: boolean;
   webOnly: boolean;
   apiPort: number;
   webUrl?: string;
+  apiRepoUrl?: string;
+  webRepoUrl?: string;
   paths?: {
     webDir?: string;
     expressDir?: string;

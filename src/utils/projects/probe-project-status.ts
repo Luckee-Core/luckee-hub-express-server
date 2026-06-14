@@ -1,6 +1,11 @@
 import fs from 'fs';
 
-import type { HookStatus, ProjectRegistryEntry, ProjectLocalEntry } from '../../services/projects/types';
+import type {
+  HookStatus,
+  ProjectHookCheck,
+  ProjectRegistryEntry,
+  ProjectLocalEntry,
+} from '../../services/projects/types';
 import { findWebUrlOnPorts, isExpressHealthOk } from './port-probes';
 
 const dirExists = (p?: string): boolean => !!(p && fs.existsSync(p));
@@ -12,6 +17,12 @@ type ProbeProjectStatusOptions = {
   liveProbe?: boolean;
 };
 
+type ProbeProjectStatusResult = {
+  hookStatus: HookStatus;
+  webUrl?: string;
+  hookChecks: ProjectHookCheck[];
+};
+
 /**
  * Compute hooked-up status for a project from registry + local paths + optional live probes.
  */
@@ -19,60 +30,112 @@ export const probeProjectStatus = (
   registry: ProjectRegistryEntry,
   local?: ProjectLocalEntry,
   options: ProbeProjectStatusOptions = {},
-): { hookStatus: HookStatus; webUrl?: string } => {
+): ProbeProjectStatusResult => {
   const liveProbe = options.liveProbe ?? false;
+  const hasWeb = !!registry.webRepo && !registry.apiOnly;
+  const hasExpress = !!registry.apiRepo && !registry.webOnly;
+
+  const hookChecks: ProjectHookCheck[] = [
+    {
+      id: 'hub-configured',
+      label: 'Hub configured',
+      ok: !!local && local.enabled !== false,
+    },
+  ];
 
   if (!local) {
-    return { hookStatus: 'catalog' };
+    return { hookStatus: 'catalog', hookChecks };
   }
   if (local.enabled === false) {
-    return { hookStatus: 'disabled' };
+    return { hookStatus: 'disabled', hookChecks };
   }
 
-  const webOk = !registry.webRepo || dirExists(local.webDir);
-  const expressOk = registry.apiOnly || !registry.apiRepo || dirExists(local.expressDir);
+  if (hasWeb) {
+    hookChecks.push({
+      id: 'web-path',
+      label: 'Web path',
+      ok: dirExists(local.webDir),
+    });
+  }
+  if (hasExpress) {
+    hookChecks.push({
+      id: 'express-path',
+      label: 'Express path',
+      ok: dirExists(local.expressDir),
+    });
+  }
+
+  const webOk = !hasWeb || dirExists(local.webDir);
+  const expressOk = !hasExpress || dirExists(local.expressDir);
 
   if (!webOk || !expressOk) {
-    return { hookStatus: 'missing' };
+    return { hookStatus: 'missing', hookChecks };
   }
 
-  const webConfigured = registry.apiOnly || hasNodeModules(local.webDir);
-  const expressConfigured =
-    registry.webOnly || registry.apiOnly || hasNodeModules(local.expressDir);
+  if (hasWeb) {
+    hookChecks.push({
+      id: 'web-deps',
+      label: 'Web installed',
+      ok: hasNodeModules(local.webDir),
+    });
+  }
+  if (hasExpress) {
+    hookChecks.push({
+      id: 'express-deps',
+      label: 'Express installed',
+      ok: hasNodeModules(local.expressDir),
+    });
+  }
+
+  const webConfigured = !hasWeb || hasNodeModules(local.webDir);
+  const expressConfigured = !hasExpress || hasNodeModules(local.expressDir);
 
   if (!webConfigured || !expressConfigured) {
-    return { hookStatus: 'cloned' };
+    return { hookStatus: 'cloned', hookChecks };
   }
 
   if (!liveProbe) {
-    return { hookStatus: 'configured' };
+    if (hasExpress) {
+      hookChecks.push({ id: 'api-running', label: 'API running', ok: false });
+    }
+    if (hasWeb) {
+      hookChecks.push({ id: 'web-running', label: 'Web running', ok: false });
+    }
+    return { hookStatus: 'configured', hookChecks };
   }
 
   const apiRunning =
+    !hasExpress ||
     registry.webOnly ||
-    (registry.apiRepo && isExpressHealthOk(registry.defaultApiPort, registry.healthPath));
+    isExpressHealthOk(registry.defaultApiPort, registry.healthPath);
 
   const webPortStart = local.webPortStart ?? registry.defaultWebPortStart;
-  const webUrl = registry.apiOnly ? undefined : findWebUrlOnPorts(webPortStart, 1);
+  const webUrl = hasWeb ? findWebUrlOnPorts(webPortStart, 1) : undefined;
+  const webRunning = hasWeb && !!webUrl;
 
-  const webRunning = !registry.apiOnly && !!webUrl;
+  if (hasExpress) {
+    hookChecks.push({ id: 'api-running', label: 'API running', ok: apiRunning });
+  }
+  if (hasWeb) {
+    hookChecks.push({ id: 'web-running', label: 'Web running', ok: webRunning });
+  }
 
   if (registry.apiOnly) {
     if (apiRunning) {
-      return { hookStatus: 'ready' };
+      return { hookStatus: 'ready', hookChecks };
     }
-    return { hookStatus: 'configured' };
+    return { hookStatus: 'configured', hookChecks };
   }
 
   if (apiRunning && webRunning) {
-    return { hookStatus: 'ready', webUrl };
+    return { hookStatus: 'ready', webUrl, hookChecks };
   }
   if (apiRunning) {
-    return { hookStatus: 'api_running', webUrl };
+    return { hookStatus: 'api_running', webUrl, hookChecks };
   }
   if (webRunning) {
-    return { hookStatus: 'web_running', webUrl };
+    return { hookStatus: 'web_running', webUrl, hookChecks };
   }
 
-  return { hookStatus: 'configured', webUrl };
+  return { hookStatus: 'configured', webUrl, hookChecks };
 };
