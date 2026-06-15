@@ -3,6 +3,7 @@ import type {
   MergedProjectConfig,
   ProjectRegistryEntry,
 } from '../../services/projects/types';
+import { getExpressRegistryRepo, getNextjsRegistryRepo } from './get-registry-repo';
 
 /**
  * Merge registry entry with local project override and hub defaults.
@@ -16,6 +17,9 @@ export const mergeProjectConfig = (
     return null;
   }
 
+  const expressRepo = getExpressRegistryRepo(registry);
+  const nextjsRepo = getNextjsRegistryRepo(registry);
+
   return {
     id: registry.id,
     registry,
@@ -23,9 +27,9 @@ export const mergeProjectConfig = (
     webDir: local.webDir,
     expressDir: local.expressDir,
     workspaceFile: local.workspaceFile,
-    apiPort: registry.defaultApiPort,
-    webPortStart: local.webPortStart ?? registry.defaultWebPortStart,
-    healthPath: registry.healthPath,
+    apiPort: expressRepo?.defaultApiPort ?? 0,
+    webPortStart: local.webPortStart ?? nextjsRepo?.defaultWebPortStart ?? 3000,
+    healthPath: expressRepo?.healthPath ?? '/api/health',
     nvmSh: localConfig.nvmSh ?? `${process.env.HOME}/.nvm/nvm.sh`,
     cursorBin:
       localConfig.cursorBin ??

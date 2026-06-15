@@ -1,14 +1,32 @@
 import { execSync } from 'child_process';
 
+type RunShellCommandOptions = {
+  cwd?: string;
+  timeoutMs?: number;
+  env?: Record<string, string>;
+  /** Stream stdout/stderr to the server terminal (for long-running brew commands). */
+  inheritOutput?: boolean;
+};
+
 /**
  * Run a shell command and return trimmed stdout.
  */
-export const runShellCommand = (command: string, options?: { cwd?: string }): string => {
-  return execSync(command, {
+export const runShellCommand = (command: string, options?: RunShellCommandOptions): string => {
+  const inheritOutput = options?.inheritOutput === true;
+  const result = execSync(command, {
     encoding: 'utf8',
     cwd: options?.cwd,
-    stdio: ['pipe', 'pipe', 'pipe'],
-  }).trim();
+    timeout: options?.timeoutMs,
+    env: { ...process.env, ...options?.env },
+    stdio: inheritOutput ? 'inherit' : ['pipe', 'pipe', 'pipe'],
+    maxBuffer: 10 * 1024 * 1024,
+  });
+
+  if (inheritOutput || result === undefined || result === null) {
+    return '';
+  }
+
+  return result.trim();
 };
 
 /**

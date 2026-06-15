@@ -1,6 +1,6 @@
 import type { LocalDatabaseConfig } from '../local-database/types';
 
-export type { LocalDatabaseConfig, LocalDatabaseProbe, LocalDatabaseSetupResult } from '../local-database/types';
+export type { LocalDatabaseConfig, LocalDatabaseCleanupResult, LocalDatabaseProbe, LocalDatabaseSetupResult, LocalDatabaseStepResult } from '../local-database/types';
 
 export type HookStatus =
   | 'catalog'
@@ -18,18 +18,35 @@ export type ProjectHookCheck = {
   ok: boolean;
 };
 
+export type ProjectRegistryRepoType = 'express' | 'nextjs';
+
+export type ProjectRegistryRepoEntry = {
+  repoType: ProjectRegistryRepoType;
+  repoName: string;
+  defaultApiPort?: number;
+  defaultWebPortStart?: number;
+  healthPath?: string;
+};
+
 export type ProjectRegistryEntry = {
   id: string;
   name: string;
   description: string;
-  webRepo: string | null;
-  apiRepo: string | null;
-  defaultApiPort: number;
-  defaultWebPortStart: number;
-  healthPath: string;
-  webOnly: boolean;
-  apiOnly: boolean;
+  repos: ProjectRegistryRepoEntry[];
   localDatabase?: LocalDatabaseConfig;
+};
+
+export type HubProjectRepo = {
+  projectId: string;
+  repoType: ProjectRegistryRepoType;
+  repoName: string;
+  repoUrl?: string;
+  localDir?: string;
+  dirExists?: boolean;
+  depsInstalled?: boolean;
+  defaultApiPort?: number;
+  defaultWebPortStart?: number;
+  healthPath?: string;
 };
 
 export type ProjectLocalEntry = {
@@ -56,20 +73,18 @@ export type HubProject = {
   name: string;
   description: string;
   hookStatus: HookStatus;
-  hookChecks: ProjectHookCheck[];
   enabled: boolean;
-  apiOnly: boolean;
-  webOnly: boolean;
   apiPort: number;
   webUrl?: string;
-  apiRepoUrl?: string;
-  webRepoUrl?: string;
   paths?: {
-    webDir?: string;
-    expressDir?: string;
     workspaceFile?: string;
   };
   localDatabaseSupported: boolean;
+};
+
+export type ListProjectsData = {
+  projects: HubProject[];
+  repos: HubProjectRepo[];
 };
 
 export type MergedProjectConfig = {

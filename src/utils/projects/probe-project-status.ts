@@ -7,6 +7,12 @@ import type {
   ProjectLocalEntry,
 } from '../../services/projects/types';
 import { findWebUrlOnPorts, isExpressHealthOk } from './port-probes';
+import {
+  getExpressRegistryRepo,
+  getNextjsRegistryRepo,
+  projectHasExpressRepo,
+  projectHasNextjsRepo,
+} from './get-registry-repo';
 
 const dirExists = (p?: string): boolean => !!(p && fs.existsSync(p));
 
@@ -32,8 +38,10 @@ export const probeProjectStatus = (
   options: ProbeProjectStatusOptions = {},
 ): ProbeProjectStatusResult => {
   const liveProbe = options.liveProbe ?? false;
-  const hasWeb = !!registry.webRepo && !registry.apiOnly;
-  const hasExpress = !!registry.apiRepo && !registry.webOnly;
+  const hasWeb = projectHasNextjsRepo(registry);
+  const hasExpress = projectHasExpressRepo(registry);
+  const expressRepo = getExpressRegistryRepo(registry);
+  const nextjsRepo = getNextjsRegistryRepo(registry);
 
   const hookChecks: ProjectHookCheck[] = [
     {
@@ -106,10 +114,12 @@ export const probeProjectStatus = (
 
   const apiRunning =
     !hasExpress ||
-    registry.webOnly ||
-    isExpressHealthOk(registry.defaultApiPort, registry.healthPath);
+    isExpressHealthOk(
+      expressRepo?.defaultApiPort ?? 0,
+      expressRepo?.healthPath ?? '/api/health',
+    );
 
-  const webPortStart = local.webPortStart ?? registry.defaultWebPortStart;
+  const webPortStart = local.webPortStart ?? nextjsRepo?.defaultWebPortStart ?? 3000;
   const webUrl = hasWeb ? findWebUrlOnPorts(webPortStart, 1) : undefined;
   const webRunning = hasWeb && !!webUrl;
 
@@ -120,7 +130,7 @@ export const probeProjectStatus = (
     hookChecks.push({ id: 'web-running', label: 'Web running', ok: webRunning });
   }
 
-  if (registry.apiOnly) {
+  if (!hasWeb) {
     if (apiRunning) {
       return { hookStatus: 'ready', hookChecks };
     }

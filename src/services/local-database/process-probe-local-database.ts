@@ -1,11 +1,10 @@
 import {
-  buildDatabaseUrl,
-  databaseExists,
-  envConfigured,
+  buildLocalDatabaseProbeContext,
+  buildLocalDatabaseSetupSteps,
   getHubRoot,
-  isPostgresRunning,
+  getPostgresConnection,
   resolveProjectForDatabase,
-  schemaReady,
+  wasPostgresStartedByHub,
 } from '../../utils/local-database';
 import type { LocalDatabaseProbe } from './types';
 
@@ -27,29 +26,42 @@ export const processProbeLocalDatabase = (projectId: string): LocalDatabaseProbe
     };
   }
 
-  const { localDatabase, merged } = resolved;
-  const expectedTables = localDatabase.expectedTables ?? [];
-  const databaseUrl = buildDatabaseUrl(localDatabase.databaseName);
-  const postgresRunning = isPostgresRunning();
-  const dbExists = postgresRunning && databaseExists(localDatabase.databaseName);
-  const tablesReady =
-    dbExists && expectedTables.length > 0
-      ? schemaReady(localDatabase.databaseName, expectedTables)
-      : false;
-  const envOk = envConfigured(merged.expressDir!, localDatabase.databaseName);
+  const context = buildLocalDatabaseProbeContext(resolved);
+  const connection = getPostgresConnection(context.localDatabase);
+
+  const setupSteps = buildLocalDatabaseSetupSteps({
+    localDatabase: context.localDatabase,
+    expressEnvPath: context.expressEnvPath,
+    databaseUrl: context.databaseUrl,
+    postgresRunning: context.postgresRunning,
+    databaseExists: context.databaseExists,
+    schemaReady: context.schemaReady,
+    envConfigured: context.envConfigured,
+  });
+
+  const hasRunnablePostgresSteps = setupSteps.some(
+    (step) =>
+      (step.id === 'postgres-install' || step.id === 'postgres-start') && step.runnable,
+  );
 
   const probe: LocalDatabaseProbe = {
     supported: true,
-    kind: localDatabase.kind,
-    databaseName: localDatabase.databaseName,
-    postgresRunning,
-    databaseExists: dbExists,
-    schemaReady: tablesReady,
-    envConfigured: envOk,
-    databaseUrl,
-    message: !postgresRunning
-      ? 'Postgres is not running — start with: brew services start postgresql@16'
-      : undefined,
+    kind: context.localDatabase.kind,
+    databaseName: context.localDatabase.databaseName,
+    migrationsDir: context.localDatabase.migrationsDir,
+    migrationFiles: context.localDatabase.migrationFiles,
+    expressEnvPath: context.expressEnvPath,
+    setupSteps,
+    postgresRunning: context.postgresRunning,
+    postgresStartedByHub: wasPostgresStartedByHub(projectId),
+    databaseExists: context.databaseExists,
+    schemaReady: context.schemaReady,
+    envConfigured: context.envConfigured,
+    databaseUrl: context.databaseUrl,
+    message:
+      !context.postgresRunning && !hasRunnablePostgresSteps
+        ? `Postgres is not running on ${connection.host}:${connection.port}.`
+        : undefined,
   };
 
   console.log('✅ [local-database.processProbeLocalDatabase] Probe complete', {

@@ -1,6 +1,6 @@
 import path from 'path';
 
-import { mergeProjectConfig, readLocalConfig, readRegistry } from '../../utils/projects';
+import { mergeProjectConfig, projectHasNextjsRepo, readLocalConfig, readRegistry } from '../../utils/projects';
 import { openInChrome, resolveProjectWebUrl } from '../../utils/launcher';
 
 /**
@@ -11,7 +11,7 @@ export const processOpenChrome = (projectId: string): boolean => {
   const registry = readRegistry(hubRoot);
   const localConfig = readLocalConfig(hubRoot);
   const entry = registry.find((s) => s.id === projectId);
-  if (!entry || entry.apiOnly) {
+  if (!entry || !projectHasNextjsRepo(entry)) {
     return false;
   }
 

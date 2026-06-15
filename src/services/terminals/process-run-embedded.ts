@@ -2,7 +2,7 @@ import { execSync } from 'child_process';
 import path from 'path';
 
 import { openInChrome } from '../../utils/launcher';
-import { mergeProjectConfig, readLocalConfig, readRegistry } from '../../utils/projects';
+import { mergeProjectConfig, projectHasNextjsRepo, readLocalConfig, readRegistry } from '../../utils/projects';
 import {
   findAvailableWebPort,
   findNextWebUrl,
@@ -67,7 +67,7 @@ const completeEmbeddedJob = async (
     }
 
     let webUrl: string | undefined;
-    if (merged.webDir && !merged.registry.apiOnly) {
+    if (merged.webDir && projectHasNextjsRepo(merged.registry)) {
       webUrl = findNextWebUrl(merged.webPortStart);
 
       if (webUrl) {

@@ -1,3 +1,10 @@
+export { buildProjectRepos } from './build-project-repos';
+export {
+  getExpressRegistryRepo,
+  getNextjsRegistryRepo,
+  projectHasExpressRepo,
+  projectHasNextjsRepo,
+} from './get-registry-repo';
 export { mergeProjectConfig } from './merge-project-config';
 export { probeProjectStatus } from './probe-project-status';
 export { readLocalConfig } from './read-local-config';

@@ -1,6 +1,12 @@
 import path from 'path';
 
-import { mergeProjectConfig, readLocalConfig, readRegistry } from '../../utils/projects';
+import {
+  mergeProjectConfig,
+  projectHasExpressRepo,
+  projectHasNextjsRepo,
+  readLocalConfig,
+  readRegistry,
+} from '../../utils/projects';
 import {
   findNextWebUrl,
   isExpressHealthy,
@@ -30,7 +36,7 @@ export const processSyncTerminalSessions = (): TerminalSessionInfo[] => {
       continue;
     }
 
-    if (!entry.webOnly && merged.expressDir) {
+    if (projectHasExpressRepo(entry) && merged.expressDir) {
       const expressHealthy = isExpressHealthy(merged.apiPort, merged.healthPath);
       if (expressHealthy && !hasProjectRole(entry.id, 'express')) {
         spawnProjectPty({
@@ -44,7 +50,7 @@ export const processSyncTerminalSessions = (): TerminalSessionInfo[] => {
       }
     }
 
-    if (!entry.apiOnly && merged.webDir) {
+    if (projectHasNextjsRepo(entry) && merged.webDir) {
       const webUrl = findNextWebUrl(merged.webPortStart, 1);
       if (webUrl && !hasProjectRole(entry.id, 'web')) {
         const port = Number(new URL(webUrl).port) || merged.webPortStart;

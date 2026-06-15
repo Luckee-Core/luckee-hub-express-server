@@ -9,10 +9,13 @@ export const listProjectsHandler = async (req: Request, res: Response) => {
   const liveProbe = req.query.live === '1' || req.query.live === 'true';
   console.log('📥 [projects.listProjectsHandler] Request received', { liveProbe });
   try {
-    const projects = processListProjects({ liveProbe });
-    console.log('✅ [projects.listProjectsHandler] Projects listed', { count: projects.length });
+    const { projects, repos } = processListProjects({ liveProbe });
+    console.log('✅ [projects.listProjectsHandler] Projects listed', {
+      projectCount: projects.length,
+      repoCount: repos.length,
+    });
     console.log('📤 [projects.listProjectsHandler] Sending response', { statusCode: 200 });
-    res.status(200).json({ success: true, data: projects });
+    res.status(200).json({ success: true, data: { projects, repos } });
   } catch (error: unknown) {
     const message = error instanceof Error ? error.message : 'Failed to list projects';
     console.error('❌ [projects.listProjectsHandler] Failed to list projects', { message });

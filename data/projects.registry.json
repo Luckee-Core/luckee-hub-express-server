@@ -3,25 +3,37 @@
     "id": "lead-studio",
     "name": "Lead Studio",
     "description": "Lead CRM, research workers, email queue",
-    "webRepo": "lead-studio-web-open-source",
-    "apiRepo": "lead-studio-express-server",
-    "defaultApiPort": 3032,
-    "defaultWebPortStart": 3033,
-    "healthPath": "/api/health",
-    "webOnly": false,
-    "apiOnly": false
+    "repos": [
+      {
+        "repoType": "express",
+        "repoName": "lead-studio-express-server",
+        "defaultApiPort": 3032,
+        "healthPath": "/api/health"
+      },
+      {
+        "repoType": "nextjs",
+        "repoName": "lead-studio-web-open-source",
+        "defaultWebPortStart": 3033
+      }
+    ]
   },
   {
     "id": "my-health",
     "name": "My Health",
     "description": "Self-hosted health dashboard",
-    "webRepo": "my-health-open-source",
-    "apiRepo": "my-health-open-source-express-server",
-    "defaultApiPort": 3009,
-    "defaultWebPortStart": 3010,
-    "healthPath": "/api/health",
-    "webOnly": false,
-    "apiOnly": false,
+    "repos": [
+      {
+        "repoType": "express",
+        "repoName": "my-health-open-source-express-server",
+        "defaultApiPort": 3009,
+        "healthPath": "/api/health"
+      },
+      {
+        "repoType": "nextjs",
+        "repoName": "my-health-open-source",
+        "defaultWebPortStart": 3010
+      }
+    ],
     "localDatabase": {
       "kind": "postgres",
       "databaseName": "my_health",
@@ -37,91 +49,130 @@
         "appointments",
         "focus_areas",
         "daily_entries"
-      ]
+      ],
+      "postgres": {
+        "host": "127.0.0.1",
+        "port": 5432,
+        "formula": "postgresql@16",
+        "installCommand": "brew install postgresql@16",
+        "startCommand": "brew services start postgresql@16",
+        "stopCommand": "brew services stop postgresql@16"
+      }
     }
   },
   {
     "id": "personal-finances",
     "name": "Personal Finances",
     "description": "Money dashboard with CSV imports and AI prompts",
-    "webRepo": "personal-finances",
-    "apiRepo": "personal-finances-express-server",
-    "defaultApiPort": 3011,
-    "defaultWebPortStart": 3012,
-    "healthPath": "/api/health",
-    "webOnly": false,
-    "apiOnly": false
+    "repos": [
+      {
+        "repoType": "express",
+        "repoName": "personal-finances-express-server",
+        "defaultApiPort": 3011,
+        "healthPath": "/api/health"
+      },
+      {
+        "repoType": "nextjs",
+        "repoName": "personal-finances",
+        "defaultWebPortStart": 3012
+      }
+    ]
   },
   {
     "id": "knowledge-studio",
     "name": "Knowledge Studio",
     "description": "YouTube and knowledge workflows",
-    "webRepo": "knowledge-studio-open-source",
-    "apiRepo": "knowledge-studio-express-server",
-    "defaultApiPort": 3020,
-    "defaultWebPortStart": 3021,
-    "healthPath": "/api/health",
-    "webOnly": false,
-    "apiOnly": false
+    "repos": [
+      {
+        "repoType": "express",
+        "repoName": "knowledge-studio-express-server",
+        "defaultApiPort": 3020,
+        "healthPath": "/api/health"
+      },
+      {
+        "repoType": "nextjs",
+        "repoName": "knowledge-studio-open-source",
+        "defaultWebPortStart": 3021
+      }
+    ]
   },
   {
     "id": "blog-studio",
     "name": "Blog Studio",
     "description": "Blog authoring and distribution",
-    "webRepo": "blog-studio-open-source-web",
-    "apiRepo": "blog-studio-open-source-express-server",
-    "defaultApiPort": 3025,
-    "defaultWebPortStart": 3026,
-    "healthPath": "/api/health",
-    "webOnly": false,
-    "apiOnly": false
+    "repos": [
+      {
+        "repoType": "express",
+        "repoName": "blog-studio-open-source-express-server",
+        "defaultApiPort": 3025,
+        "healthPath": "/api/health"
+      },
+      {
+        "repoType": "nextjs",
+        "repoName": "blog-studio-open-source-web",
+        "defaultWebPortStart": 3026
+      }
+    ]
   },
   {
     "id": "code-your-resume",
     "name": "Code Your Resume",
     "description": "Job-search CRM and resume studios",
-    "webRepo": "code-your-resume-open-source",
-    "apiRepo": "code-your-resume-open-source-express-server",
-    "defaultApiPort": 3053,
-    "defaultWebPortStart": 3054,
-    "healthPath": "/api/health",
-    "webOnly": false,
-    "apiOnly": false
+    "repos": [
+      {
+        "repoType": "express",
+        "repoName": "code-your-resume-open-source-express-server",
+        "defaultApiPort": 3053,
+        "healthPath": "/api/health"
+      },
+      {
+        "repoType": "nextjs",
+        "repoName": "code-your-resume-open-source",
+        "defaultWebPortStart": 3054
+      }
+    ]
   },
   {
     "id": "luckee-blueprints",
     "name": "Luckee Blueprints",
     "description": "Workforce training and certifications",
-    "webRepo": "luckee-blueprints",
-    "apiRepo": "luckee-blueprints-express-server",
-    "defaultApiPort": 3040,
-    "defaultWebPortStart": 3041,
-    "healthPath": "/api/health",
-    "webOnly": false,
-    "apiOnly": false
+    "repos": [
+      {
+        "repoType": "express",
+        "repoName": "luckee-blueprints-express-server",
+        "defaultApiPort": 3040,
+        "healthPath": "/api/health"
+      },
+      {
+        "repoType": "nextjs",
+        "repoName": "luckee-blueprints",
+        "defaultWebPortStart": 3041
+      }
+    ]
   },
   {
     "id": "luckee-open-source",
     "name": "Luckee Open Source",
     "description": "Lead and ops CRM-style modular dashboard",
-    "webRepo": "luckee-open-source",
-    "apiRepo": "luckee-open-source-express",
-    "defaultApiPort": 3030,
-    "defaultWebPortStart": 3031,
-    "healthPath": "/api/health",
-    "webOnly": false,
-    "apiOnly": false
+    "repos": [
+      {
+        "repoType": "nextjs",
+        "repoName": "luckee-open-source",
+        "defaultWebPortStart": 3031
+      }
+    ]
   },
   {
     "id": "qr-code-generator",
     "name": "QR Code Generator",
     "description": "QR generation API utilities",
-    "webRepo": null,
-    "apiRepo": "qr-code-generator-open-source-express-server",
-    "defaultApiPort": 3060,
-    "defaultWebPortStart": 3000,
-    "healthPath": "/api/health",
-    "webOnly": false,
-    "apiOnly": true
+    "repos": [
+      {
+        "repoType": "express",
+        "repoName": "qr-code-generator-open-source-express-server",
+        "defaultApiPort": 3060,
+        "healthPath": "/api/health"
+      }
+    ]
   }
 ]
