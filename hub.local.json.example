@@ -2,7 +2,7 @@
   "workspaceParent": "/Users/matthewruiz/github",
   "nvmSh": "/opt/homebrew/opt/nvm/nvm.sh",
   "cursorBin": "/Applications/Cursor.app/Contents/Resources/app/bin/cursor",
-  "cursorOpenFlags": "--classic --reuse-window",
+  "cursorOpenFlags": "--classic --new-window",
   "projects": {
     "lead-studio": {
       "enabled": true,

@@ -34,6 +34,6 @@ export const mergeProjectConfig = (
     cursorBin:
       localConfig.cursorBin ??
       '/Applications/Cursor.app/Contents/Resources/app/bin/cursor',
-    cursorOpenFlags: localConfig.cursorOpenFlags ?? '--classic --reuse-window',
+    cursorOpenFlags: localConfig.cursorOpenFlags ?? '--classic --new-window',
   };
 };
