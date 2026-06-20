@@ -57,6 +57,18 @@
     },
     "knowledge-studio": {
       "enabled": false
+    },
+    "instagram-studio": {
+      "enabled": true,
+      "webDir": "/Users/matthewruiz/github/instagram-studio/instagram-studio-open-source",
+      "expressDir": "/Users/matthewruiz/github/instagram-studio/instagram-studio-open-source-express-server",
+      "webPortStart": 3071
+    },
+    "tiktok-studio": {
+      "enabled": true,
+      "webDir": "/Users/matthewruiz/github/tiktok-studio/tiktok-studio",
+      "expressDir": "/Users/matthewruiz/github/tiktok-studio/tiktok-studio-express-server",
+      "webPortStart": 3073
     }
   }
 }
