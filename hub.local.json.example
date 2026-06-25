@@ -18,6 +18,18 @@
       "workspaceFile": "/Users/matthewruiz/github/my-health/my-health-open-source-express-server.code-workspace",
       "webPortStart": 3010
     },
+    "my-fundraise": {
+      "enabled": true,
+      "webDir": "/Users/matthewruiz/github/my-fundraise/my-fundraise-web",
+      "expressDir": "/Users/matthewruiz/github/my-fundraise/my-fundraise-express-server",
+      "webPortStart": 3091
+    },
+    "my-nonprofit": {
+      "enabled": true,
+      "webDir": "/Users/matthewruiz/github/my-nonprofit/my-nonprofit-console",
+      "expressDir": "/Users/matthewruiz/github/my-nonprofit/my-nonprofit-express-server",
+      "webPortStart": 3081
+    },
     "personal-finances": {
       "enabled": true,
       "webDir": "/Users/matthewruiz/github/personal-finances/personal-finances",
@@ -30,6 +42,12 @@
       "webDir": "/Users/matthewruiz/github/blog-studio/blog-studio-open-source-web",
       "expressDir": "/Users/matthewruiz/github/blog-studio/blog-studio-open-source-express-server",
       "webPortStart": 3026
+    },
+    "code-control": {
+      "enabled": true,
+      "webDir": "/Users/matthewruiz/github/code-control/code-control",
+      "expressDir": "/Users/matthewruiz/github/code-control/code-control-express-server",
+      "webPortStart": 3075
     },
     "code-your-resume": {
       "enabled": true,
@@ -49,6 +67,12 @@
       "enabled": true,
       "webDir": "/Users/matthewruiz/github/luckee/luckee-open-source",
       "webPortStart": 3031
+    },
+    "local-scheduler": {
+      "enabled": true,
+      "webDir": "/Users/matthewruiz/github/local-scheduler/local-scheduler-web",
+      "expressDir": "/Users/matthewruiz/github/local-scheduler/local-scheduler-express-server",
+      "webPortStart": 4121
     },
     "qr-code-generator": {
       "enabled": true,

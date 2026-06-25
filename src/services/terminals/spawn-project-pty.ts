@@ -44,12 +44,26 @@ export const buildExpressPtyCommand = (merged: MergedProjectConfig): string => {
 /**
  * Build shell command to wait for Express health then start Next.js.
  */
+const buildExpressApiEnvExports = (apiPort: number): string => {
+  if (apiPort <= 0) {
+    return '';
+  }
+  const apiUrl = `http://127.0.0.1:${apiPort}`;
+  return (
+    `export EXPRESS_API_URL='${apiUrl}' && ` +
+    `export CODE_CONTROL_API_URL='${apiUrl}' && ` +
+    `export NEXT_PUBLIC_CODE_CONTROL_API_URL='${apiUrl}' && `
+  );
+};
+
 export const buildWebPtyCommand = (merged: MergedProjectConfig): string => {
   const dir = shellEscape(merged.webDir ?? '');
   const nvm = buildNvmPrefix(merged.nvmSh);
   const healthUrl = `http://127.0.0.1:${merged.apiPort}${merged.healthPath}`;
+  const apiEnv = buildExpressApiEnvExports(merged.apiPort);
   return (
-    `cd '${dir}' && ${nvm} && echo '>>> ${merged.id} Web — waiting for Express...' && ` +
+    `cd '${dir}' && ${nvm} && ${apiEnv}` +
+    `echo '>>> ${merged.id} Web — waiting for Express...' && ` +
     `until curl -fsS '${healthUrl}' 2>/dev/null | grep -qE '"status"[[:space:]]*:[[:space:]]*"ok"'; do sleep 2; done && ` +
     `echo '>>> Express ready. Starting Next.js...' && npm run dev`
   );
@@ -84,8 +98,9 @@ export const buildRunningStatusPtyCommand = (
 export const buildWebOnlyPtyCommand = (merged: MergedProjectConfig, webPort: number): string => {
   const dir = shellEscape(merged.webDir ?? '');
   const nvm = buildNvmPrefix(merged.nvmSh);
+  const apiEnv = buildExpressApiEnvExports(merged.apiPort);
   return (
-    `cd '${dir}' && ${nvm} && export PORT=${webPort} && ` +
+    `cd '${dir}' && ${nvm} && export PORT=${webPort} && ${apiEnv}` +
     `echo '>>> ${merged.id} Web (Next.js :${webPort})' && npm run dev`
   );
 };
