@@ -6,6 +6,7 @@ export {
   projectHasNextjsRepo,
 } from './get-registry-repo';
 export { mergeProjectConfig } from './merge-project-config';
+export { resolveProjectWorkspaceFile } from './resolve-project-workspace-file';
 export { probeProjectStatus } from './probe-project-status';
 export { readLocalConfig } from './read-local-config';
 export { readRegistry } from './read-registry';

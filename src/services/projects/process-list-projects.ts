@@ -7,6 +7,7 @@ import {
   probeProjectStatus,
   readLocalConfig,
   readRegistry,
+  resolveProjectWorkspaceFile,
 } from '../../utils/projects';
 import type { ListProjectsData } from './types';
 
@@ -45,7 +46,7 @@ export const processListProjects = (
       enabled: local?.enabled !== false,
       apiPort: expressRepo?.defaultApiPort ?? 0,
       webUrl,
-      paths: local ? { workspaceFile: local.workspaceFile } : undefined,
+      paths: local ? { workspaceFile: resolveProjectWorkspaceFile(local) } : undefined,
       localDatabaseSupported: !!entry.localDatabase,
     };
   });

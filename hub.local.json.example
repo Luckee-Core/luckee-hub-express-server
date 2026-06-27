@@ -22,6 +22,7 @@
       "enabled": true,
       "webDir": "/Users/matthewruiz/github/my-fundraise/my-fundraise-web",
       "expressDir": "/Users/matthewruiz/github/my-fundraise/my-fundraise-express-server",
+      "workspaceFile": "/Users/matthewruiz/github/my-fundraise/my-fundraise-web.code-workspace",
       "webPortStart": 3091
     },
     "my-nonprofit": {
@@ -73,6 +74,11 @@
       "webDir": "/Users/matthewruiz/github/local-scheduler/local-scheduler-web",
       "expressDir": "/Users/matthewruiz/github/local-scheduler/local-scheduler-express-server",
       "webPortStart": 4121
+    },
+    "website-site-scraper": {
+      "enabled": true,
+      "expressDir": "/Users/matthewruiz/github/website-scraper/website-site-scraper-open-source-express-server",
+      "workspaceFile": "/Users/matthewruiz/github/website-scraper/website-site-scraper-open-source-express-server.code-workspace"
     },
     "qr-code-generator": {
       "enabled": true,
