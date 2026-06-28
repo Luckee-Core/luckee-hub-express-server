@@ -25,6 +25,12 @@
       "workspaceFile": "/Users/matthewruiz/github/my-fundraise/my-fundraise-web.code-workspace",
       "webPortStart": 3091
     },
+    "my-ai-threads": {
+      "enabled": true,
+      "webDir": "/Users/matthewruiz/github/my-ai-threads/my-ai-threads-console",
+      "expressDir": "/Users/matthewruiz/github/my-ai-threads/my-ai-threads-express-server",
+      "webPortStart": 3093
+    },
     "my-nonprofit": {
       "enabled": true,
       "webDir": "/Users/matthewruiz/github/my-nonprofit/my-nonprofit-console",
