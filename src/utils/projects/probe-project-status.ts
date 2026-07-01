@@ -6,7 +6,8 @@ import type {
   ProjectRegistryEntry,
   ProjectLocalEntry,
 } from '../../services/projects/types';
-import { findWebUrlOnPorts, isExpressHealthOk } from './port-probes';
+import { findWebUrlOnPorts } from './port-probes';
+import { findExpressApiPort } from './resolve-project-ports';
 import {
   getExpressRegistryRepo,
   getNextjsRegistryRepo,
@@ -112,15 +113,15 @@ export const probeProjectStatus = (
     return { hookStatus: 'configured', hookChecks };
   }
 
+  const registryApiPort = expressRepo?.defaultApiPort ?? 0;
+  const healthPath = expressRepo?.healthPath ?? '/api/health';
   const apiRunning =
     !hasExpress ||
-    isExpressHealthOk(
-      expressRepo?.defaultApiPort ?? 0,
-      expressRepo?.healthPath ?? '/api/health',
-    );
+    findExpressApiPort(registry.id, registryApiPort, healthPath, 10) !== undefined;
 
   const webPortStart = local.webPortStart ?? nextjsRepo?.defaultWebPortStart ?? 3000;
-  const webUrl = hasWeb ? findWebUrlOnPorts(webPortStart, 1) : undefined;
+  const resolvedPorts = hasWeb ? findWebUrlOnPorts(webPortStart, 11) : undefined;
+  const webUrl = resolvedPorts;
   const webRunning = hasWeb && !!webUrl;
 
   if (hasExpress) {

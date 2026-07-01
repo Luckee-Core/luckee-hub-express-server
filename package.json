@@ -8,6 +8,8 @@
     "dev": "nodemon --exec ts-node index.ts",
     "build": "tsc",
     "build:watch": "tsc --watch",
+    "validate:ports": "node scripts/validate-port-registry.mjs",
+    "suggest:ports": "node scripts/suggest-next-project-ports.mjs",
     "postinstall": "sh scripts/postinstall.sh"
   },
   "dependencies": {

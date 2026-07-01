@@ -1,5 +1,95 @@
 [
   {
+    "id": "blog-studio",
+    "name": "Blog Studio",
+    "description": "Blog authoring and distribution",
+    "repos": [
+      {
+        "repoType": "express",
+        "repoName": "blog-studio-open-source-express-server",
+        "defaultApiPort": 3010,
+        "healthPath": "/api/health"
+      },
+      {
+        "repoType": "nextjs",
+        "repoName": "blog-studio-open-source-web",
+        "defaultWebPortStart": 3011
+      }
+    ]
+  },
+  {
+    "id": "code-control",
+    "name": "Code Control",
+    "description": "Schema, conventions, and guided codegen into customer repos",
+    "repos": [
+      {
+        "repoType": "express",
+        "repoName": "code-control-express-server",
+        "defaultApiPort": 3012,
+        "healthPath": "/api/health"
+      },
+      {
+        "repoType": "nextjs",
+        "repoName": "code-control",
+        "defaultWebPortStart": 3013
+      }
+    ]
+  },
+  {
+    "id": "code-your-resume",
+    "name": "Code Your Resume",
+    "description": "Job-search CRM and resume studios",
+    "repos": [
+      {
+        "repoType": "express",
+        "repoName": "code-your-resume-open-source-express-server",
+        "defaultApiPort": 3014,
+        "healthPath": "/api/health"
+      },
+      {
+        "repoType": "nextjs",
+        "repoName": "code-your-resume-open-source",
+        "defaultWebPortStart": 3015
+      }
+    ]
+  },
+  {
+    "id": "instagram-studio",
+    "name": "Instagram Studio",
+    "description": "Instagram carousel content and Graph publishing",
+    "repos": [
+      {
+        "repoType": "express",
+        "repoName": "instagram-studio-open-source-express-server",
+        "defaultApiPort": 3016,
+        "healthPath": "/api/health"
+      },
+      {
+        "repoType": "nextjs",
+        "repoName": "instagram-studio-open-source",
+        "defaultWebPortStart": 3017
+      }
+    ]
+  },
+  {
+    "id": "knowledge-studio",
+    "name": "Knowledge Studio",
+    "description": "YouTube and knowledge workflows",
+    "repos": [
+      {
+        "repoType": "express",
+        "repoName": "knowledge-studio-express-server",
+        "defaultApiPort": 3018,
+        "healthPath": "/api/health"
+      },
+      {
+        "repoType": "nextjs",
+        "repoName": "knowledge-studio-open-source",
+        "defaultWebPortStart": 3019
+      }
+    ]
+  },
+  {
     "id": "lead-studio",
     "name": "Lead Studio",
     "description": "Lead CRM, research workers, email queue",
@@ -7,13 +97,103 @@
       {
         "repoType": "express",
         "repoName": "lead-studio-express-server",
-        "defaultApiPort": 3032,
+        "defaultApiPort": 3020,
         "healthPath": "/api/health"
       },
       {
         "repoType": "nextjs",
         "repoName": "lead-studio-web-open-source",
-        "defaultWebPortStart": 3033
+        "defaultWebPortStart": 3021
+      }
+    ]
+  },
+  {
+    "id": "local-scheduler",
+    "name": "Local Scheduler",
+    "description": "Local cron studio for worker Express APIs (email queue, etc.)",
+    "repos": [
+      {
+        "repoType": "express",
+        "repoName": "local-scheduler-express-server",
+        "defaultApiPort": 3022,
+        "healthPath": "/api/health"
+      },
+      {
+        "repoType": "nextjs",
+        "repoName": "local-scheduler-web",
+        "defaultWebPortStart": 3023
+      }
+    ]
+  },
+  {
+    "id": "luckee-blueprints",
+    "name": "Luckee Blueprints",
+    "description": "Workforce training and certifications",
+    "repos": [
+      {
+        "repoType": "express",
+        "repoName": "luckee-blueprints-express-server",
+        "defaultApiPort": 3024,
+        "healthPath": "/api/health"
+      },
+      {
+        "repoType": "nextjs",
+        "repoName": "luckee-blueprints",
+        "defaultWebPortStart": 3025
+      }
+    ]
+  },
+  {
+    "id": "luckee-open-source",
+    "name": "Luckee Open Source",
+    "description": "Leads, contacts, and outbound email pipeline",
+    "repos": [
+      {
+        "repoType": "express",
+        "repoName": "luckee-open-source-express-server",
+        "defaultApiPort": 3026,
+        "healthPath": "/api/health"
+      },
+      {
+        "repoType": "nextjs",
+        "repoName": "luckee-open-source",
+        "defaultWebPortStart": 3027
+      }
+    ]
+  },
+  {
+    "id": "my-ai-threads",
+    "name": "My AI Threads",
+    "description": "Search, browse, and Ask over local Cursor agent transcripts",
+    "repos": [
+      {
+        "repoType": "express",
+        "repoName": "my-ai-threads-express-server",
+        "defaultApiPort": 3028,
+        "healthPath": "/api/health"
+      },
+      {
+        "repoType": "nextjs",
+        "repoName": "my-ai-threads-console",
+        "defaultWebPortStart": 3029
+      }
+    ]
+  },
+  {
+    "id": "my-fundraise",
+    "name": "My Fundraise",
+    "description": "Investors CRM, graphics studio (TSX preview), and pitch deck slide coach",
+    "repos": [
+      {
+        "repoType": "express",
+        "repoName": "my-fundraise-express-server",
+        "defaultApiPort": 3030,
+        "healthPath": "/api/health"
+      },
+      {
+        "repoType": "nextjs",
+        "repoName": "my-fundraise-web",
+        "defaultWebPortStart": 3031
       }
     ]
   },
@@ -25,13 +205,13 @@
       {
         "repoType": "express",
         "repoName": "my-health-open-source-express-server",
-        "defaultApiPort": 3009,
+        "defaultApiPort": 3032,
         "healthPath": "/api/health"
       },
       {
         "repoType": "nextjs",
         "repoName": "my-health-open-source",
-        "defaultWebPortStart": 3010
+        "defaultWebPortStart": 3033
       }
     ],
     "localDatabase": {
@@ -61,42 +241,6 @@
     }
   },
   {
-    "id": "my-fundraise",
-    "name": "My Fundraise",
-    "description": "Investors CRM, graphics studio (TSX preview), and pitch deck slide coach",
-    "repos": [
-      {
-        "repoType": "express",
-        "repoName": "my-fundraise-express-server",
-        "defaultApiPort": 3090,
-        "healthPath": "/api/health"
-      },
-      {
-        "repoType": "nextjs",
-        "repoName": "my-fundraise-web",
-        "defaultWebPortStart": 3091
-      }
-    ]
-  },
-  {
-    "id": "my-ai-threads",
-    "name": "My AI Threads",
-    "description": "Search, browse, and Ask over local Cursor agent transcripts",
-    "repos": [
-      {
-        "repoType": "express",
-        "repoName": "my-ai-threads-express-server",
-        "defaultApiPort": 3092,
-        "healthPath": "/api/health"
-      },
-      {
-        "repoType": "nextjs",
-        "repoName": "my-ai-threads-console",
-        "defaultWebPortStart": 3093
-      }
-    ]
-  },
-  {
     "id": "my-nonprofit",
     "name": "My Nonprofit",
     "description": "PA/Philadelphia nonprofit formation wizard with AI document drafts",
@@ -104,13 +248,31 @@
       {
         "repoType": "express",
         "repoName": "my-nonprofit-express-server",
-        "defaultApiPort": 3080,
+        "defaultApiPort": 3034,
         "healthPath": "/api/health"
       },
       {
         "repoType": "nextjs",
         "repoName": "my-nonprofit-console",
-        "defaultWebPortStart": 3081
+        "defaultWebPortStart": 3035
+      }
+    ]
+  },
+  {
+    "id": "my-ops-tracker",
+    "name": "My Ops Tracker",
+    "description": "Customers, projects, tickets, and time tracking",
+    "repos": [
+      {
+        "repoType": "express",
+        "repoName": "my-ops-tracker-express-server",
+        "defaultApiPort": 3036,
+        "healthPath": "/api/health"
+      },
+      {
+        "repoType": "nextjs",
+        "repoName": "my-ops-tracker-web",
+        "defaultWebPortStart": 3037
       }
     ]
   },
@@ -122,133 +284,44 @@
       {
         "repoType": "express",
         "repoName": "personal-finances-express-server",
-        "defaultApiPort": 3011,
+        "defaultApiPort": 3038,
         "healthPath": "/api/health"
       },
       {
         "repoType": "nextjs",
         "repoName": "personal-finances",
-        "defaultWebPortStart": 3012
+        "defaultWebPortStart": 3039
       }
     ]
   },
   {
-    "id": "knowledge-studio",
-    "name": "Knowledge Studio",
-    "description": "YouTube and knowledge workflows",
+    "id": "qr-code-generator",
+    "name": "QR Code Generator",
+    "description": "QR generation API utilities",
     "repos": [
       {
         "repoType": "express",
-        "repoName": "knowledge-studio-express-server",
-        "defaultApiPort": 3020,
-        "healthPath": "/api/health"
-      },
-      {
-        "repoType": "nextjs",
-        "repoName": "knowledge-studio-open-source",
-        "defaultWebPortStart": 3021
-      }
-    ]
-  },
-  {
-    "id": "blog-studio",
-    "name": "Blog Studio",
-    "description": "Blog authoring and distribution",
-    "repos": [
-      {
-        "repoType": "express",
-        "repoName": "blog-studio-open-source-express-server",
-        "defaultApiPort": 3025,
-        "healthPath": "/api/health"
-      },
-      {
-        "repoType": "nextjs",
-        "repoName": "blog-studio-open-source-web",
-        "defaultWebPortStart": 3026
-      }
-    ]
-  },
-  {
-    "id": "code-control",
-    "name": "Code Control",
-    "description": "Schema, conventions, and guided codegen into customer repos",
-    "repos": [
-      {
-        "repoType": "express",
-        "repoName": "code-control-express-server",
-        "defaultApiPort": 3074,
-        "healthPath": "/api/health"
-      },
-      {
-        "repoType": "nextjs",
-        "repoName": "code-control",
-        "defaultWebPortStart": 3075
-      }
-    ]
-  },
-  {
-    "id": "code-your-resume",
-    "name": "Code Your Resume",
-    "description": "Job-search CRM and resume studios",
-    "repos": [
-      {
-        "repoType": "express",
-        "repoName": "code-your-resume-open-source-express-server",
-        "defaultApiPort": 3053,
-        "healthPath": "/api/health"
-      },
-      {
-        "repoType": "nextjs",
-        "repoName": "code-your-resume-open-source",
-        "defaultWebPortStart": 3054
-      }
-    ]
-  },
-  {
-    "id": "luckee-blueprints",
-    "name": "Luckee Blueprints",
-    "description": "Workforce training and certifications",
-    "repos": [
-      {
-        "repoType": "express",
-        "repoName": "luckee-blueprints-express-server",
+        "repoName": "qr-code-generator-open-source-express-server",
         "defaultApiPort": 3040,
         "healthPath": "/api/health"
-      },
-      {
-        "repoType": "nextjs",
-        "repoName": "luckee-blueprints",
-        "defaultWebPortStart": 3041
       }
     ]
   },
   {
-    "id": "luckee-open-source",
-    "name": "Luckee Open Source",
-    "description": "Lead and ops CRM-style modular dashboard",
-    "repos": [
-      {
-        "repoType": "nextjs",
-        "repoName": "luckee-open-source",
-        "defaultWebPortStart": 3031
-      }
-    ]
-  },
-  {
-    "id": "local-scheduler",
-    "name": "Local Scheduler",
-    "description": "Local cron studio for worker Express APIs (email queue, etc.)",
+    "id": "tiktok-studio",
+    "name": "TikTok Studio",
+    "description": "TikTok carousel content and publishing",
     "repos": [
       {
         "repoType": "express",
-        "repoName": "local-scheduler-express-server",
-        "defaultApiPort": 4120,
+        "repoName": "tiktok-studio-express-server",
+        "defaultApiPort": 3041,
         "healthPath": "/api/health"
       },
       {
         "repoType": "nextjs",
-        "repoName": "local-scheduler-web",
-        "defaultWebPortStart": 4121
+        "repoName": "tiktok-studio",
+        "defaultWebPortStart": 3042
       }
     ]
   },
@@ -266,51 +339,20 @@
     ]
   },
   {
-    "id": "qr-code-generator",
-    "name": "QR Code Generator",
-    "description": "QR generation API utilities",
+    "id": "app-store-manager",
+    "name": "App Store Manager",
+    "description": "App Store listing copy, TSX screenshot studio, and device frame assets",
     "repos": [
       {
         "repoType": "express",
-        "repoName": "qr-code-generator-open-source-express-server",
-        "defaultApiPort": 3060,
-        "healthPath": "/api/health"
-      }
-    ]
-  },
-  {
-    "id": "instagram-studio",
-    "name": "Instagram Studio",
-    "description": "Instagram carousel content and Graph publishing",
-    "repos": [
-      {
-        "repoType": "express",
-        "repoName": "instagram-studio-open-source-express-server",
-        "defaultApiPort": 3070,
+        "repoName": "app-store-manager-express-server",
+        "defaultApiPort": 3044,
         "healthPath": "/api/health"
       },
       {
         "repoType": "nextjs",
-        "repoName": "instagram-studio-open-source",
-        "defaultWebPortStart": 3071
-      }
-    ]
-  },
-  {
-    "id": "tiktok-studio",
-    "name": "TikTok Studio",
-    "description": "TikTok carousel content and publishing",
-    "repos": [
-      {
-        "repoType": "express",
-        "repoName": "tiktok-studio-express-server",
-        "defaultApiPort": 3072,
-        "healthPath": "/api/health"
-      },
-      {
-        "repoType": "nextjs",
-        "repoName": "tiktok-studio",
-        "defaultWebPortStart": 3073
+        "repoName": "app-store-manager-console",
+        "defaultWebPortStart": 3045
       }
     ]
   }

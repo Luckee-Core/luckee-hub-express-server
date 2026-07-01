@@ -50,6 +50,8 @@ const buildExpressApiEnvExports = (apiPort: number): string => {
   }
   const apiUrl = `http://127.0.0.1:${apiPort}`;
   return (
+    `export NEXT_PUBLIC_SERVER_URL='${apiUrl}' && ` +
+    `export NEXT_PUBLIC_API_URL='${apiUrl}' && ` +
     `export EXPRESS_API_URL='${apiUrl}' && ` +
     `export CODE_CONTROL_API_URL='${apiUrl}' && ` +
     `export NEXT_PUBLIC_CODE_CONTROL_API_URL='${apiUrl}' && `

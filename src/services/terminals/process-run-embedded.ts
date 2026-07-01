@@ -2,7 +2,15 @@ import { execSync } from 'child_process';
 import path from 'path';
 
 import { openInChrome } from '../../utils/launcher';
-import { mergeProjectConfig, projectHasNextjsRepo, readLocalConfig, readRegistry } from '../../utils/projects';
+import {
+  mergeProjectConfig,
+  projectHasNextjsRepo,
+  readLocalConfig,
+  readRegistry,
+  resolveProjectPortsForRun,
+  withResolvedApiPort,
+  writeResolvedProjectPorts,
+} from '../../utils/projects';
 import {
   findAvailableWebPort,
   findNextWebUrl,
@@ -40,6 +48,8 @@ const completeEmbeddedJob = async (
   merged: NonNullable<ReturnType<typeof mergeProjectConfig>>,
   sessions: TerminalSessionInfo[],
   needsExpressWait: boolean,
+  webPortStart: number,
+  apiUrl: string,
 ): Promise<void> => {
   try {
     if (needsExpressWait) {
@@ -68,7 +78,7 @@ const completeEmbeddedJob = async (
 
     let webUrl: string | undefined;
     if (merged.webDir && projectHasNextjsRepo(merged.registry)) {
-      webUrl = findNextWebUrl(merged.webPortStart);
+      webUrl = findNextWebUrl(webPortStart);
 
       if (webUrl) {
         writeJobFile({
@@ -80,7 +90,7 @@ const completeEmbeddedJob = async (
           updatedAt: new Date().toISOString(),
         });
       } else {
-        const webPort = findAvailableWebPort(merged.webPortStart);
+        const webPort = findAvailableWebPort(webPortStart);
 
         writeJobFile({
           jobId,
@@ -123,16 +133,31 @@ const completeEmbeddedJob = async (
           updatedAt: new Date().toISOString(),
         });
 
-        webUrl = await waitForNextWebUrl(merged.webPortStart);
+        webUrl = await waitForNextWebUrl(webPortStart);
         if (!webUrl) {
-          webUrl = findNextWebUrl(merged.webPortStart);
+          webUrl = findNextWebUrl(webPortStart);
         }
       }
       if (webUrl) {
         const { writeFileSync, mkdirSync } = await import('fs');
         mkdirSync(HUB_TMP, { recursive: true });
         writeFileSync(`${HUB_TMP}/${projectId}-web-url.txt`, `${webUrl}\n`);
+
+        const webPort = Number(new URL(webUrl).port) || webPortStart;
+        writeResolvedProjectPorts(projectId, {
+          apiPort: merged.apiPort,
+          webPort,
+          webPortStart,
+          apiUrl,
+          webUrl,
+        });
       }
+    } else if (merged.apiPort > 0) {
+      writeResolvedProjectPorts(projectId, {
+        apiPort: merged.apiPort,
+        webPortStart,
+        apiUrl,
+      });
     }
 
     if (webUrl) {
@@ -178,13 +203,16 @@ export const processRunEmbedded = (projectId: string): RunEmbeddedResult | null 
     return null;
   }
 
+  const { apiPort, webPortStart, apiUrl } = resolveProjectPortsForRun(merged);
+  const runMerged = withResolvedApiPort(merged, apiPort);
+
   const jobId = `${projectId}-${Date.now()}`;
   const sessions: TerminalSessionInfo[] = [];
 
   const expressHealthy =
-    !merged.expressDir || expressAlreadyHealthy(merged.apiPort, merged.healthPath);
+    !runMerged.expressDir || expressAlreadyHealthy(runMerged.apiPort, runMerged.healthPath);
 
-  const needsExpressWait = !!(merged.expressDir && !expressHealthy);
+  const needsExpressWait = !!(runMerged.expressDir && !expressHealthy);
 
   if (needsExpressWait) {
     try {
@@ -192,9 +220,9 @@ export const processRunEmbedded = (projectId: string): RunEmbeddedResult | null 
         projectId,
         role: 'express',
         label: `${projectId} / Express`,
-        command: buildExpressPtyCommand(merged),
-        cwd: merged.expressDir!,
-        port: merged.apiPort,
+        command: buildExpressPtyCommand(runMerged),
+        cwd: runMerged.expressDir!,
+        port: runMerged.apiPort,
       });
       sessions.push(session);
     } catch (error: unknown) {
@@ -220,7 +248,15 @@ export const processRunEmbedded = (projectId: string): RunEmbeddedResult | null 
     updatedAt: new Date().toISOString(),
   });
 
-  void completeEmbeddedJob(jobId, projectId, merged, sessions, needsExpressWait).catch(
+  void completeEmbeddedJob(
+    jobId,
+    projectId,
+    runMerged,
+    sessions,
+    needsExpressWait,
+    webPortStart,
+    apiUrl,
+  ).catch(
     (error: unknown) => {
       const message = error instanceof Error ? error.message : 'Embedded run failed';
       writeJobFile({

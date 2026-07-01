@@ -4,107 +4,122 @@
   "cursorBin": "/Applications/Cursor.app/Contents/Resources/app/bin/cursor",
   "cursorOpenFlags": "--classic --new-window",
   "projects": {
-    "lead-studio": {
-      "enabled": true,
-      "webDir": "/Users/matthewruiz/github/lead-open-source/lead-studio-web-open-source",
-      "expressDir": "/Users/matthewruiz/github/lead-open-source/lead-studio-express-server",
-      "workspaceFile": "/Users/matthewruiz/github/lead-open-source/lead-studio-web-open-source.code-workspace",
-      "webPortStart": 3033
-    },
-    "my-health": {
-      "enabled": true,
-      "webDir": "/Users/matthewruiz/github/my-health/my-health-open-source",
-      "expressDir": "/Users/matthewruiz/github/my-health/my-health-open-source-express-server",
-      "workspaceFile": "/Users/matthewruiz/github/my-health/my-health-open-source-express-server.code-workspace",
-      "webPortStart": 3010
-    },
-    "my-fundraise": {
-      "enabled": true,
-      "webDir": "/Users/matthewruiz/github/my-fundraise/my-fundraise-web",
-      "expressDir": "/Users/matthewruiz/github/my-fundraise/my-fundraise-express-server",
-      "workspaceFile": "/Users/matthewruiz/github/my-fundraise/my-fundraise-web.code-workspace",
-      "webPortStart": 3091
-    },
-    "my-ai-threads": {
-      "enabled": true,
-      "webDir": "/Users/matthewruiz/github/my-ai-threads/my-ai-threads-console",
-      "expressDir": "/Users/matthewruiz/github/my-ai-threads/my-ai-threads-express-server",
-      "webPortStart": 3093
-    },
-    "my-nonprofit": {
-      "enabled": true,
-      "webDir": "/Users/matthewruiz/github/my-nonprofit/my-nonprofit-console",
-      "expressDir": "/Users/matthewruiz/github/my-nonprofit/my-nonprofit-express-server",
-      "webPortStart": 3081
-    },
-    "personal-finances": {
-      "enabled": true,
-      "webDir": "/Users/matthewruiz/github/personal-finances/personal-finances",
-      "expressDir": "/Users/matthewruiz/github/personal-finances/personal-finances-express-server",
-      "workspaceFile": "/Users/matthewruiz/github/personal-finances/personal-finances.code-workspace",
-      "webPortStart": 3012
-    },
     "blog-studio": {
       "enabled": true,
       "webDir": "/Users/matthewruiz/github/blog-studio/blog-studio-open-source-web",
       "expressDir": "/Users/matthewruiz/github/blog-studio/blog-studio-open-source-express-server",
-      "webPortStart": 3026
+      "webPortStart": 3011
     },
     "code-control": {
       "enabled": true,
       "webDir": "/Users/matthewruiz/github/code-control/code-control",
       "expressDir": "/Users/matthewruiz/github/code-control/code-control-express-server",
-      "webPortStart": 3075
+      "webPortStart": 3013
     },
     "code-your-resume": {
       "enabled": true,
       "webDir": "/Users/matthewruiz/github/code-resume/code-your-resume-open-source",
       "expressDir": "/Users/matthewruiz/github/code-resume/code-your-resume-open-source-express-server",
       "workspaceFile": "/Users/matthewruiz/github/code-resume/code-your-resume-open-source.code-workspace",
-      "webPortStart": 3054
+      "webPortStart": 3015
+    },
+    "instagram-studio": {
+      "enabled": true,
+      "webDir": "/Users/matthewruiz/github/instagram-studio/instagram-studio-open-source",
+      "expressDir": "/Users/matthewruiz/github/instagram-studio/instagram-studio-open-source-express-server",
+      "webPortStart": 3017
+    },
+    "knowledge-studio": {
+      "enabled": false,
+      "webPortStart": 3019
+    },
+    "lead-studio": {
+      "enabled": true,
+      "webDir": "/Users/matthewruiz/github/lead-open-source/lead-studio-web-open-source",
+      "expressDir": "/Users/matthewruiz/github/lead-open-source/lead-studio-express-server",
+      "workspaceFile": "/Users/matthewruiz/github/lead-open-source/lead-studio-web-open-source.code-workspace",
+      "webPortStart": 3021
+    },
+    "local-scheduler": {
+      "enabled": true,
+      "webDir": "/Users/matthewruiz/github/local-scheduler/local-scheduler-web",
+      "expressDir": "/Users/matthewruiz/github/local-scheduler/local-scheduler-express-server",
+      "webPortStart": 3023
     },
     "luckee-blueprints": {
       "enabled": true,
       "webDir": "/Users/matthewruiz/github/luckee/luckee-blueprints",
       "expressDir": "/Users/matthewruiz/github/luckee/luckee-blueprints-express-server",
       "workspaceFile": "/Users/matthewruiz/github/luckee/luckee-blueprints-express-server.code-workspace",
-      "webPortStart": 3041
+      "webPortStart": 3025
     },
     "luckee-open-source": {
       "enabled": true,
       "webDir": "/Users/matthewruiz/github/luckee/luckee-open-source",
+      "expressDir": "/Users/matthewruiz/github/luckee/luckee-open-source-express-server",
+      "webPortStart": 3027
+    },
+    "my-ai-threads": {
+      "enabled": true,
+      "webDir": "/Users/matthewruiz/github/my-ai-threads/my-ai-threads-console",
+      "expressDir": "/Users/matthewruiz/github/my-ai-threads/my-ai-threads-express-server",
+      "webPortStart": 3029
+    },
+    "my-fundraise": {
+      "enabled": true,
+      "webDir": "/Users/matthewruiz/github/my-fundraise/my-fundraise-web",
+      "expressDir": "/Users/matthewruiz/github/my-fundraise/my-fundraise-express-server",
+      "workspaceFile": "/Users/matthewruiz/github/my-fundraise/my-fundraise-web.code-workspace",
       "webPortStart": 3031
     },
-    "local-scheduler": {
+    "my-health": {
       "enabled": true,
-      "webDir": "/Users/matthewruiz/github/local-scheduler/local-scheduler-web",
-      "expressDir": "/Users/matthewruiz/github/local-scheduler/local-scheduler-express-server",
-      "webPortStart": 4121
+      "webDir": "/Users/matthewruiz/github/my-health/my-health-open-source",
+      "expressDir": "/Users/matthewruiz/github/my-health/my-health-open-source-express-server",
+      "workspaceFile": "/Users/matthewruiz/github/my-health/my-health-open-source-express-server.code-workspace",
+      "webPortStart": 3033
     },
-    "website-site-scraper": {
+    "my-nonprofit": {
       "enabled": true,
-      "expressDir": "/Users/matthewruiz/github/website-scraper/website-site-scraper-open-source-express-server",
-      "workspaceFile": "/Users/matthewruiz/github/website-scraper/website-site-scraper-open-source-express-server.code-workspace"
+      "webDir": "/Users/matthewruiz/github/my-nonprofit/my-nonprofit-console",
+      "expressDir": "/Users/matthewruiz/github/my-nonprofit/my-nonprofit-express-server",
+      "webPortStart": 3035
+    },
+    "my-ops-tracker": {
+      "enabled": true,
+      "webDir": "/Users/matthewruiz/github/my-ops-tracker/my-ops-tracker-web",
+      "expressDir": "/Users/matthewruiz/github/my-ops-tracker/my-ops-tracker-express-server",
+      "workspaceFile": "/Users/matthewruiz/github/my-ops-tracker/my-ops-tracker-web.code-workspace",
+      "webPortStart": 3037
+    },
+    "personal-finances": {
+      "enabled": true,
+      "webDir": "/Users/matthewruiz/github/personal-finances/personal-finances",
+      "expressDir": "/Users/matthewruiz/github/personal-finances/personal-finances-express-server",
+      "workspaceFile": "/Users/matthewruiz/github/personal-finances/personal-finances.code-workspace",
+      "webPortStart": 3039
     },
     "qr-code-generator": {
       "enabled": true,
       "expressDir": "/Users/matthewruiz/github/qr-code-generator/qr-code-generator-open-source-express-server",
       "workspaceFile": "/Users/matthewruiz/github/qr-code-generator/qr-code-generator-open-source-express-server.code-workspace"
     },
-    "knowledge-studio": {
-      "enabled": false
-    },
-    "instagram-studio": {
-      "enabled": true,
-      "webDir": "/Users/matthewruiz/github/instagram-studio/instagram-studio-open-source",
-      "expressDir": "/Users/matthewruiz/github/instagram-studio/instagram-studio-open-source-express-server",
-      "webPortStart": 3071
-    },
     "tiktok-studio": {
       "enabled": true,
       "webDir": "/Users/matthewruiz/github/tiktok-studio/tiktok-studio",
       "expressDir": "/Users/matthewruiz/github/tiktok-studio/tiktok-studio-express-server",
-      "webPortStart": 3073
+      "webPortStart": 3042
+    },
+    "website-site-scraper": {
+      "enabled": true,
+      "expressDir": "/Users/matthewruiz/github/website-scraper/website-site-scraper-open-source-express-server",
+      "workspaceFile": "/Users/matthewruiz/github/website-scraper/website-site-scraper-open-source-express-server.code-workspace"
+    },
+    "app-store-manager": {
+      "enabled": true,
+      "webDir": "/Users/matthewruiz/github/app-store-manager/app-store-manager-console",
+      "expressDir": "/Users/matthewruiz/github/app-store-manager/app-store-manager-express-server",
+      "webPortStart": 3045
     }
   }
 }
