@@ -120,7 +120,7 @@ export const probeProjectStatus = (
     findExpressApiPort(registry.id, registryApiPort, healthPath, 10) !== undefined;
 
   const webPortStart = local.webPortStart ?? nextjsRepo?.defaultWebPortStart ?? 3000;
-  const resolvedPorts = hasWeb ? findWebUrlOnPorts(webPortStart, 11) : undefined;
+  const resolvedPorts = hasWeb ? findWebUrlOnPorts(webPortStart, 1) : undefined;
   const webUrl = resolvedPorts;
   const webRunning = hasWeb && !!webUrl;
 

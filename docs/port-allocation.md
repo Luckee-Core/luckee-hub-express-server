@@ -24,9 +24,10 @@ Run `npm run suggest:ports` to print the next suggested pair.
 **Canonical path:** use **Run** in Luckee Hub. The launcher:
 
 1. Sets `PORT` on Express and Next.js PTYs (strips hub `PORT` so it never leaks)
-2. Scans +10 if the preferred port is busy (`findAvailableApiPort` / `findAvailableWebPort`)
-3. Injects API URL env vars: `NEXT_PUBLIC_SERVER_URL`, `NEXT_PUBLIC_API_URL`, `EXPRESS_API_URL`
-4. Writes resolved ports to `/tmp/luckee-hub/<projectId>-ports.json`
+2. Scans +10 for the first **free** port if the preferred port is busy (`findAvailableApiPort` / `findAvailableWebPort`) when **starting** servers
+3. Detects already-running Next.js only on the assigned port — never by scanning ahead to another project's dev server
+4. Injects API URL env vars: `NEXT_PUBLIC_SERVER_URL`, `NEXT_PUBLIC_API_URL`, `EXPRESS_API_URL`
+5. Writes resolved ports to `/tmp/luckee-hub/<projectId>-ports.json`
 
 **Manual `npm run dev`** outside hub uses each repo’s `.env` fallback. Mismatches are possible — prefer hub Run for local work.
 

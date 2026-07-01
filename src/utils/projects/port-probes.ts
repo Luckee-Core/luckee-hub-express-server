@@ -52,7 +52,8 @@ export const isNextDevServerOnPort = (port: number): boolean => {
 };
 
 /**
- * Find Next.js URL — defaults to a single configured port for fast list probes.
+ * Find Next.js URL on the project's assigned web port (default scanMax=1).
+ * Do not widen the scan — another hub project's dev server may be listening nearby.
  */
 export const findWebUrlOnPorts = (
   webPortStart: number,

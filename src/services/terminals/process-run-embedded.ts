@@ -12,7 +12,6 @@ import {
   writeResolvedProjectPorts,
 } from '../../utils/projects';
 import {
-  findAvailableWebPort,
   findNextWebUrl,
   waitForExpressHealth,
   waitForNextWebUrl,
@@ -78,7 +77,8 @@ const completeEmbeddedJob = async (
 
     let webUrl: string | undefined;
     if (merged.webDir && projectHasNextjsRepo(merged.registry)) {
-      webUrl = findNextWebUrl(webPortStart);
+      const webPort = webPortStart;
+      webUrl = findNextWebUrl(webPort);
 
       if (webUrl) {
         writeJobFile({
@@ -90,8 +90,6 @@ const completeEmbeddedJob = async (
           updatedAt: new Date().toISOString(),
         });
       } else {
-        const webPort = findAvailableWebPort(webPortStart);
-
         writeJobFile({
           jobId,
           projectId,
@@ -133,9 +131,9 @@ const completeEmbeddedJob = async (
           updatedAt: new Date().toISOString(),
         });
 
-        webUrl = await waitForNextWebUrl(webPortStart);
+        webUrl = await waitForNextWebUrl(webPort);
         if (!webUrl) {
-          webUrl = findNextWebUrl(webPortStart);
+          webUrl = findNextWebUrl(webPort);
         }
       }
       if (webUrl) {

@@ -96,27 +96,30 @@ export const findAvailableWebPort = (
 };
 
 /**
- * Find Next.js dev URL by scanning ports from webPortStart.
+ * Find Next.js dev URL on the project's assigned web port only.
+ * Hub assigns one web port per project — do not scan ahead or another project's dev server may match.
  */
 export const findNextWebUrl = (
-  webPortStart: number,
-  scanMax = 10,
-): string | undefined => findWebUrlOnPorts(webPortStart, scanMax);
+  webPort: number,
+  scanMax = 1,
+): string | undefined => findWebUrlOnPorts(webPort, scanMax);
 
 /**
- * Poll until Next.js responds on a scanned port (up to maxSeconds).
+ * Poll until Next.js responds on the assigned web port (up to maxSeconds).
  */
 export const waitForNextWebUrl = async (
-  webPortStart: number,
+  webPort: number,
   maxSeconds = 120,
 ): Promise<string | undefined> => {
   for (let i = 0; i < maxSeconds; i += 1) {
-    const url = findNextWebUrl(webPortStart);
-    if (url) {
-      const ok = curlQuiet(`-o /dev/null "${url}"`);
-      if (ok !== null) {
-        return url;
-      }
+    if (!isNextDevServer(webPort)) {
+      await sleep(1000);
+      continue;
+    }
+    const url = `http://localhost:${webPort}`;
+    const ok = curlQuiet(`-o /dev/null "${url}"`);
+    if (ok !== null) {
+      return url;
     }
     await sleep(1000);
   }
