@@ -120,6 +120,13 @@
       "webDir": "/Users/matthewruiz/github/app-store-manager/app-store-manager-console",
       "expressDir": "/Users/matthewruiz/github/app-store-manager/app-store-manager-express-server",
       "webPortStart": 3045
+    },
+    "code-commit-summaries": {
+      "enabled": true,
+      "webDir": "/Users/matthewruiz/github/code-commit-summaries/code-commit-summaries-web",
+      "expressDir": "/Users/matthewruiz/github/code-commit-summaries/code-commit-summaries-express-server",
+      "workspaceFile": "/Users/matthewruiz/github/code-commit-summaries/code-commit-summaries-web.code-workspace",
+      "webPortStart": 3047
     }
   }
 }
