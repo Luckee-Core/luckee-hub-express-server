@@ -55,7 +55,8 @@ const buildExpressApiEnvExports = (apiPort: number): string => {
     `export EXPRESS_API_URL='${apiUrl}' && ` +
     `export COMMIT_SUMMARIES_EXPRESS_URL='${apiUrl}' && ` +
     `export CODE_CONTROL_API_URL='${apiUrl}' && ` +
-    `export NEXT_PUBLIC_CODE_CONTROL_API_URL='${apiUrl}' && `
+    `export NEXT_PUBLIC_CODE_CONTROL_API_URL='${apiUrl}' && ` +
+    `export NEXT_PUBLIC_INNERTUBE_EXPRESS_URL='${apiUrl}' && `
   );
 };
 

@@ -127,6 +127,12 @@
       "expressDir": "/Users/matthewruiz/github/code-commit-summaries/code-commit-summaries-express-server",
       "workspaceFile": "/Users/matthewruiz/github/code-commit-summaries/code-commit-summaries-web.code-workspace",
       "webPortStart": 3047
+    },
+    "innertube": {
+      "enabled": true,
+      "webDir": "/Users/matthewruiz/github/innertube/innertube-web",
+      "expressDir": "/Users/matthewruiz/github/innertube/innertube-retriever-express-server",
+      "webPortStart": 3049
     }
   }
 }
