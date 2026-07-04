@@ -133,6 +133,12 @@
       "webDir": "/Users/matthewruiz/github/innertube/innertube-web",
       "expressDir": "/Users/matthewruiz/github/innertube/innertube-retriever-express-server",
       "webPortStart": 3049
+    },
+    "my-substack-manager": {
+      "enabled": true,
+      "webDir": "/Users/matthewruiz/github/my-substack-manager/my-substack-manager-web",
+      "expressDir": "/Users/matthewruiz/github/my-substack-manager/my-substack-manager-express-server",
+      "webPortStart": 3051
     }
   }
 }
