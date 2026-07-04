@@ -372,7 +372,32 @@
         "repoName": "code-commit-summaries-web",
         "defaultWebPortStart": 3047
       }
-    ]
+    ],
+    "localDatabase": {
+      "kind": "postgres",
+      "databaseName": "commit_summaries",
+      "migrationsDir": "migrations",
+      "migrationFiles": [
+        "001_ai_prompts_and_exchange_registry.sql",
+        "002_github_catalog.sql"
+      ],
+      "expectedTables": [
+        "exchange_table_registry",
+        "summary_ai_flow_prompt",
+        "daily_summary_exchanges",
+        "repo_summary_exchanges",
+        "github_organization",
+        "github_repository"
+      ],
+      "postgres": {
+        "host": "127.0.0.1",
+        "port": 5432,
+        "formula": "postgresql@16",
+        "installCommand": "brew install postgresql@16",
+        "startCommand": "brew services start postgresql@16",
+        "stopCommand": "brew services stop postgresql@16"
+      }
+    }
   },
   {
     "id": "innertube",

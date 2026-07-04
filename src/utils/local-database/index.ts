@@ -16,11 +16,20 @@ export {
   runPostgresInstallStep,
   runPostgresStartStep,
   runPostgresStopStep,
+  runPostgresStopAndClearAllSession,
 } from './run-local-database-step';
 export {
+  addPostgresConsumer,
+  clearAllPostgresStartedByHub,
+  clearAllPostgresConsumers,
   clearPostgresStartedByHub,
   getHubStartedPostgresEntries,
+  getPostgresConsumerCount,
+  hasPostgresConsumers,
+  isPostgresConsumer,
   markPostgresStartedByHub,
+  removePostgresConsumer,
+  shouldStopPostgresAfterClose,
   wasPostgresStartedByHub,
 } from './postgres-hub-session';
 export { getPostgresConnection } from './get-postgres-connection';

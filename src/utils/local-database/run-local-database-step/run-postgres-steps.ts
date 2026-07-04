@@ -1,7 +1,7 @@
 import type { LocalDatabaseConfig } from '../../../services/local-database/types';
 import { getPostgresConnection } from '../get-postgres-connection';
 import { isConfiguredPostgresInstalled, getPostgresFormula } from '../postgres-brew';
-import { clearPostgresStartedByHub } from '../postgres-hub-session';
+import { clearAllPostgresStartedByHub, clearPostgresStartedByHub } from '../postgres-hub-session';
 import { isPostgresRunning, waitForPostgres } from '../postgres-probes';
 import { runShellCommand } from '../run-shell-command';
 
@@ -65,17 +65,14 @@ export const runPostgresStartStep = (localDatabase: LocalDatabaseConfig): string
 /**
  * Run the registry-configured Postgres stop command.
  */
-export const runPostgresStopStep = (
-  projectId: string,
-  localDatabase: LocalDatabaseConfig,
-): string => {
+export const runPostgresStopCommand = (localDatabase: LocalDatabaseConfig): string => {
   const stopCommand = localDatabase.postgres?.stopCommand;
   if (!stopCommand) {
     throw new Error('Postgres stop command is not configured');
   }
 
   const connection = getPostgresConnection(localDatabase);
-  console.log('💾 [runPostgresStopStep] Running stop command', { stopCommand, projectId });
+  console.log('💾 [runPostgresStopCommand] Running stop command', { stopCommand });
   runShellCommand(stopCommand, {
     env: BREW_ENV,
     timeoutMs: STOP_TIMEOUT_MS,
@@ -85,7 +82,29 @@ export const runPostgresStopStep = (
     throw new Error(`Postgres is still running on ${connection.host}:${connection.port}`);
   }
 
-  clearPostgresStartedByHub(projectId);
-  console.log('✅ [runPostgresStopStep] Postgres stopped');
+  console.log('✅ [runPostgresStopCommand] Postgres stopped');
   return `Postgres stopped on ${connection.host}:${connection.port}`;
+};
+
+/**
+ * Run stop command and clear hub session tracking for one project.
+ */
+export const runPostgresStopStep = (
+  projectId: string,
+  localDatabase: LocalDatabaseConfig,
+): string => {
+  const message = runPostgresStopCommand(localDatabase);
+  clearPostgresStartedByHub(projectId);
+  return message;
+};
+
+/**
+ * Run stop command and clear all hub Postgres session state.
+ */
+export const runPostgresStopAndClearAllSession = (
+  localDatabase: LocalDatabaseConfig,
+): string => {
+  const message = runPostgresStopCommand(localDatabase);
+  clearAllPostgresStartedByHub();
+  return message;
 };

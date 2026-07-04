@@ -80,6 +80,7 @@ export type HubProject = {
     workspaceFile?: string;
   };
   localDatabaseSupported: boolean;
+  postgresActiveConsumer?: boolean;
 };
 
 export type ListProjectsData = {

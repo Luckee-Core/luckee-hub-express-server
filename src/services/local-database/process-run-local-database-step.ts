@@ -2,6 +2,7 @@ import {
   buildLocalDatabaseProbeContext,
   buildLocalDatabaseSetupSteps,
   findLocalDatabaseSetupStep,
+  clearAllPostgresConsumers,
   getHubRoot,
   getPostgresFormula,
   markPostgresStartedByHub,
@@ -11,7 +12,7 @@ import {
   runMigrationStep,
   runPostgresInstallStep,
   runPostgresStartStep,
-  runPostgresStopStep,
+  runPostgresStopAndClearAllSession,
 } from '../../utils/local-database';
 import type { LocalDatabaseStepResult } from './types';
 
@@ -64,7 +65,8 @@ export const processRunLocalDatabaseStep = (
 
     try {
       console.log('💾 [local-database.processRunLocalDatabaseStep] Stopping Postgres');
-      const message = runPostgresStopStep(projectId, localDatabase);
+      const message = runPostgresStopAndClearAllSession(localDatabase);
+      clearAllPostgresConsumers();
       console.log('✅ [local-database.processRunLocalDatabaseStep] Step complete', {
         projectId,
         stepId,

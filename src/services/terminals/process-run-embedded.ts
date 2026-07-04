@@ -1,6 +1,7 @@
 import { execSync } from 'child_process';
 import path from 'path';
 
+import { processEnsureLocalDatabaseForRun } from '../local-database/process-ensure-local-database-for-run';
 import { openInChrome } from '../../utils/launcher';
 import {
   mergeProjectConfig,
@@ -206,6 +207,19 @@ export const processRunEmbedded = (projectId: string): RunEmbeddedResult | null 
 
   const jobId = `${projectId}-${Date.now()}`;
   const sessions: TerminalSessionInfo[] = [];
+
+  const ensureResult = processEnsureLocalDatabaseForRun(projectId);
+  if ('error' in ensureResult) {
+    writeJobFile({
+      jobId,
+      projectId,
+      status: 'failed',
+      message: `Postgres setup failed: ${ensureResult.error}`,
+      sessions,
+      updatedAt: new Date().toISOString(),
+    });
+    return { jobId, sessions };
+  }
 
   const expressHealthy =
     !runMerged.expressDir || expressAlreadyHealthy(runMerged.apiPort, runMerged.healthPath);

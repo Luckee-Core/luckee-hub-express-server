@@ -9,6 +9,7 @@ import {
   readRegistry,
   resolveProjectWorkspaceFile,
 } from '../../utils/projects';
+import { isPostgresConsumer } from '../../utils/local-database';
 import type { ListProjectsData } from './types';
 
 type ProcessListProjectsOptions = {
@@ -48,6 +49,7 @@ export const processListProjects = (
       webUrl,
       paths: local ? { workspaceFile: resolveProjectWorkspaceFile(local) } : undefined,
       localDatabaseSupported: !!entry.localDatabase,
+      postgresActiveConsumer: entry.localDatabase ? isPostgresConsumer(entry.id) : false,
     };
   });
 
