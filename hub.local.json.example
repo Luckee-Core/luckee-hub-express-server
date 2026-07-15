@@ -139,6 +139,13 @@
       "webDir": "/Users/matthewruiz/github/my-substack-manager/my-substack-manager-web",
       "expressDir": "/Users/matthewruiz/github/my-substack-manager/my-substack-manager-express-server",
       "webPortStart": 3051
+    },
+    "my-gmail-manager": {
+      "enabled": true,
+      "webDir": "/Users/matthewruiz/github/my-gmail-manager/my-gmail-manager-web",
+      "expressDir": "/Users/matthewruiz/github/my-gmail-manager/my-gmail-manager-express-server",
+      "workspaceFile": "/Users/matthewruiz/github/my-gmail-manager/my-gmail-manager-web.code-workspace",
+      "webPortStart": 3053
     }
   }
 }

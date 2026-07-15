@@ -35,8 +35,12 @@ const buildNvmPrefix = (nvmSh: string): string =>
 export const buildExpressPtyCommand = (merged: MergedProjectConfig): string => {
   const dir = shellEscape(merged.expressDir ?? '');
   const nvm = buildNvmPrefix(merged.nvmSh);
+  const webOriginExport =
+    merged.webPortStart > 0
+      ? `export WEB_APP_ORIGIN='http://127.0.0.1:${merged.webPortStart}' && `
+      : '';
   return (
-    `cd '${dir}' && ${nvm} && export PORT=${merged.apiPort} && ` +
+    `cd '${dir}' && ${nvm} && export PORT=${merged.apiPort} && ${webOriginExport}` +
     `echo '>>> ${merged.id} Express (:${merged.apiPort})' && npm run dev`
   );
 };
@@ -53,6 +57,7 @@ const buildExpressApiEnvExports = (apiPort: number): string => {
     `export NEXT_PUBLIC_SERVER_URL='${apiUrl}' && ` +
     `export NEXT_PUBLIC_API_URL='${apiUrl}' && ` +
     `export EXPRESS_API_URL='${apiUrl}' && ` +
+    `export NEXT_PUBLIC_EXPRESS_URL='${apiUrl}' && ` +
     `export COMMIT_SUMMARIES_EXPRESS_URL='${apiUrl}' && ` +
     `export CODE_CONTROL_API_URL='${apiUrl}' && ` +
     `export NEXT_PUBLIC_CODE_CONTROL_API_URL='${apiUrl}' && ` +
