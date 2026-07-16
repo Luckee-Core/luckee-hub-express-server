@@ -1,6 +1,7 @@
 import * as pty from 'node-pty';
 
 import { ensureSpawnHelperExecutable } from '../../utils/terminals/ensure-spawn-helper';
+import { buildNvmShellPrefix, shellEscape } from '../../utils/projects/build-nvm-shell-prefix';
 import type { MergedProjectConfig } from '../projects/types';
 import { registerSession } from './session-registry';
 import type { TerminalRole, TerminalSessionInfo } from './types';
@@ -24,10 +25,7 @@ const buildPtyEnv = (input: PtyEnvInput): Record<string, string> => {
   return env;
 };
 
-const shellEscape = (value: string): string => value.replace(/'/g, "'\\''");
-
-const buildNvmPrefix = (nvmSh: string): string =>
-  `export NVM_DIR="$HOME/.nvm" && [ -s '${shellEscape(nvmSh)}' ] && . '${shellEscape(nvmSh)}'`;
+const buildNvmPrefix = buildNvmShellPrefix;
 
 /**
  * Build shell command to start Express dev server in a PTY.

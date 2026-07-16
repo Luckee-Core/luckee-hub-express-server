@@ -15,6 +15,7 @@ ADRs for **express-server-template** and apps created from it.
 9. [009 – Embedded terminal service](./009-embedded-terminal-service.md) — `node-pty`, WebSocket, bottom-dock PTYs.
 10. [010 – Projects catalog and rename](./010-projects-catalog-and-rename.md) — `projects.registry.json`, `/api/projects`.
 11. [011 – Local database service](./011-local-database-service.md) — Postgres probe/setup for hooked-up projects.
+12. [012 – Project setup into luckee/](./012-project-setup-into-luckee.md) — Clone + npm install, `luckeeParent`, Setup job.
 
 ## How to use
 

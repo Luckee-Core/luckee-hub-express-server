@@ -5,6 +5,15 @@ import type { TerminalSessionInfo } from './types';
 
 const HUB_TMP = '/tmp/luckee-hub/jobs';
 
+export type SetupJobStepStatus = 'pending' | 'running' | 'done' | 'skipped' | 'failed';
+
+export type SetupJobStep = {
+  id: string;
+  label: string;
+  status: SetupJobStepStatus;
+  message?: string;
+};
+
 export type LauncherJobFile = {
   jobId: string;
   projectId: string;
@@ -12,6 +21,7 @@ export type LauncherJobFile = {
   message?: string;
   webUrl?: string;
   sessions?: TerminalSessionInfo[];
+  steps?: SetupJobStep[];
   updatedAt: string;
 };
 

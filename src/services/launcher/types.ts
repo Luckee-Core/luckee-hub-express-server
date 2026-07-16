@@ -1,5 +1,14 @@
 export type LauncherJobStatus = 'running' | 'completed' | 'failed';
 
+export type SetupJobStepStatus = 'pending' | 'running' | 'done' | 'skipped' | 'failed';
+
+export type SetupJobStep = {
+  id: string;
+  label: string;
+  status: SetupJobStepStatus;
+  message?: string;
+};
+
 export type LauncherJobSession = {
   sessionId: string;
   projectId: string;
@@ -14,5 +23,6 @@ export type LauncherJob = {
   message?: string;
   webUrl?: string;
   sessions?: LauncherJobSession[];
+  steps?: SetupJobStep[];
   updatedAt: string;
 };

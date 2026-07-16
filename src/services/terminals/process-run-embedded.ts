@@ -1,4 +1,5 @@
 import { execSync } from 'child_process';
+import fs from 'fs';
 import path from 'path';
 
 import { processEnsureLocalDatabaseForRun } from '../local-database/process-ensure-local-database-for-run';
@@ -22,10 +23,13 @@ import {
   buildWebOnlyPtyCommand,
   spawnProjectPty,
 } from './spawn-project-pty';
+import { ensureProjectTerminalSessions } from './ensure-project-terminal-sessions';
 import type { RunEmbeddedResult, TerminalSessionInfo } from './types';
 import { writeJobFile } from './write-job-file';
 
 const HUB_TMP = '/tmp/luckee-hub';
+
+const hasNodeModules = (dir?: string): boolean => !!(dir && fs.existsSync(`${dir}/node_modules`));
 
 const expressAlreadyHealthy = (apiPort: number, healthPath: string): boolean => {
   try {
@@ -36,6 +40,24 @@ const expressAlreadyHealthy = (apiPort: number, healthPath: string): boolean => 
     return out.includes('"ok"');
   } catch {
     return false;
+  }
+};
+
+const attachRunningStatusSessions = (projectId: string, sessions: TerminalSessionInfo[]): void => {
+  const hubRoot = path.resolve(__dirname, '../../..');
+  const registry = readRegistry(hubRoot);
+  const localConfig = readLocalConfig(hubRoot);
+  const entry = registry.find((project) => project.id === projectId);
+  const local = localConfig.projects?.[projectId];
+  if (!entry || !local || local.enabled === false) {
+    return;
+  }
+
+  const attached = ensureProjectTerminalSessions({ entry, local, localConfig });
+  for (const session of attached) {
+    if (!sessions.some((existing) => existing.role === session.role)) {
+      sessions.push(session);
+    }
   }
 };
 
@@ -82,6 +104,7 @@ const completeEmbeddedJob = async (
       webUrl = findNextWebUrl(webPort);
 
       if (webUrl) {
+        attachRunningStatusSessions(projectId, sessions);
         writeJobFile({
           jobId,
           projectId,
@@ -163,6 +186,8 @@ const completeEmbeddedJob = async (
       openInChrome(webUrl);
     }
 
+    attachRunningStatusSessions(projectId, sessions);
+
     writeJobFile({
       jobId,
       projectId,
@@ -207,6 +232,30 @@ export const processRunEmbedded = (projectId: string): RunEmbeddedResult | null 
 
   const jobId = `${projectId}-${Date.now()}`;
   const sessions: TerminalSessionInfo[] = [];
+
+  if (runMerged.expressDir && !hasNodeModules(runMerged.expressDir)) {
+    writeJobFile({
+      jobId,
+      projectId,
+      status: 'failed',
+      message: 'Express dependencies are not installed — run Setup first',
+      sessions,
+      updatedAt: new Date().toISOString(),
+    });
+    return { jobId, sessions };
+  }
+
+  if (runMerged.webDir && projectHasNextjsRepo(runMerged.registry) && !hasNodeModules(runMerged.webDir)) {
+    writeJobFile({
+      jobId,
+      projectId,
+      status: 'failed',
+      message: 'Web dependencies are not installed — run Setup first',
+      sessions,
+      updatedAt: new Date().toISOString(),
+    });
+    return { jobId, sessions };
+  }
 
   const ensureResult = processEnsureLocalDatabaseForRun(projectId);
   if ('error' in ensureResult) {
@@ -259,6 +308,8 @@ export const processRunEmbedded = (projectId: string): RunEmbeddedResult | null 
     sessions,
     updatedAt: new Date().toISOString(),
   });
+
+  attachRunningStatusSessions(projectId, sessions);
 
   void completeEmbeddedJob(
     jobId,

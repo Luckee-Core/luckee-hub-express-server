@@ -59,6 +59,9 @@ export type ProjectLocalEntry = {
 };
 
 export type HubLocalConfig = {
+  /** Parent directory for the required `luckee/` folder (e.g. `/Users/you/github`). */
+  luckeeParent?: string;
+  /** @deprecated Use luckeeParent. Kept as alias for existing configs. */
   workspaceParent?: string;
   nvmSh?: string;
   cursorBin?: string;
