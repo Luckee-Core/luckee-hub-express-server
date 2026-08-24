@@ -72,7 +72,7 @@ export const buildWebPtyCommand = (merged: MergedProjectConfig): string => {
     `cd '${dir}' && ${nvm} && ${apiEnv}` +
     `echo '>>> ${merged.id} Web — waiting for Express...' && ` +
     `until curl -fsS '${healthUrl}' 2>/dev/null | grep -qE '"status"[[:space:]]*:[[:space:]]*"ok"'; do sleep 2; done && ` +
-    `echo '>>> Express ready. Starting Next.js...' && npm run dev`
+    `echo '>>> Express ready. Starting Next.js...' && npm run dev -- --port ${merged.webPortStart}`
   );
 };
 
@@ -108,7 +108,7 @@ export const buildWebOnlyPtyCommand = (merged: MergedProjectConfig, webPort: num
   const apiEnv = buildExpressApiEnvExports(merged.apiPort);
   return (
     `cd '${dir}' && ${nvm} && export PORT=${webPort} && ${apiEnv}` +
-    `echo '>>> ${merged.id} Web (Next.js :${webPort})' && npm run dev`
+    `echo '>>> ${merged.id} Web (Next.js :${webPort})' && npm run dev -- --port ${webPort}`
   );
 };
 

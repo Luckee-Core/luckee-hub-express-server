@@ -3,6 +3,7 @@ import fs from 'fs';
 import path from 'path';
 
 import { processEnsureLocalDatabaseForRun } from '../local-database/process-ensure-local-database-for-run';
+import { processEnsureSupabaseConfigForRun } from '../supabase-config/process-ensure-supabase-config-for-run';
 import { openInChrome } from '../../utils/launcher';
 import {
   mergeProjectConfig,
@@ -264,6 +265,19 @@ export const processRunEmbedded = (projectId: string): RunEmbeddedResult | null 
       projectId,
       status: 'failed',
       message: `Postgres setup failed: ${ensureResult.error}`,
+      sessions,
+      updatedAt: new Date().toISOString(),
+    });
+    return { jobId, sessions };
+  }
+
+  const supabaseEnsure = processEnsureSupabaseConfigForRun(projectId);
+  if ('error' in supabaseEnsure) {
+    writeJobFile({
+      jobId,
+      projectId,
+      status: 'failed',
+      message: `Supabase setup failed: ${supabaseEnsure.error}`,
       sessions,
       updatedAt: new Date().toISOString(),
     });

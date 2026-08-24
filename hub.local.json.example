@@ -152,6 +152,12 @@
       "webDir": "/Users/matthewruiz/github/luckee/mac-manager/mac-manager-web",
       "expressDir": "/Users/matthewruiz/github/luckee/mac-manager/mac-manager-express-server",
       "webPortStart": 3055
+    },
+    "design-prompter": {
+      "enabled": true,
+      "webDir": "/Users/matthewruiz/github/design-prompter/design-prompter-web",
+      "expressDir": "/Users/matthewruiz/github/design-prompter/design-prompter-express-server",
+      "webPortStart": 3057
     }
   }
 }
