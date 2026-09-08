@@ -4,7 +4,7 @@ import path from 'path';
 
 import { processEnsureLocalDatabaseForRun } from '../local-database/process-ensure-local-database-for-run';
 import { processEnsureSupabaseConfigForRun } from '../supabase-config/process-ensure-supabase-config-for-run';
-import { openInChrome } from '../../utils/launcher';
+import { applyWebOpenPath, openInChrome } from '../../utils/launcher';
 import {
   mergeProjectConfig,
   projectHasNextjsRepo,
@@ -184,7 +184,7 @@ const completeEmbeddedJob = async (
     }
 
     if (webUrl) {
-      openInChrome(webUrl);
+      openInChrome(applyWebOpenPath(webUrl, merged.registry.webOpenPath));
     }
 
     attachRunningStatusSessions(projectId, sessions);

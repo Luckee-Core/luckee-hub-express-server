@@ -48,6 +48,8 @@ export type ProjectRegistryEntry = {
   name: string;
   description: string;
   repos: ProjectRegistryRepoEntry[];
+  /** Path opened in Chrome after Run (e.g. `/dashboard`). Origin `/` when omitted. */
+  webOpenPath?: string;
   localDatabase?: LocalDatabaseConfig;
   supabase?: SupabaseConfig;
   expressEnv?: ExpressEnvConfig;

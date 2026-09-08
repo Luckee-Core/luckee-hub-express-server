@@ -232,6 +232,7 @@
     "id": "my-health",
     "name": "My Health",
     "description": "Self-hosted health dashboard",
+    "webOpenPath": "/dashboard",
     "repos": [
       {
         "repoType": "express",
