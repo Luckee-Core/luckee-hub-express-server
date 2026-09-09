@@ -4,7 +4,7 @@ import { ensureSpawnHelperExecutable } from '../../utils/terminals/ensure-spawn-
 import { buildNvmShellPrefix, shellEscape } from '../../utils/projects/build-nvm-shell-prefix';
 import type { MergedProjectConfig } from '../projects/types';
 import { registerSession } from './session-registry';
-import type { TerminalRole, TerminalSessionInfo } from './types';
+import type { TerminalRole, TerminalSessionInfo, TerminalSessionKind } from './types';
 
 type PtyEnvInput = {
   cwd: string;
@@ -119,6 +119,7 @@ type SpawnProjectPtyInput = {
   command: string;
   cwd: string;
   port: number;
+  kind?: TerminalSessionKind;
 };
 
 /**
@@ -167,6 +168,8 @@ export const spawnProjectPty = (input: SpawnProjectPtyInput): TerminalSessionInf
     pty: ptyProcess,
     createdAt: new Date().toISOString(),
     getReplay: (): string => outputChunks.join(''),
+    kind: input.kind ?? 'dev',
+    port: input.port,
   };
 
   registerSession(record);

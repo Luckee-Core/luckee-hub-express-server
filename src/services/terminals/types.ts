@@ -1,5 +1,7 @@
 export type TerminalRole = 'express' | 'web';
 
+export type TerminalSessionKind = 'dev' | 'status';
+
 export type TerminalSessionInfo = {
   sessionId: string;
   projectId: string;
@@ -11,6 +13,8 @@ export type TerminalSessionRecord = TerminalSessionInfo & {
   pty: import('node-pty').IPty;
   createdAt: string;
   getReplay: () => string;
+  kind: TerminalSessionKind;
+  port: number;
 };
 
 export type TerminalResizeMessage = {

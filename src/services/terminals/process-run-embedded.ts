@@ -1,4 +1,3 @@
-import { execSync } from 'child_process';
 import fs from 'fs';
 import path from 'path';
 
@@ -16,6 +15,7 @@ import {
 } from '../../utils/projects';
 import {
   findNextWebUrl,
+  isExpressHealthy,
   waitForExpressHealth,
   waitForNextWebUrl,
 } from '../../utils/projects/wait-for-project-ready';
@@ -31,18 +31,6 @@ import { writeJobFile } from './write-job-file';
 const HUB_TMP = '/tmp/luckee-hub';
 
 const hasNodeModules = (dir?: string): boolean => !!(dir && fs.existsSync(`${dir}/node_modules`));
-
-const expressAlreadyHealthy = (apiPort: number, healthPath: string): boolean => {
-  try {
-    const out = execSync(`curl -fsS "http://127.0.0.1:${apiPort}${healthPath}" 2>/dev/null`, {
-      encoding: 'utf8',
-      timeout: 3000,
-    });
-    return out.includes('"ok"');
-  } catch {
-    return false;
-  }
-};
 
 const attachRunningStatusSessions = (projectId: string, sessions: TerminalSessionInfo[]): void => {
   const hubRoot = path.resolve(__dirname, '../../..');
@@ -85,7 +73,12 @@ const completeEmbeddedJob = async (
         updatedAt: new Date().toISOString(),
       });
 
-      const ok = await waitForExpressHealth(merged.apiPort, merged.healthPath);
+      const ok = await waitForExpressHealth(
+        merged.apiPort,
+        merged.healthPath,
+        180,
+        merged.expressDir,
+      );
       if (!ok) {
         writeJobFile({
           jobId,
@@ -102,7 +95,11 @@ const completeEmbeddedJob = async (
     let webUrl: string | undefined;
     if (merged.webDir && projectHasNextjsRepo(merged.registry)) {
       const webPort = webPortStart;
-      webUrl = findNextWebUrl(webPort);
+      webUrl =
+        findNextWebUrl(webPort, 1, merged.webDir) ??
+        (merged.webPortStart !== webPort
+          ? findNextWebUrl(merged.webPortStart, 1, merged.webDir)
+          : undefined);
 
       if (webUrl) {
         attachRunningStatusSessions(projectId, sessions);
@@ -156,9 +153,9 @@ const completeEmbeddedJob = async (
           updatedAt: new Date().toISOString(),
         });
 
-        webUrl = await waitForNextWebUrl(webPort);
+        webUrl = await waitForNextWebUrl(webPort, 120, merged.webDir);
         if (!webUrl) {
-          webUrl = findNextWebUrl(webPort);
+          webUrl = findNextWebUrl(webPort, 1, merged.webDir);
         }
       }
       if (webUrl) {
@@ -285,7 +282,8 @@ export const processRunEmbedded = (projectId: string): RunEmbeddedResult | null 
   }
 
   const expressHealthy =
-    !runMerged.expressDir || expressAlreadyHealthy(runMerged.apiPort, runMerged.healthPath);
+    !runMerged.expressDir ||
+    isExpressHealthy(runMerged.apiPort, runMerged.healthPath, runMerged.expressDir);
 
   const needsExpressWait = !!(runMerged.expressDir && !expressHealthy);
 

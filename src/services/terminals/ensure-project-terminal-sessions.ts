@@ -35,7 +35,11 @@ export const ensureProjectTerminalSessions = (
   const orphan = input.orphan ?? false;
 
   if (projectHasExpressRepo(input.entry) && merged.expressDir) {
-    const expressHealthy = isExpressHealthy(merged.apiPort, merged.healthPath);
+    const expressHealthy = isExpressHealthy(
+      merged.apiPort,
+      merged.healthPath,
+      merged.expressDir,
+    );
     if (expressHealthy && !hasProjectRole(input.entry.id, 'express')) {
       spawned.push(
         spawnProjectPty({
@@ -45,13 +49,14 @@ export const ensureProjectTerminalSessions = (
           command: buildRunningStatusPtyCommand(`${input.entry.name} API`, merged.apiPort, orphan),
           cwd: merged.expressDir,
           port: merged.apiPort,
+          kind: 'status',
         }),
       );
     }
   }
 
   if (projectHasNextjsRepo(input.entry) && merged.webDir) {
-    const webUrl = findNextWebUrl(merged.webPortStart, 1);
+    const webUrl = findNextWebUrl(merged.webPortStart, 1, merged.webDir);
     if (webUrl && !hasProjectRole(input.entry.id, 'web')) {
       const port = Number(new URL(webUrl).port) || merged.webPortStart;
       spawned.push(
@@ -62,6 +67,7 @@ export const ensureProjectTerminalSessions = (
           command: buildRunningStatusPtyCommand(`${input.entry.name} Web`, port, orphan),
           cwd: merged.webDir,
           port,
+          kind: 'status',
         }),
       );
     }

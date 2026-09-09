@@ -27,11 +27,12 @@ export const resolveProjectWebUrl = (
   projectId: string,
   webPortStart: number,
   webOpenPath?: string,
+  webDir?: string,
 ): string | undefined => {
   const resolved = readResolvedProjectPorts(projectId);
   const assignedPort = getAssignedWebPort(webPortStart, resolved);
 
-  const liveUrl = findNextWebUrl(assignedPort);
+  const liveUrl = findNextWebUrl(assignedPort, 1, webDir);
   if (liveUrl) {
     return applyWebOpenPath(liveUrl, webOpenPath);
   }

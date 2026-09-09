@@ -26,6 +26,13 @@ export const hasProjectRole = (projectId: string, role: TerminalRole): boolean =
 };
 
 /**
+ * List all session records (including PTY, kind, and port).
+ */
+export const listSessionRecords = (): TerminalSessionRecord[] => {
+  return Array.from(sessions.values());
+};
+
+/**
  * List all active terminal sessions.
  */
 export const listSessions = (): TerminalSessionInfo[] => {

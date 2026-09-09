@@ -24,6 +24,7 @@ export const processOpenChrome = (projectId: string): boolean => {
     projectId,
     merged.webPortStart,
     merged.registry.webOpenPath,
+    merged.webDir,
   );
   if (!webUrl) {
     return false;

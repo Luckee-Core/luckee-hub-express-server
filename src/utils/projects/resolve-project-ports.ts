@@ -4,8 +4,8 @@ import path from 'path';
 import type { MergedProjectConfig } from '../../services/projects/types';
 import { isExpressHealthOk } from './port-probes';
 import {
-  findAvailableWebPort,
   resolveApiPortForRun,
+  resolveWebPortForRun,
 } from './wait-for-project-ready';
 
 const HUB_TMP = '/tmp/luckee-hub';
@@ -75,13 +75,14 @@ export const findExpressApiPort = (
   registryApiPort: number,
   healthPath: string,
   scanMax = 10,
+  ownerDir?: string,
 ): number | undefined => {
   const start = getPreferredApiPort(projectId, registryApiPort);
   if (start <= 0) {
     return undefined;
   }
   for (let port = start; port < start + scanMax; port += 1) {
-    if (isExpressHealthOk(port, healthPath)) {
+    if (isExpressHealthOk(port, healthPath, ownerDir)) {
       return port;
     }
   }
@@ -94,11 +95,13 @@ export const findExpressApiPort = (
 export const resolveProjectPortsForRun = (
   merged: MergedProjectConfig,
 ): { apiPort: number; webPortStart: number; apiUrl: string } => {
-  const apiPort = resolveApiPortForRun(merged.apiPort, merged.healthPath);
-  const webPortStart =
-    merged.webPortStart > 0
-      ? findAvailableWebPort(merged.webPortStart)
-      : merged.webPortStart;
+  const apiPort = resolveApiPortForRun(
+    merged.apiPort,
+    merged.healthPath,
+    10,
+    merged.expressDir,
+  );
+  const webPortStart = resolveWebPortForRun(merged.webPortStart, 10, merged.webDir);
 
   return {
     apiPort,
