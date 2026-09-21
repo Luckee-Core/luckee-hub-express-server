@@ -1,4 +1,4 @@
-# 014 — Express env groups (AI / Maps / Email)
+# 014 — Express env groups (AI / Maps)
 
 ## Status
 
@@ -6,7 +6,7 @@ Accepted
 
 ## Context
 
-Lead Studio Express needs more than Supabase keys (Anthropic, Google Maps, Gmail). Hub should upsert those into the same express `.env` via project-detail tabs, without storing secrets in Hub Redux long-term.
+Lead Studio Express needs more than Supabase keys (Anthropic, Google Maps). Hub should upsert those into the same express `.env` via project-detail tabs, without storing secrets in Hub Redux long-term.
 
 ## Decision
 
@@ -14,7 +14,7 @@ Lead Studio Express needs more than Supabase keys (Anthropic, Google Maps, Gmail
 
 Optional `expressEnv.groups` on a registry entry. Each group has `label` + `keys[]`.
 
-Lead Studio groups: `ai` (`ANTHROPIC_API_KEY` only — model is Haiku in Express), `google-maps`, `email`.
+Lead Studio groups: `ai` (`ANTHROPIC_API_KEY` only — model is Haiku in Express), `google-maps`. An `email` group may exist on other products; Lead Studio does not ship outbound send.
 
 List projects exposes `expressEnvGroupIds: Object.keys(groups)`.
 
