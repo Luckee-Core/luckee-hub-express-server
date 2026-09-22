@@ -22,6 +22,7 @@ export type LauncherJobFile = {
   webUrl?: string;
   sessions?: TerminalSessionInfo[];
   steps?: SetupJobStep[];
+  logTail?: string;
   updatedAt: string;
 };
 
