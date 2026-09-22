@@ -92,7 +92,7 @@
   {
     "id": "lead-studio",
     "name": "Lead Studio",
-    "description": "Lead CRM, research workers, email queue",
+    "description": "Lead CRM and research workers",
     "repos": [
       {
         "repoType": "express",
@@ -105,7 +105,29 @@
         "repoName": "lead-studio-web-open-source",
         "defaultWebPortStart": 3021
       }
-    ]
+    ],
+    "supabase": {
+      "bootstrapSql": "sql/000_full_schema_bootstrap.sql",
+      "expectedTables": [
+        "leads",
+        "lead_contacts",
+        "google_maps_scrape_runs",
+        "facebook_google_search"
+      ],
+      "envKeys": ["SUPABASE_URL", "SUPABASE_SERVICE_KEY", "DATABASE_URL"]
+    },
+    "expressEnv": {
+      "groups": {
+        "ai": {
+          "label": "AI",
+          "keys": ["ANTHROPIC_API_KEY"]
+        },
+        "google-maps": {
+          "label": "Google Maps Scraper",
+          "keys": ["GOOGLE_MAPS_API_KEY"]
+        }
+      }
+    }
   },
   {
     "id": "local-scheduler",
@@ -201,6 +223,7 @@
     "id": "my-health",
     "name": "My Health",
     "description": "Self-hosted health dashboard",
+    "webOpenPath": "/dashboard",
     "repos": [
       {
         "repoType": "express",
@@ -470,5 +493,53 @@
         "defaultWebPortStart": 3055
       }
     ]
+  },
+  {
+    "id": "design-prompter",
+    "name": "Design Prompter",
+    "description": "Customer research, Facebook scraping, and Lovable prompt generation",
+    "repos": [
+      {
+        "repoType": "express",
+        "repoName": "design-prompter-express-server",
+        "defaultApiPort": 3056,
+        "healthPath": "/api/health"
+      },
+      {
+        "repoType": "nextjs",
+        "repoName": "design-prompter-web",
+        "defaultWebPortStart": 3057
+      }
+    ],
+    "localDatabase": {
+      "kind": "postgres",
+      "databaseName": "design_prompter",
+      "migrationsDir": "migrations",
+      "migrationFiles": ["setup.sql"],
+      "expectedTables": [
+        "customers",
+        "customer_notes",
+        "customer_brand",
+        "customer_prompts",
+        "customer_facebook_searches",
+        "customer_facebook_posts"
+      ],
+      "postgres": {
+        "host": "127.0.0.1",
+        "port": 5432,
+        "formula": "postgresql@16",
+        "installCommand": "brew install postgresql@16",
+        "startCommand": "brew services start postgresql@16",
+        "stopCommand": "brew services stop postgresql@16"
+      }
+    },
+    "expressEnv": {
+      "groups": {
+        "ai": {
+          "label": "AI & Scrapers",
+          "keys": ["ANTHROPIC_API_KEY", "APIFY_API_TOKEN"]
+        }
+      }
+    }
   }
 ]

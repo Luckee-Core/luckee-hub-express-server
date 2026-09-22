@@ -1,7 +1,8 @@
 import path from 'path';
 
-import { readLocalConfig, readRegistry } from '../../utils/projects';
+import { mergeProjectConfig, readLocalConfig, readRegistry } from '../../utils/projects';
 import { ensureProjectTerminalSessions } from './ensure-project-terminal-sessions';
+import { pruneStaleStatusSessions } from './prune-stale-status-sessions';
 import { listSessions } from './session-registry';
 import type { TerminalSessionInfo } from './types';
 
@@ -21,6 +22,12 @@ export const processSyncTerminalSessions = (): TerminalSessionInfo[] => {
       continue;
     }
 
+    const merged = mergeProjectConfig(entry, localConfig);
+    if (!merged) {
+      continue;
+    }
+
+    pruneStaleStatusSessions(merged);
     ensureProjectTerminalSessions({
       entry,
       local,

@@ -115,12 +115,16 @@ export const probeProjectStatus = (
 
   const registryApiPort = expressRepo?.defaultApiPort ?? 0;
   const healthPath = expressRepo?.healthPath ?? '/api/health';
+  // List live probes only check the preferred port (scanMax=1). Scanning 10
+  // ports × N projects blocks the Express event loop for ~10s and starves
+  // concurrent requests (supabase / express-env probes).
   const apiRunning =
     !hasExpress ||
-    findExpressApiPort(registry.id, registryApiPort, healthPath, 10) !== undefined;
+    findExpressApiPort(registry.id, registryApiPort, healthPath, 1, local.expressDir) !==
+      undefined;
 
   const webPortStart = local.webPortStart ?? nextjsRepo?.defaultWebPortStart ?? 3000;
-  const resolvedPorts = hasWeb ? findWebUrlOnPorts(webPortStart, 1) : undefined;
+  const resolvedPorts = hasWeb ? findWebUrlOnPorts(webPortStart, 1, local.webDir) : undefined;
   const webUrl = resolvedPorts;
   const webRunning = hasWeb && !!webUrl;
 

@@ -2,6 +2,7 @@ import fs from 'fs';
 
 import { findNextWebUrl } from '../projects/wait-for-project-ready';
 import { readResolvedProjectPorts } from '../projects/resolve-project-ports';
+import { applyWebOpenPath } from './apply-web-open-path';
 
 const HUB_TMP = '/tmp/luckee-hub';
 
@@ -25,13 +26,15 @@ const getAssignedWebPort = (
 export const resolveProjectWebUrl = (
   projectId: string,
   webPortStart: number,
+  webOpenPath?: string,
+  webDir?: string,
 ): string | undefined => {
   const resolved = readResolvedProjectPorts(projectId);
   const assignedPort = getAssignedWebPort(webPortStart, resolved);
 
-  const liveUrl = findNextWebUrl(assignedPort);
+  const liveUrl = findNextWebUrl(assignedPort, 1, webDir);
   if (liveUrl) {
-    return liveUrl;
+    return applyWebOpenPath(liveUrl, webOpenPath);
   }
 
   if (
@@ -39,7 +42,7 @@ export const resolveProjectWebUrl = (
     resolved.webPort === assignedPort &&
     resolved.webPort === resolved.webPortStart
   ) {
-    return resolved.webUrl;
+    return applyWebOpenPath(resolved.webUrl, webOpenPath);
   }
 
   const savedPath = `${HUB_TMP}/${projectId}-web-url.txt`;
@@ -48,7 +51,7 @@ export const resolveProjectWebUrl = (
     if (saved.startsWith('http://')) {
       const savedPort = Number(new URL(saved).port);
       if (savedPort === assignedPort) {
-        return saved;
+        return applyWebOpenPath(saved, webOpenPath);
       }
     }
   }

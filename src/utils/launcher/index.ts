@@ -1,3 +1,4 @@
+export { applyWebOpenPath } from './apply-web-open-path';
 export { openCursorWorkspace } from './open-cursor-workspace';
 export { openInChrome } from './open-in-chrome';
 export { createSetupDebugLog } from './log-setup-debug';

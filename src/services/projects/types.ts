@@ -1,6 +1,21 @@
 import type { LocalDatabaseConfig } from '../local-database/types';
+import type { ExpressEnvConfig } from '../express-env/types';
+import type { SupabaseConfig } from '../supabase-config/types';
 
 export type { LocalDatabaseConfig, LocalDatabaseCleanupResult, LocalDatabaseProbe, LocalDatabaseSetupResult, LocalDatabaseStepResult } from '../local-database/types';
+export type {
+  SupabaseConfig,
+  SupabaseProbe,
+  SupabaseConfigSaveInput,
+  SupabaseConfigSaveResult,
+} from '../supabase-config/types';
+export type {
+  ExpressEnvConfig,
+  ExpressEnvGroupConfig,
+  ExpressEnvGroupId,
+  ExpressEnvGroupProbe,
+  ExpressEnvGroupSaveResult,
+} from '../express-env/types';
 
 export type HookStatus =
   | 'catalog'
@@ -33,7 +48,11 @@ export type ProjectRegistryEntry = {
   name: string;
   description: string;
   repos: ProjectRegistryRepoEntry[];
+  /** Path opened in Chrome after Run (e.g. `/dashboard`). Origin `/` when omitted. */
+  webOpenPath?: string;
   localDatabase?: LocalDatabaseConfig;
+  supabase?: SupabaseConfig;
+  expressEnv?: ExpressEnvConfig;
 };
 
 export type HubProjectRepo = {
@@ -83,6 +102,8 @@ export type HubProject = {
     workspaceFile?: string;
   };
   localDatabaseSupported: boolean;
+  supabaseSupported: boolean;
+  expressEnvGroupIds: string[];
   postgresActiveConsumer?: boolean;
 };
 

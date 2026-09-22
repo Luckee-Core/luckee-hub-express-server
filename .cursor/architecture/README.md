@@ -16,6 +16,8 @@ ADRs for **express-server-template** and apps created from it.
 10. [010 – Projects catalog and rename](./010-projects-catalog-and-rename.md) — `projects.registry.json`, `/api/projects`.
 11. [011 – Local database service](./011-local-database-service.md) — Postgres probe/setup for hooked-up projects.
 12. [012 – Project setup into luckee/](./012-project-setup-into-luckee.md) — Clone + npm install, `luckeeParent`, Setup job.
+13. [013 – Supabase config service](./013-supabase-config-service.md) — Upsert Supabase keys into express `.env` from Hub.
+14. [014 – Express env groups](./014-express-env-groups.md) — AI / Maps / Email env tabs upserting express `.env`.
 
 ## How to use
 

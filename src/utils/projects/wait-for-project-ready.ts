@@ -18,15 +18,15 @@ const curlQuiet = (args: string): string | null => {
   }
 };
 
-const expressHealthOk = (apiPort: number, healthPath: string): boolean => isExpressHealthOk(apiPort, healthPath);
-
-const isNextDevServer = (port: number): boolean => isNextDevServerOnPort(port);
-
 /**
  * True when Express is listening and health returns ok.
+ * When `ownerDir` is set, ignore another project's process on the same port.
  */
-export const isExpressHealthy = (apiPort: number, healthPath: string): boolean =>
-  portListening(apiPort) && expressHealthOk(apiPort, healthPath);
+export const isExpressHealthy = (
+  apiPort: number,
+  healthPath: string,
+  ownerDir?: string,
+): boolean => portListening(apiPort) && isExpressHealthOk(apiPort, healthPath, ownerDir);
 
 /**
  * Wait until Express health responds (up to maxSeconds).
@@ -35,9 +35,10 @@ export const waitForExpressHealth = async (
   apiPort: number,
   healthPath: string,
   maxSeconds = 180,
+  ownerDir?: string,
 ): Promise<boolean> => {
   for (let i = 0; i < maxSeconds; i += 1) {
-    if (portListening(apiPort) && expressHealthOk(apiPort, healthPath)) {
+    if (isExpressHealthy(apiPort, healthPath, ownerDir)) {
       return true;
     }
     await sleep(1000);
@@ -67,11 +68,12 @@ export const resolveApiPortForRun = (
   preferredApiPort: number,
   healthPath: string,
   scanMax = 10,
+  ownerDir?: string,
 ): number => {
   if (preferredApiPort <= 0) {
     return findAvailableApiPort(3010, scanMax);
   }
-  if (isExpressHealthy(preferredApiPort, healthPath)) {
+  if (isExpressHealthy(preferredApiPort, healthPath, ownerDir)) {
     return preferredApiPort;
   }
   if (!portListening(preferredApiPort)) {
@@ -96,13 +98,35 @@ export const findAvailableWebPort = (
 };
 
 /**
+ * Resolve web port for Run: reuse Next.js already on preferred, else first free slot in scan range.
+ * Next.js 16 refuses a second `next dev` in the same directory, so never bump off an existing project server.
+ */
+export const resolveWebPortForRun = (
+  preferredWebPort: number,
+  scanMax = 10,
+  ownerDir?: string,
+): number => {
+  if (preferredWebPort <= 0) {
+    return preferredWebPort;
+  }
+  if (isNextDevServerOnPort(preferredWebPort, ownerDir)) {
+    return preferredWebPort;
+  }
+  if (!portListening(preferredWebPort)) {
+    return preferredWebPort;
+  }
+  return findAvailableWebPort(preferredWebPort, scanMax);
+};
+
+/**
  * Find Next.js dev URL on the project's assigned web port only.
  * Hub assigns one web port per project — do not scan ahead or another project's dev server may match.
  */
 export const findNextWebUrl = (
   webPort: number,
   scanMax = 1,
-): string | undefined => findWebUrlOnPorts(webPort, scanMax);
+  ownerDir?: string,
+): string | undefined => findWebUrlOnPorts(webPort, scanMax, ownerDir);
 
 /**
  * Poll until Next.js responds on the assigned web port (up to maxSeconds).
@@ -110,9 +134,10 @@ export const findNextWebUrl = (
 export const waitForNextWebUrl = async (
   webPort: number,
   maxSeconds = 120,
+  ownerDir?: string,
 ): Promise<string | undefined> => {
   for (let i = 0; i < maxSeconds; i += 1) {
-    if (!isNextDevServer(webPort)) {
+    if (!isNextDevServerOnPort(webPort, ownerDir)) {
       await sleep(1000);
       continue;
     }

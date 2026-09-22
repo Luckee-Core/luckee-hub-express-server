@@ -34,7 +34,7 @@ Local Postgres setup for individual projects is handled by the **local-database*
 
 ### macOS helpers
 
-- `src/utils/launcher/` — open Chrome, open Cursor workspace, resolve web URL
+- `src/utils/launcher/` — open Chrome, open Cursor workspace, resolve web URL. Optional registry `webOpenPath` (e.g. `/dashboard`) is appended when Chrome opens.
 
 ### Handler pattern carve-out
 

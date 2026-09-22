@@ -4,7 +4,7 @@ import { ensureSpawnHelperExecutable } from '../../utils/terminals/ensure-spawn-
 import { buildNvmShellPrefix, shellEscape } from '../../utils/projects/build-nvm-shell-prefix';
 import type { MergedProjectConfig } from '../projects/types';
 import { registerSession } from './session-registry';
-import type { TerminalRole, TerminalSessionInfo } from './types';
+import type { TerminalRole, TerminalSessionInfo, TerminalSessionKind } from './types';
 
 type PtyEnvInput = {
   cwd: string;
@@ -72,7 +72,7 @@ export const buildWebPtyCommand = (merged: MergedProjectConfig): string => {
     `cd '${dir}' && ${nvm} && ${apiEnv}` +
     `echo '>>> ${merged.id} Web — waiting for Express...' && ` +
     `until curl -fsS '${healthUrl}' 2>/dev/null | grep -qE '"status"[[:space:]]*:[[:space:]]*"ok"'; do sleep 2; done && ` +
-    `echo '>>> Express ready. Starting Next.js...' && npm run dev`
+    `echo '>>> Express ready. Starting Next.js...' && npm run dev -- --port ${merged.webPortStart}`
   );
 };
 
@@ -108,7 +108,7 @@ export const buildWebOnlyPtyCommand = (merged: MergedProjectConfig, webPort: num
   const apiEnv = buildExpressApiEnvExports(merged.apiPort);
   return (
     `cd '${dir}' && ${nvm} && export PORT=${webPort} && ${apiEnv}` +
-    `echo '>>> ${merged.id} Web (Next.js :${webPort})' && npm run dev`
+    `echo '>>> ${merged.id} Web (Next.js :${webPort})' && npm run dev -- --port ${webPort}`
   );
 };
 
@@ -119,6 +119,7 @@ type SpawnProjectPtyInput = {
   command: string;
   cwd: string;
   port: number;
+  kind?: TerminalSessionKind;
 };
 
 /**
@@ -167,6 +168,8 @@ export const spawnProjectPty = (input: SpawnProjectPtyInput): TerminalSessionInf
     pty: ptyProcess,
     createdAt: new Date().toISOString(),
     getReplay: (): string => outputChunks.join(''),
+    kind: input.kind ?? 'dev',
+    port: input.port,
   };
 
   registerSession(record);
