@@ -79,6 +79,60 @@ const resolveRepoDir = (
   return paths.webDir;
 };
 
+type ResolvedSetupPaths = SetupProjectPaths & {
+  luckeeRoot: string;
+  projectRoot: string;
+  /** Keep the saved workspace path when the checkout already lives outside luckee/. */
+  preserveWorkspaceFile: boolean;
+};
+
+const existingDirectory = (dir: string | undefined): string | undefined =>
+  dir && fs.existsSync(dir) ? dir : undefined;
+
+/**
+ * Prefer checkouts already recorded in hub.local.json.
+ * Fresh projects still clone under `{luckeeParent}/luckee/{projectId}/`.
+ */
+const resolveSetupPaths = (
+  luckeeParent: string,
+  registry: ProjectRegistryEntry,
+  localConfig: HubLocalConfig,
+  projectId: string,
+): ResolvedSetupPaths => {
+  const cloned = resolveProjectClonePaths(luckeeParent, registry);
+  const existing = localConfig.projects?.[projectId];
+  const existingWebDir = existingDirectory(existing?.webDir);
+  const existingExpressDir = existingDirectory(existing?.expressDir);
+  const webSatisfied = !cloned.webDir || !!existingWebDir;
+  const expressSatisfied = !cloned.expressDir || !!existingExpressDir;
+  const usingExistingCheckout = webSatisfied && expressSatisfied && (!!existingWebDir || !!existingExpressDir);
+
+  if (!usingExistingCheckout) {
+    return {
+      luckeeRoot: cloned.luckeeRoot,
+      projectRoot: cloned.projectRoot,
+      webDir: cloned.webDir,
+      expressDir: cloned.expressDir,
+      workspaceFile: resolveProjectWorkspaceFilePath(cloned.projectRoot, projectId),
+      preserveWorkspaceFile: false,
+    };
+  }
+
+  const webDir = existingWebDir ?? cloned.webDir;
+  const expressDir = existingExpressDir ?? cloned.expressDir;
+  const projectRoot = path.dirname(webDir ?? expressDir ?? cloned.projectRoot);
+  const existingWorkspace = existingDirectory(existing?.workspaceFile);
+
+  return {
+    luckeeRoot: path.dirname(projectRoot),
+    projectRoot,
+    webDir,
+    expressDir,
+    workspaceFile: existingWorkspace ?? resolveProjectWorkspaceFilePath(projectRoot, projectId),
+    preserveWorkspaceFile: !!existingWorkspace,
+  };
+};
+
 const runSetupJob = async (
   jobId: string,
   projectId: string,
@@ -87,7 +141,7 @@ const runSetupJob = async (
   luckeeParent: string,
   githubOrg: string,
 ): Promise<void> => {
-  const paths = resolveProjectClonePaths(luckeeParent, registry);
+  const paths = resolveSetupPaths(luckeeParent, registry, localConfig, projectId);
   const nvmSh = localConfig.nvmSh ?? `${process.env.HOME}/.nvm/nvm.sh`;
   const debugLog = createSetupDebugLog(jobId);
   let lastOutputFlushMs = 0;
@@ -155,12 +209,14 @@ const runSetupJob = async (
       );
     }
 
-    const workspaceFile = resolveProjectWorkspaceFilePath(paths.projectRoot, projectId);
+    const workspaceFile = paths.workspaceFile ?? resolveProjectWorkspaceFilePath(paths.projectRoot, projectId);
     const workspaceStepId = getSetupWorkspaceStepId();
     debugLog.write(`🚀 [launcher.processSetupProject] Writing Cursor workspace ${workspaceFile}`);
     publishStep(workspaceStepId, { status: 'running' }, 'Creating Cursor workspace...');
 
-    const workspaceResult = writeProjectWorkspaceFile(paths.projectRoot, projectId, registry);
+    const workspaceResult = paths.preserveWorkspaceFile
+      ? 'skipped'
+      : writeProjectWorkspaceFile(paths.projectRoot, projectId, registry);
     debugLog.write(
       `✅ [launcher.processSetupProject] ${workspaceResult === 'written' ? 'Created' : 'Skipped'} Cursor workspace ${workspaceFile}`,
     );
