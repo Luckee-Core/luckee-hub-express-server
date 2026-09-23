@@ -541,5 +541,56 @@
         }
       }
     }
+  },
+  {
+    "id": "speech-therapy-tracker",
+    "name": "Speech Therapy Tracker",
+    "description": "Peg-tube feeds, speech-therapy exercises, photo import, and ice-cube consumption",
+    "repos": [
+      {
+        "repoType": "express",
+        "repoName": "speech-therapy-tracker-express-server",
+        "defaultApiPort": 3058,
+        "healthPath": "/api/health"
+      },
+      {
+        "repoType": "nextjs",
+        "repoName": "speech-therapy-tracker-web",
+        "defaultWebPortStart": 3059
+      }
+    ],
+    "localDatabase": {
+      "kind": "postgres",
+      "databaseName": "my_health",
+      "migrationsDir": "migrations",
+      "migrationFiles": ["setup.sql"],
+      "expectedTables": [
+        "therapy_exercise_imports",
+        "therapy_exercises",
+        "therapy_exercise_logs",
+        "therapy_exercise_import_ai_requests",
+        "therapy_exercise_import_ai_responses",
+        "therapy_exercise_import_ai_exchanges",
+        "feed_formulas",
+        "feed_logs",
+        "speech_therapy_consumption"
+      ],
+      "postgres": {
+        "host": "127.0.0.1",
+        "port": 5432,
+        "formula": "postgresql@16",
+        "installCommand": "brew install postgresql@16",
+        "startCommand": "brew services start postgresql@16",
+        "stopCommand": "brew services stop postgresql@16"
+      }
+    },
+    "expressEnv": {
+      "groups": {
+        "ai": {
+          "label": "AI",
+          "keys": ["ANTHROPIC_API_KEY"]
+        }
+      }
+    }
   }
 ]

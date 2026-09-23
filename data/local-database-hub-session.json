@@ -8,6 +8,7 @@
   ],
   "activeConsumers": [
     "my-health",
-    "design-prompter"
+    "design-prompter",
+    "speech-therapy-tracker"
   ]
 }

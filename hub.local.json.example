@@ -158,6 +158,12 @@
       "webDir": "/Users/matthewruiz/github/design-prompter/design-prompter-web",
       "expressDir": "/Users/matthewruiz/github/design-prompter/design-prompter-express-server",
       "webPortStart": 3057
+    },
+    "speech-therapy-tracker": {
+      "enabled": true,
+      "webDir": "/Users/matthewruiz/github/my-health/speech-therapy-tracker-web",
+      "expressDir": "/Users/matthewruiz/github/my-health/speech-therapy-tracker-express-server",
+      "webPortStart": 3059
     }
   }
 }
