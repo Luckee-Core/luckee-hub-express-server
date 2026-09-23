@@ -8,12 +8,14 @@ import type {
 } from '../../services/projects/types';
 import { writeJobFile } from '../terminals/write-job-file';
 import type { LauncherJobFile } from '../terminals/write-job-file';
+import { createSetupDebugLog } from '../../utils/launcher/log-setup-debug';
 import {
   buildSetupSteps,
   expireStaleSetupJobs,
   getActiveSetupJobId,
   getSetupCloneStepId,
   getSetupInstallStepId,
+  getSetupWorkspaceStepId,
   writeSetupJobStep,
 } from '../../utils/launcher/setup-job';
 import {
@@ -25,8 +27,10 @@ import {
   readRegistry,
   resolveLuckeeParent,
   resolveProjectClonePaths,
+  resolveProjectWorkspaceFilePath,
   toGithubRepoUrl,
   writeLocalConfig,
+  writeProjectWorkspaceFile,
 } from '../../utils/projects';
 import { getHubRoot } from '../../utils/projects/get-hub-root';
 
@@ -37,6 +41,7 @@ export type SetupProjectResult = {
 export type SetupProjectPaths = {
   webDir?: string;
   expressDir?: string;
+  workspaceFile?: string;
 };
 
 const upsertProjectLocalEntry = (
@@ -51,6 +56,7 @@ const upsertProjectLocalEntry = (
     enabled: true,
     ...(paths.webDir ? { webDir: paths.webDir } : {}),
     ...(paths.expressDir ? { expressDir: paths.expressDir } : {}),
+    ...(paths.workspaceFile ? { workspaceFile: paths.workspaceFile } : {}),
     ...(webPortStart !== undefined ? { webPortStart } : {}),
   };
 
@@ -83,8 +89,40 @@ const runSetupJob = async (
 ): Promise<void> => {
   const paths = resolveProjectClonePaths(luckeeParent, registry);
   const nvmSh = localConfig.nvmSh ?? `${process.env.HOME}/.nvm/nvm.sh`;
+  const debugLog = createSetupDebugLog(jobId);
+  let lastOutputFlushMs = 0;
+
+  const publishStep = (
+    stepId: string,
+    patch: { status?: 'pending' | 'running' | 'done' | 'skipped' | 'failed'; message?: string },
+    topLevelMessage?: string,
+  ): void => {
+    writeSetupJobStep(jobId, stepId, patch, topLevelMessage, debugLog.tail());
+  };
+
+  const publishOutput = (stepId: string, line: string): void => {
+    debugLog.write(`📥 [launcher.processSetupProject] ${line}`);
+    const now = Date.now();
+    if (now - lastOutputFlushMs < 400) {
+      return;
+    }
+    lastOutputFlushMs = now;
+    publishStep(stepId, { status: 'running', message: line }, line);
+  };
 
   try {
+    const jobPath = path.join('/tmp/luckee-hub/jobs', `${jobId}.json`);
+    if (fs.existsSync(jobPath)) {
+      const currentJob = JSON.parse(fs.readFileSync(jobPath, 'utf8')) as LauncherJobFile;
+      writeJobFile({
+        ...currentJob,
+        message: `Debug log: ${debugLog.filePath}`,
+        logTail: debugLog.tail(),
+        updatedAt: new Date().toISOString(),
+      });
+    }
+
+    debugLog.write(`🚀 [launcher.processSetupProject] Setup started for ${projectId}`);
     fs.mkdirSync(paths.luckeeRoot, { recursive: true });
     fs.mkdirSync(paths.projectRoot, { recursive: true });
 
@@ -95,7 +133,8 @@ const runSetupJob = async (
         throw new Error(`Unsupported repo type for ${repo.repoName}`);
       }
 
-      writeSetupJobStep(jobId, stepId, { status: 'running' }, `Cloning ${repo.repoName}...`);
+      debugLog.write(`🚀 [launcher.processSetupProject] Cloning ${repo.repoName} into ${destDir}`);
+      publishStep(stepId, { status: 'running' }, `Cloning ${repo.repoName}...`);
 
       const repoUrl = toGithubRepoUrl(githubOrg, repo.repoName);
       if (!repoUrl) {
@@ -103,8 +142,10 @@ const runSetupJob = async (
       }
 
       const cloneResult = cloneGitRepo(repoUrl, destDir);
-      writeSetupJobStep(
-        jobId,
+      debugLog.write(
+        `✅ [launcher.processSetupProject] ${cloneResult === 'cloned' ? 'Cloned' : 'Skipped clone'} ${repo.repoName}`,
+      );
+      publishStep(
         stepId,
         {
           status: cloneResult === 'cloned' ? 'done' : 'skipped',
@@ -113,6 +154,24 @@ const runSetupJob = async (
         cloneResult === 'cloned' ? `Cloned ${repo.repoName}` : `Skipped clone ${repo.repoName}`,
       );
     }
+
+    const workspaceFile = resolveProjectWorkspaceFilePath(paths.projectRoot, projectId);
+    const workspaceStepId = getSetupWorkspaceStepId();
+    debugLog.write(`🚀 [launcher.processSetupProject] Writing Cursor workspace ${workspaceFile}`);
+    publishStep(workspaceStepId, { status: 'running' }, 'Creating Cursor workspace...');
+
+    const workspaceResult = writeProjectWorkspaceFile(paths.projectRoot, projectId, registry);
+    debugLog.write(
+      `✅ [launcher.processSetupProject] ${workspaceResult === 'written' ? 'Created' : 'Skipped'} Cursor workspace ${workspaceFile}`,
+    );
+    publishStep(
+      workspaceStepId,
+      {
+        status: workspaceResult === 'written' ? 'done' : 'skipped',
+        message: workspaceResult === 'written' ? 'Created' : 'Already exists',
+      },
+      workspaceResult === 'written' ? 'Created Cursor workspace' : 'Skipped Cursor workspace',
+    );
 
     const nextjsRepo = getNextjsRegistryRepo(registry);
     const webPortStart =
@@ -123,7 +182,7 @@ const runSetupJob = async (
       upsertProjectLocalEntry(
         localConfig,
         projectId,
-        { webDir: paths.webDir, expressDir: paths.expressDir },
+        { webDir: paths.webDir, expressDir: paths.expressDir, workspaceFile },
         webPortStart,
       ),
     );
@@ -135,16 +194,14 @@ const runSetupJob = async (
         throw new Error(`Unsupported repo type for ${repo.repoName}`);
       }
 
-      writeSetupJobStep(
-        jobId,
-        stepId,
-        { status: 'running' },
-        `Installing dependencies in ${repo.repoName}...`,
-      );
+      debugLog.write(`🚀 [launcher.processSetupProject] npm install in ${destDir}`);
+      publishStep(stepId, { status: 'running' }, `Installing dependencies in ${repo.repoName}...`);
 
-      const installResult = await npmInstallRepo(destDir, nvmSh);
-      writeSetupJobStep(
-        jobId,
+      const installResult = await npmInstallRepo(destDir, nvmSh, (line) => publishOutput(stepId, line));
+      debugLog.write(
+        `✅ [launcher.processSetupProject] ${installResult === 'installed' ? 'Installed' : 'Skipped install'} ${repo.repoName}`,
+      );
+      publishStep(
         stepId,
         {
           status: installResult === 'installed' ? 'done' : 'skipped',
@@ -156,21 +213,24 @@ const runSetupJob = async (
       );
     }
 
-    const jobPath = path.join('/tmp/luckee-hub/jobs', `${jobId}.json`);
-    const currentJob = fs.existsSync(jobPath)
-      ? (JSON.parse(fs.readFileSync(jobPath, 'utf8')) as LauncherJobFile)
+    const completedJobPath = path.join('/tmp/luckee-hub/jobs', `${jobId}.json`);
+    const currentJob = fs.existsSync(completedJobPath)
+      ? (JSON.parse(fs.readFileSync(completedJobPath, 'utf8')) as LauncherJobFile)
       : null;
 
+    debugLog.write(`✅ [launcher.processSetupProject] Setup complete for ${projectId}`);
     writeJobFile({
       jobId,
       projectId,
       status: 'completed',
       message: 'Setup complete',
       steps: currentJob?.steps,
+      logTail: debugLog.tail(),
       updatedAt: new Date().toISOString(),
     });
   } catch (error: unknown) {
     const message = error instanceof Error ? error.message : 'Setup failed';
+    debugLog.write(`❌ [launcher.processSetupProject] ${message}`);
     const nextjsRepo = getNextjsRegistryRepo(registry);
     const webPortStart =
       localConfig.projects?.[projectId]?.webPortStart ?? nextjsRepo?.defaultWebPortStart;
@@ -182,7 +242,11 @@ const runSetupJob = async (
         upsertProjectLocalEntry(
           localConfig,
           projectId,
-          { webDir: paths.webDir, expressDir: paths.expressDir },
+          {
+            webDir: paths.webDir,
+            expressDir: paths.expressDir,
+            workspaceFile: resolveProjectWorkspaceFilePath(paths.projectRoot, projectId),
+          },
           webPortStart,
         ),
       );
@@ -207,6 +271,7 @@ const runSetupJob = async (
       status: 'failed',
       message,
       steps: failedSteps,
+      logTail: debugLog.tail(),
       updatedAt: new Date().toISOString(),
     });
   }

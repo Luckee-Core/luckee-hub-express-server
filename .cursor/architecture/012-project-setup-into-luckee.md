@@ -35,14 +35,37 @@ Example:
 1. Requires `luckeeParent` (400 if unset).
 2. Creates `{luckeeParent}/luckee` and `{luckeeParent}/luckee/{projectId}`.
 3. Clones each registry repo from `Luckee-Core` (or `githubOrg` override).
-4. Writes `hub.local.json` project paths before install (so failed install still leaves `cloned` status).
-5. Runs `npm install` in each repo using the same `nvmSh` prefix as embedded terminals.
+4. Writes `{projectId}.code-workspace` in the project folder with relative repo folder paths (Express, then Next.js). Skips when the file already exists so hand-edited workspaces are preserved.
+5. Writes `hub.local.json` project paths (`webDir`, `expressDir`, `workspaceFile`) before install (so failed install still leaves `cloned` status).
+6. Runs `npm install --loglevel verbose` in each repo using the same `nvmSh` prefix as embedded terminals.
+
+`npm run dev` uses nodemon with `watch` limited to `src/` and `index.ts`. Setup writes `hub.local.json` in the package root before install. Watching that file restarts the server and kills `npm` before it prints anything.
 
 Idempotency:
 
 - Existing `.git` directory → skip clone.
 - Existing `node_modules` → skip install.
+- Existing `{projectId}.code-workspace` → skip workspace write; still set `workspaceFile` in `hub.local.json`.
 - Non-empty non-git directory → 400.
+
+### Cursor workspace
+
+Example for Lead Studio:
+
+```text
+/Users/matthewruiz/luckee/lead-studio/lead-studio.code-workspace
+```
+
+```json
+{
+  "folders": [
+    { "path": "lead-studio-express-server" },
+    { "path": "lead-studio-web-open-source" }
+  ]
+}
+```
+
+Setup does not open Cursor. `POST /api/launcher/projects/:id/open-cursor` uses the saved `workspaceFile`.
 
 ### Hub config API
 
@@ -56,7 +79,7 @@ Setup reuses launcher job files under `/tmp/luckee-hub/jobs/` and `GET /api/laun
 
 Each setup job includes structured `steps[]` (clone + install per registry repo). Stale `"running"` jobs older than 2 minutes are marked failed on retry so Setup can start fresh.
 
-Shell commands for install use `runNvmShellCommand` which drains stdout/stderr to avoid pipe deadlocks during `npm install`.
+Shell commands for install use `runNvmShellCommand` which drains stdout/stderr to avoid pipe deadlocks during `npm install`. Each line is written to the hub server console and `/tmp/luckee-hub/logs/<jobId>.log`. The job file keeps a `logTail` so the setup modal can show the same output.
 
 ## Related
 

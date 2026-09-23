@@ -9,10 +9,11 @@ const HUB_JOBS_DIR = '/tmp/luckee-hub/jobs';
 const DEFAULT_STALE_MS = 2 * 60 * 1000;
 
 const cloneStepId = (repoName: string): string => `clone-${repoName}`;
+const workspaceStepId = (): string => 'workspace';
 const installStepId = (repoName: string): string => `install-${repoName}`;
 
 /**
- * Build ordered setup steps for clone + npm install per registry repo.
+ * Build ordered setup steps for clone, workspace file, and npm install per registry repo.
  */
 export const buildSetupSteps = (registry: ProjectRegistryEntry): SetupJobStep[] => {
   const steps: SetupJobStep[] = [];
@@ -24,6 +25,12 @@ export const buildSetupSteps = (registry: ProjectRegistryEntry): SetupJobStep[] 
       status: 'pending',
     });
   }
+
+  steps.push({
+    id: workspaceStepId(),
+    label: 'Workspace',
+    status: 'pending',
+  });
 
   for (const repo of registry.repos) {
     steps.push({
@@ -144,6 +151,7 @@ export const writeSetupJobStep = (
   stepId: string,
   patch: WriteSetupJobStepPatch,
   topLevelMessage?: string,
+  logTail?: string,
 ): LauncherJobFile | null => {
   const job = readJobFile(jobId);
   if (!job || !job.steps) {
@@ -163,6 +171,7 @@ export const writeSetupJobStep = (
     ...job,
     steps,
     message: topLevelMessage ?? job.message,
+    ...(logTail !== undefined ? { logTail } : {}),
     updatedAt: new Date().toISOString(),
   };
 
@@ -171,4 +180,5 @@ export const writeSetupJobStep = (
 };
 
 export const getSetupCloneStepId = cloneStepId;
+export const getSetupWorkspaceStepId = workspaceStepId;
 export const getSetupInstallStepId = installStepId;

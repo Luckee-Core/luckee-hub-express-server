@@ -21,6 +21,11 @@ export { resolveLuckeeParent } from './resolve-luckee-parent';
 export { resolveProjectClonePaths } from './resolve-project-clone-paths';
 export type { ProjectClonePaths } from './resolve-project-clone-paths';
 export { writeLocalConfig } from './write-local-config';
+export {
+  resolveProjectWorkspaceFilePath,
+  writeProjectWorkspaceFile,
+} from './write-project-workspace-file';
+export type { WriteProjectWorkspaceFileResult } from './write-project-workspace-file';
 export { readRegistry } from './read-registry';
 export * from './port-probes';
 export {
