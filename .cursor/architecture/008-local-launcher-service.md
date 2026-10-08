@@ -38,4 +38,4 @@ Local Postgres setup for individual projects is handled by the **local-database*
 
 ### Handler pattern carve-out
 
-Hub-express has **no managed Supabase/Anthropic client**. ADR 002 step 1 (get managed client + null check) is **N/A** for hub handlers. Validate request params, then delegate to `processX()` inside try/catch.
+Hub-express has **no managed Supabase/Anthropic client**. This process does not initialize Stripe or a hub database client. Child apps still own their own Supabase or Postgres. ADR 002 step 1 (get managed client + null check) is **N/A** for hub handlers. Validate request params, then delegate to `processX()` inside try/catch.

@@ -6,15 +6,15 @@ Accepted
 
 ## Context
 
-Luckee Hub Run spawns interactive dev-server terminals inside the hub UI (right-side terminal dock), not macOS Terminal.app windows.
+Luckee Hub Run spawns interactive dev-server terminals inside the hub UI (bottom terminal dock), not macOS Terminal.app windows.
 
 ## Decision
 
 ### Stack
 
-- **`node-pty`** — spawn `zsh` with `npm run dev` per studio process
+- **`node-pty`** — spawn `zsh` with `npm run dev` per project process
 - **`ws`** — WebSocket on the same `http.Server` as Express (`127.0.0.1` only)
-- **In-memory session registry** — `Map<sessionId, { pty, studioId, role }>`; sessions die on hub-express restart
+- **In-memory session registry** — `Map<sessionId, { pty, projectId, role }>`; sessions die on hub-express restart
 
 ### Service layout
 
@@ -28,9 +28,13 @@ Status PTYs (`kind: 'status'`) are pruned on `/api/terminals/sync` when the port
 
 Closing a tab (or Close project) suppresses that role until the next Run. Sync and job polling must not reopen a session the user just killed. Job polls only return sessions that are still in the registry.
 
+When a PTY exits, `removeSession` drops the registry entry and does **not** suppress the role. The next sync omits that id. User-closed tabs still use `killSession(id, true)`.
+
 ### Web port walk
 
 Run starts Next.js on the first free port from **3000** (3000 taken → 3001 → …), skipping the API port. The API stays on its catalog port when that port is free or already belongs to the project. If the catalog port is taken by another process, the API uses the next free port and the project list shows that live port.
+
+List live probes share one API lookup for `hookStatus` and `apiPort`: preferred port from `/tmp/luckee-hub/{id}-ports.json`, then the registry port if different. Two health checks at most — not a 10-port scan.
 
 ### Run flow
 

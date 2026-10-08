@@ -9,6 +9,7 @@ BEFORE implementing ANY feature, you MUST:
 
 | Path | Purpose |
 |------|---------|
+| **`src/model/{entity}.ts`** | Table row and write-input types ([016](./architecture/016-domain-models.md)) |
 | **`src/data/{table}/`** | **CRUD only** — one folder per database table, one function per file |
 | **`src/services/{feature}/`** | Routers, handlers, `processX()` action/business logic |
 | **`src/services/middleware`**, **`health`**, **`server`** | Cross-cutting (shipped in starter) |
@@ -28,6 +29,7 @@ BEFORE implementing ANY feature, you MUST:
 ## Handlers
 
 - MUST follow: (1) get managed client, (2) validate request, (3) call `processX()`, (4) try/catch, (5) return response.
+- Hub handlers follow [008](./architecture/008-local-launcher-service.md): step 1 is N/A (no managed client; no Stripe). Validate, then `processX()`.
 - NEVER inline business logic or database queries in handlers.
 - MUST add JSDoc on router factories, handlers, and `processX()` functions.
 - MUST return `{ success: false, error }` with `500` on server errors; `200` / `400` per ADR 006.
@@ -36,13 +38,15 @@ BEFORE implementing ANY feature, you MUST:
 
 - MUST place **only** database CRUD in `src/data/{table}/` — **one folder per table**.
 - MUST keep **one CRUD function per file** with JSDoc.
+- MUST NOT put model types in `src/data/` — use `src/model/{entity}.ts`.
 - MUST NOT put business rules, HTTP, or orchestration in `src/data/`.
 - NEVER inline queries in handlers or `processX()` — call data functions instead.
 
 ## Managed clients & edge
 
-- MUST use `getManagedSupabaseClient()` / `getManagedAnthropicClient()` when added; NEVER `createClient()` in handlers, services, or data code.
+- MUST use `getManagedSupabaseClient()` / `getManagedAnthropicClient()` **when added**; NEVER `createClient()` in handlers, services, or data code.
 - MUST initialize managed clients once at startup; null-check before use → `500`.
+- Luckee hub-express does not add those clients and does not use Stripe.
 - Supabase edge functions MUST ONLY call Railway endpoints.
 
 ## Logging
@@ -58,3 +62,12 @@ Use emoji prefixes: `🚀` `✅` `❌` `📥` `📤` `🤖` `💾`
 - [005 – Edge functions Railway-only](./architecture/005-edge-functions-railway-only.md)
 - [006 – Logging & error response standards](./architecture/006-logging-and-error-response-standards.md)
 - [007 – Starter template layout](./architecture/007-starter-template-layout.md)
+- [008 – Local launcher service](./architecture/008-local-launcher-service.md)
+- [009 – Embedded terminal service](./architecture/009-embedded-terminal-service.md)
+- [010 – Projects catalog and rename](./architecture/010-projects-catalog-and-rename.md)
+- [011 – Local database service](./architecture/011-local-database-service.md)
+- [012 – Project setup into luckee/](./architecture/012-project-setup-into-luckee.md)
+- [013 – Supabase config service](./architecture/013-supabase-config-service.md)
+- [014 – Express env groups](./architecture/014-express-env-groups.md)
+- [015 – API runtime detection](./architecture/015-api-runtime-detection.md)
+- [016 – Domain models](./architecture/016-domain-models.md)

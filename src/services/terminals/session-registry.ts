@@ -79,6 +79,13 @@ export const listSessions = (): TerminalSessionInfo[] => {
 };
 
 /**
+ * Drop a registry entry when the PTY exits. Does not suppress the role.
+ */
+export const removeSession = (sessionId: string): void => {
+  sessions.delete(sessionId);
+};
+
+/**
  * Kill and remove a terminal session.
  * `suppressRole` keeps sync from opening a replacement tab for that role.
  */

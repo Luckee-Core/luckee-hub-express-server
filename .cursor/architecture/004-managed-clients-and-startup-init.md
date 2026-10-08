@@ -246,6 +246,10 @@ const response = await fetch('https://railway-service.example.com/api/ai/summari
 const supabase = createClient(url, key); // ❌ no direct CRUD/business logic in edge
 ```
 
+## Luckee hub
+
+This process does not initialize Stripe, Supabase, or Anthropic. Stripe is template-only. Hub handlers skip the managed-client step ([008](./008-local-launcher-service.md)). The rest of the Supabase/Anthropic startup pattern stays for table-backed servers created from the template.
+
 ## Related
 
 - See [Router Factory & Handler Pattern](./002-router-factory-and-handler-pattern.md)

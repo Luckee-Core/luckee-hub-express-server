@@ -51,13 +51,16 @@ src/data/users/
   get-user-by-id.ts
   create-user.ts
   index.ts
+src/model/user.ts
 ```
+
+Add **`src/model/{entity}.ts`** for the row and write-input types **before** the first data function ([016](./016-domain-models.md)). Never `src/data/{table}/types.ts`. Data barrels export CRUD functions only.
 
 `process-get-user.ts` in `src/services/users/` calls `getUserById` from `src/data/users/` — never the other way around.
 
 ### 4) Managed clients
 
-Add `src/services/managed/` per [004](./004-managed-clients-and-startup-init.md).
+Add `src/services/managed/` per [004](./004-managed-clients-and-startup-init.md). Luckee hub-express does not initialize those clients ([008](./008-local-launcher-service.md)).
 
 ### 5) What stays in `src/services/`
 

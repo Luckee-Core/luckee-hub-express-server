@@ -668,5 +668,23 @@
         "defaultWebPortStart": 3065
       }
     ]
+  },
+  {
+    "id": "my-local-postgres",
+    "name": "My Local Postgres",
+    "description": "Inventory of local Postgres databases and their sizes",
+    "repos": [
+      {
+        "repoType": "express",
+        "repoName": "my-local-postgres-express-server",
+        "defaultApiPort": 3066,
+        "healthPath": "/api/health"
+      },
+      {
+        "repoType": "nextjs",
+        "repoName": "my-local-postgres-web",
+        "defaultWebPortStart": 3067
+      }
+    ]
   }
 ]

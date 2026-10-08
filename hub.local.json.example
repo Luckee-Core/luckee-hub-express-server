@@ -182,6 +182,12 @@
       "webDir": "/Users/matthewruiz/github/extracttextfrompdf/extract-text-from-pdf-web",
       "expressDir": "/Users/matthewruiz/github/extracttextfrompdf/extract-text-from-pdf-express-server",
       "webPortStart": 3065
+    },
+    "my-local-postgres": {
+      "enabled": true,
+      "webDir": "/Users/matthewruiz/github/mylocalpostgres/my-local-postgres-web",
+      "expressDir": "/Users/matthewruiz/github/mylocalpostgres/my-local-postgres-express-server",
+      "webPortStart": 3067
     }
   }
 }

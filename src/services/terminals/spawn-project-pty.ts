@@ -4,7 +4,7 @@ import { ensureSpawnHelperExecutable } from '../../utils/terminals/ensure-spawn-
 import { buildNvmShellPrefix, shellEscape } from '../../utils/projects/build-nvm-shell-prefix';
 import { detectApiRuntime } from '../../utils/projects/detect-api-runtime';
 import type { MergedProjectConfig } from '../projects/types';
-import { registerSession } from './session-registry';
+import { registerSession, removeSession } from './session-registry';
 import type { TerminalRole, TerminalSessionInfo, TerminalSessionKind } from './types';
 
 type PtyEnvInput = {
@@ -206,6 +206,10 @@ export const spawnProjectPty = (input: SpawnProjectPtyInput): TerminalSessionInf
   };
 
   registerSession(record);
+
+  ptyProcess.onExit(() => {
+    removeSession(sessionId);
+  });
 
   return {
     sessionId,

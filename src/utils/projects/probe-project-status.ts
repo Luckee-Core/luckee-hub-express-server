@@ -6,7 +6,7 @@ import type {
   ProjectRegistryEntry,
   ProjectLocalEntry,
 } from '../../services/projects/types';
-import { findExpressApiPort } from './resolve-project-ports';
+import { resolveLiveApiPort } from './resolve-project-ports';
 import { findOwnedNextWebUrl } from './wait-for-project-ready';
 import { apiDepsInstalled, detectApiRuntime } from './detect-api-runtime';
 import {
@@ -27,6 +27,7 @@ type ProbeProjectStatusOptions = {
 type ProbeProjectStatusResult = {
   hookStatus: HookStatus;
   webUrl?: string;
+  apiPort?: number;
   hookChecks: ProjectHookCheck[];
 };
 
@@ -115,13 +116,10 @@ export const probeProjectStatus = (
 
   const registryApiPort = expressRepo?.defaultApiPort ?? 0;
   const healthPath = expressRepo?.healthPath ?? '/api/health';
-  // List live probes only check the preferred port (scanMax=1). Scanning 10
-  // ports × N projects blocks the Express event loop for ~10s and starves
-  // concurrent requests (supabase / express-env probes).
-  const apiRunning =
-    !hasExpress ||
-    findExpressApiPort(registry.id, registryApiPort, healthPath, 1, local.expressDir) !==
-      undefined;
+  const resolvedApiPort = hasExpress
+    ? resolveLiveApiPort(registry.id, registryApiPort, healthPath, local.expressDir)
+    : undefined;
+  const apiRunning = !hasExpress || resolvedApiPort !== undefined;
 
   const webUrl = hasWeb ? findOwnedNextWebUrl(local.webDir) : undefined;
   const webRunning = hasWeb && !!webUrl;
@@ -135,16 +133,16 @@ export const probeProjectStatus = (
 
   if (!hasWeb) {
     if (apiRunning) {
-      return { hookStatus: 'ready', hookChecks };
+      return { hookStatus: 'ready', apiPort: resolvedApiPort, hookChecks };
     }
     return { hookStatus: 'configured', hookChecks };
   }
 
   if (apiRunning && webRunning) {
-    return { hookStatus: 'ready', webUrl, hookChecks };
+    return { hookStatus: 'ready', webUrl, apiPort: resolvedApiPort, hookChecks };
   }
   if (apiRunning) {
-    return { hookStatus: 'api_running', webUrl, hookChecks };
+    return { hookStatus: 'api_running', webUrl, apiPort: resolvedApiPort, hookChecks };
   }
   if (webRunning) {
     return { hookStatus: 'web_running', webUrl, hookChecks };

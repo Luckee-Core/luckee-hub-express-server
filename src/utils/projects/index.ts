@@ -38,6 +38,7 @@ export {
   findExpressApiPort,
   getPreferredApiPort,
   readResolvedProjectPorts,
+  resolveLiveApiPort,
   resolveProjectPortsForRun,
   withResolvedApiPort,
   writeResolvedProjectPorts,

@@ -72,6 +72,30 @@ export const getPreferredApiPort = (
 };
 
 /**
+ * Live-list API port: preferred (ports file or registry), then registry if different.
+ * Two health checks at most — do not scan a range (stalls the Express event loop).
+ */
+export const resolveLiveApiPort = (
+  projectId: string,
+  registryApiPort: number,
+  healthPath: string,
+  ownerDir?: string,
+): number | undefined => {
+  const preferred = getPreferredApiPort(projectId, registryApiPort);
+  if (preferred > 0 && isExpressHealthOk(preferred, healthPath, ownerDir)) {
+    return preferred;
+  }
+  if (
+    registryApiPort > 0 &&
+    registryApiPort !== preferred &&
+    isExpressHealthOk(registryApiPort, healthPath, ownerDir)
+  ) {
+    return registryApiPort;
+  }
+  return undefined;
+};
+
+/**
  * Scan API ports for a healthy Express instance (resolved preferred + scan range).
  */
 export const findExpressApiPort = (
