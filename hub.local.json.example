@@ -188,6 +188,13 @@
       "webDir": "/Users/matthewruiz/github/mylocalpostgres/my-local-postgres-web",
       "expressDir": "/Users/matthewruiz/github/mylocalpostgres/my-local-postgres-express-server",
       "webPortStart": 3067
+    },
+    "trade-stocks": {
+      "enabled": true,
+      "webDir": "/Users/matthewruiz/github/tradestocksusingai/trade-stocks-using-ai-web",
+      "expressDir": "/Users/matthewruiz/github/tradestocksusingai/trade-stocks-using-ai-express-server",
+      "webPortStart": 3069,
+      "_comment": "Hub Run still starts product web on 3069. Operator console is trade-stocks-using-ai-console on 3070 (npm run dev in that repo)."
     }
   }
 }

@@ -686,5 +686,33 @@
         "defaultWebPortStart": 3067
       }
     ]
+  },
+  {
+    "id": "trade-stocks",
+    "name": "Trade Stocks",
+    "description": "Search a US ticker, open the stock, and read the company name and latest price",
+    "repos": [
+      {
+        "repoType": "express",
+        "repoName": "trade-stocks-using-ai-express-server",
+        "defaultApiPort": 3068,
+        "healthPath": "/api/health"
+      },
+      {
+        "repoType": "nextjs",
+        "repoName": "trade-stocks-using-ai-web",
+        "defaultWebPortStart": 3069
+      },
+      {
+        "repoType": "nextjs",
+        "repoName": "trade-stocks-using-ai-console",
+        "defaultWebPortStart": 3070
+      }
+    ],
+    "supabase": {
+      "bootstrapSql": "supabase/000_full_schema_bootstrap.sql",
+      "expectedTables": ["users", "stocks", "stock_quotes"],
+      "envKeys": ["SUPABASE_URL", "SUPABASE_SERVICE_ROLE_KEY"]
+    }
   }
 ]
