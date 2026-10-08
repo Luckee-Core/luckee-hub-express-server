@@ -2,6 +2,7 @@ import * as pty from 'node-pty';
 
 import { ensureSpawnHelperExecutable } from '../../utils/terminals/ensure-spawn-helper';
 import { buildNvmShellPrefix, shellEscape } from '../../utils/projects/build-nvm-shell-prefix';
+import { detectApiRuntime } from '../../utils/projects/detect-api-runtime';
 import type { MergedProjectConfig } from '../projects/types';
 import { registerSession } from './session-registry';
 import type { TerminalRole, TerminalSessionInfo, TerminalSessionKind } from './types';
@@ -27,15 +28,28 @@ const buildPtyEnv = (input: PtyEnvInput): Record<string, string> => {
 
 const buildNvmPrefix = buildNvmShellPrefix;
 
+const API_HEALTH_READY_PATTERN =
+  '"status"[[:space:]]*:[[:space:]]*"ok"|"success"[[:space:]]*:[[:space:]]*true';
+
 /**
- * Build shell command to start Express dev server in a PTY.
+ * Build shell command to start the API dev server in a PTY.
+ * Node runs npm. Python activates .venv and runs main.py.
  */
 export const buildExpressPtyCommand = (merged: MergedProjectConfig): string => {
   const dir = shellEscape(merged.expressDir ?? '');
+  const runtime = detectApiRuntime(merged.expressDir);
+  if (runtime === 'python') {
+    return (
+      `cd '${dir}' && source .venv/bin/activate && export PORT=${merged.apiPort} && ` +
+      `echo '>>> ${merged.id} Python (:${merged.apiPort})' && python main.py`
+    );
+  }
+
   const nvm = buildNvmPrefix(merged.nvmSh);
   const webOriginExport =
     merged.webPortStart > 0
-      ? `export WEB_APP_ORIGIN='http://127.0.0.1:${merged.webPortStart}' && `
+      ? `export WEB_APP_ORIGIN='http://127.0.0.1:${merged.webPortStart}' && ` +
+        `export WEB_ORIGIN='http://127.0.0.1:${merged.webPortStart}' && `
       : '';
   return (
     `cd '${dir}' && ${nvm} && export PORT=${merged.apiPort} && ${webOriginExport}` +
@@ -46,6 +60,22 @@ export const buildExpressPtyCommand = (merged: MergedProjectConfig): string => {
 /**
  * Build shell command to wait for Express health then start Next.js.
  */
+/**
+ * Shell that picks the first free TCP port from 3000, skipping the API port.
+ * Next is then started on that port so a busy 3000 walks to 3001, 3002, and so on.
+ */
+const buildNextDevPortWalk = (apiPort: number): string => {
+  const skipApi = apiPort > 0 ? `[ "$port" -ne ${apiPort} ] && ` : '';
+  return (
+    `unset PORT && port=3000 && ` +
+    `while [ "$port" -le 3100 ]; do ` +
+    `if ${skipApi}! lsof -nP -iTCP:"$port" -sTCP:LISTEN -t >/dev/null 2>&1; then break; fi; ` +
+    `port=$((port + 1)); ` +
+    `done && ` +
+    `if [ "$port" -gt 3100 ]; then echo '>>> No free Next.js port from 3000 through 3100'; exit 1; fi && `
+  );
+};
+
 const buildExpressApiEnvExports = (apiPort: number): string => {
   if (apiPort <= 0) {
     return '';
@@ -56,6 +86,7 @@ const buildExpressApiEnvExports = (apiPort: number): string => {
     `export NEXT_PUBLIC_API_URL='${apiUrl}' && ` +
     `export EXPRESS_API_URL='${apiUrl}' && ` +
     `export NEXT_PUBLIC_EXPRESS_URL='${apiUrl}' && ` +
+    `export NEXT_PUBLIC_CMS_URL='${apiUrl}' && ` +
     `export COMMIT_SUMMARIES_EXPRESS_URL='${apiUrl}' && ` +
     `export CODE_CONTROL_API_URL='${apiUrl}' && ` +
     `export NEXT_PUBLIC_CODE_CONTROL_API_URL='${apiUrl}' && ` +
@@ -68,11 +99,13 @@ export const buildWebPtyCommand = (merged: MergedProjectConfig): string => {
   const nvm = buildNvmPrefix(merged.nvmSh);
   const healthUrl = `http://127.0.0.1:${merged.apiPort}${merged.healthPath}`;
   const apiEnv = buildExpressApiEnvExports(merged.apiPort);
+  const apiLabel = detectApiRuntime(merged.expressDir) === 'python' ? 'Python' : 'Express';
   return (
     `cd '${dir}' && ${nvm} && ${apiEnv}` +
-    `echo '>>> ${merged.id} Web — waiting for Express...' && ` +
-    `until curl -fsS '${healthUrl}' 2>/dev/null | grep -qE '"status"[[:space:]]*:[[:space:]]*"ok"'; do sleep 2; done && ` +
-    `echo '>>> Express ready. Starting Next.js...' && npm run dev -- --port ${merged.webPortStart}`
+    `echo '>>> ${merged.id} Web — waiting for ${apiLabel}...' && ` +
+    `until curl -fsS '${healthUrl}' 2>/dev/null | grep -qE '${API_HEALTH_READY_PATTERN}'; do sleep 2; done && ` +
+    `echo '>>> ${apiLabel} ready. Starting Next.js...' && ${buildNextDevPortWalk(merged.apiPort)}` +
+    `echo ">>> ${merged.id} Web (Next.js :$port)" && npm run dev -- --port "$port"`
   );
 };
 
@@ -102,13 +135,13 @@ export const buildRunningStatusPtyCommand = (
 /**
  * Build shell command to start Next.js only (Express already healthy).
  */
-export const buildWebOnlyPtyCommand = (merged: MergedProjectConfig, webPort: number): string => {
+export const buildWebOnlyPtyCommand = (merged: MergedProjectConfig): string => {
   const dir = shellEscape(merged.webDir ?? '');
   const nvm = buildNvmPrefix(merged.nvmSh);
   const apiEnv = buildExpressApiEnvExports(merged.apiPort);
   return (
-    `cd '${dir}' && ${nvm} && export PORT=${webPort} && ${apiEnv}` +
-    `echo '>>> ${merged.id} Web (Next.js :${webPort})' && npm run dev -- --port ${webPort}`
+    `cd '${dir}' && ${nvm} && ${apiEnv}${buildNextDevPortWalk(merged.apiPort)}` +
+    `echo ">>> ${merged.id} Web (Next.js :$port)" && npm run dev -- --port "$port"`
   );
 };
 

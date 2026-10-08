@@ -3,6 +3,7 @@ import path from 'path';
 import {
   buildProjectRepos,
   DEFAULT_GITHUB_ORG,
+  findExpressApiPort,
   getExpressRegistryRepo,
   probeProjectStatus,
   readLocalConfig,
@@ -38,6 +39,12 @@ export const processListProjects = (
     const local = localConfig.projects?.[entry.id];
     const { hookStatus, webUrl } = probeProjectStatus(entry, local, { liveProbe });
     const expressRepo = getExpressRegistryRepo(entry);
+    const registryApiPort = expressRepo?.defaultApiPort ?? 0;
+    const healthPath = expressRepo?.healthPath ?? '/api/health';
+    const runningApiPort =
+      liveProbe && local?.expressDir
+        ? findExpressApiPort(entry.id, registryApiPort, healthPath, 8, local.expressDir)
+        : undefined;
 
     return {
       id: entry.id,
@@ -45,7 +52,7 @@ export const processListProjects = (
       description: entry.description,
       hookStatus,
       enabled: local?.enabled !== false,
-      apiPort: expressRepo?.defaultApiPort ?? 0,
+      apiPort: runningApiPort ?? registryApiPort,
       webUrl,
       paths: local ? { workspaceFile: resolveProjectWorkspaceFile(local) } : undefined,
       localDatabaseSupported: !!entry.localDatabase,

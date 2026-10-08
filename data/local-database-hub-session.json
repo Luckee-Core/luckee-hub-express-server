@@ -7,7 +7,6 @@
     }
   ],
   "activeConsumers": [
-    "design-prompter",
     "speech-therapy-tracker"
   ]
 }

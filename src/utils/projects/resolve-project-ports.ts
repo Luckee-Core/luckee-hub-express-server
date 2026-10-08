@@ -2,10 +2,14 @@ import fs from 'fs';
 import path from 'path';
 
 import type { MergedProjectConfig } from '../../services/projects/types';
-import { isExpressHealthOk } from './port-probes';
+import { isExpressHealthOk, portListening } from './port-probes';
 import {
+  findFirstFreePort,
+  findOwnedNextPort,
+  isExpressHealthy,
   resolveApiPortForRun,
-  resolveWebPortForRun,
+  WEB_PORT_WALK_END,
+  WEB_PORT_WALK_START,
 } from './wait-for-project-ready';
 
 const HUB_TMP = '/tmp/luckee-hub';
@@ -90,18 +94,40 @@ export const findExpressApiPort = (
 };
 
 /**
- * Resolve ports before hub Run: API (with collision avoidance) and web start preference.
+ * Resolve ports before hub Run.
+ * API stays on the catalog port when it is free or already this project's server.
+ * Web takes the first free port from 3000 (3000 taken → 3001 → …), never the API port.
  */
 export const resolveProjectPortsForRun = (
   merged: MergedProjectConfig,
 ): { apiPort: number; webPortStart: number; apiUrl: string } => {
-  const apiPort = resolveApiPortForRun(
-    merged.apiPort,
-    merged.healthPath,
-    10,
-    merged.expressDir,
-  );
-  const webPortStart = resolveWebPortForRun(merged.webPortStart, 10, merged.webDir);
+  const walkLength = WEB_PORT_WALK_END - WEB_PORT_WALK_START + 1;
+  const existingWeb = merged.webDir ? findOwnedNextPort(merged.webDir) : undefined;
+
+  const catalogHeldByThisProject =
+    merged.apiPort > 0 &&
+    isExpressHealthy(merged.apiPort, merged.healthPath, merged.expressDir);
+  const catalogFree =
+    merged.apiPort > 0 &&
+    !portListening(merged.apiPort) &&
+    existingWeb !== merged.apiPort;
+
+  let apiPort = catalogHeldByThisProject || catalogFree ? merged.apiPort : 0;
+
+  const webPortStart =
+    existingWeb ??
+    findFirstFreePort(WEB_PORT_WALK_START, walkLength, apiPort > 0 ? [apiPort] : []);
+
+  if (apiPort <= 0) {
+    const start = merged.apiPort > 0 ? merged.apiPort : 3010;
+    apiPort = resolveApiPortForRun(
+      start,
+      merged.healthPath,
+      20,
+      merged.expressDir,
+      [webPortStart],
+    );
+  }
 
   return {
     apiPort,

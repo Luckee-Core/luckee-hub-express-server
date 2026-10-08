@@ -5,10 +5,10 @@ import {
   projectHasNextjsRepo,
 } from '../../utils/projects';
 import {
-  findNextWebUrl,
+  findOwnedNextWebUrl,
   isExpressHealthy,
 } from '../../utils/projects/wait-for-project-ready';
-import { hasProjectRole } from './session-registry';
+import { hasProjectRole, isRoleSuppressed } from './session-registry';
 import { buildRunningStatusPtyCommand, spawnProjectPty } from './spawn-project-pty';
 import type { TerminalSessionInfo } from './types';
 
@@ -40,7 +40,11 @@ export const ensureProjectTerminalSessions = (
       merged.healthPath,
       merged.expressDir,
     );
-    if (expressHealthy && !hasProjectRole(input.entry.id, 'express')) {
+    if (
+      expressHealthy &&
+      !hasProjectRole(input.entry.id, 'express') &&
+      !isRoleSuppressed(input.entry.id, 'express')
+    ) {
       spawned.push(
         spawnProjectPty({
           projectId: input.entry.id,
@@ -56,8 +60,8 @@ export const ensureProjectTerminalSessions = (
   }
 
   if (projectHasNextjsRepo(input.entry) && merged.webDir) {
-    const webUrl = findNextWebUrl(merged.webPortStart, 1, merged.webDir);
-    if (webUrl && !hasProjectRole(input.entry.id, 'web')) {
+    const webUrl = findOwnedNextWebUrl(merged.webDir);
+    if (webUrl && !hasProjectRole(input.entry.id, 'web') && !isRoleSuppressed(input.entry.id, 'web')) {
       const port = Number(new URL(webUrl).port) || merged.webPortStart;
       spawned.push(
         spawnProjectPty({

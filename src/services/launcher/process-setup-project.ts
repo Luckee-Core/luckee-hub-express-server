@@ -22,7 +22,7 @@ import {
   cloneGitRepo,
   DEFAULT_GITHUB_ORG,
   getNextjsRegistryRepo,
-  npmInstallRepo,
+  installRepoDeps,
   readLocalConfig,
   readRegistry,
   resolveLuckeeParent,
@@ -250,10 +250,10 @@ const runSetupJob = async (
         throw new Error(`Unsupported repo type for ${repo.repoName}`);
       }
 
-      debugLog.write(`🚀 [launcher.processSetupProject] npm install in ${destDir}`);
+      debugLog.write(`🚀 [launcher.processSetupProject] install dependencies in ${destDir}`);
       publishStep(stepId, { status: 'running' }, `Installing dependencies in ${repo.repoName}...`);
 
-      const installResult = await npmInstallRepo(destDir, nvmSh, (line) => publishOutput(stepId, line));
+      const installResult = await installRepoDeps(destDir, nvmSh, (line) => publishOutput(stepId, line));
       debugLog.write(
         `✅ [launcher.processSetupProject] ${installResult === 'installed' ? 'Installed' : 'Skipped install'} ${repo.repoName}`,
       );

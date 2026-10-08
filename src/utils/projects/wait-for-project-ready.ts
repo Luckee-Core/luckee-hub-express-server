@@ -4,8 +4,13 @@ import {
   findWebUrlOnPorts,
   isExpressHealthOk,
   isNextDevServerOnPort,
+  listListeningTcpPorts,
   portListening,
 } from './port-probes';
+
+/** Next.js dev starts here and walks forward when the port is taken. */
+export const WEB_PORT_WALK_START = 3000;
+export const WEB_PORT_WALK_END = 3100;
 
 const sleep = (ms: number): Promise<void> =>
   new Promise((resolve) => setTimeout(resolve, ms));
@@ -47,39 +52,59 @@ export const waitForExpressHealth = async (
 };
 
 /**
+ * First port in the scan range that is not listening and not in `avoid`.
+ */
+export const findFirstFreePort = (
+  start: number,
+  scanMax = 101,
+  avoid: number[] = [],
+): number => {
+  const blocked = new Set(avoid);
+  for (let port = start; port < start + scanMax; port += 1) {
+    if (blocked.has(port)) {
+      continue;
+    }
+    if (!portListening(port)) {
+      return port;
+    }
+  }
+  return start + scanMax;
+};
+
+/**
  * First port in scan range that is not listening (for new Express dev server).
  */
 export const findAvailableApiPort = (
   apiPortStart: number,
   scanMax = 10,
-): number => {
-  for (let port = apiPortStart; port < apiPortStart + scanMax; port += 1) {
-    if (!portListening(port)) {
-      return port;
-    }
-  }
-  return apiPortStart + scanMax;
-};
+  avoid: number[] = [],
+): number => findFirstFreePort(apiPortStart, scanMax, avoid);
 
 /**
- * Resolve API port for Run: reuse healthy Express on preferred, else first free slot in scan range.
+ * Resolve API port for Run: reuse healthy Express on preferred, else first free slot.
+ * `avoid` keeps the API off a port the web walk is about to use.
  */
 export const resolveApiPortForRun = (
   preferredApiPort: number,
   healthPath: string,
   scanMax = 10,
   ownerDir?: string,
+  avoid: number[] = [],
 ): number => {
+  const blocked = new Set(avoid);
   if (preferredApiPort <= 0) {
-    return findAvailableApiPort(3010, scanMax);
+    return findAvailableApiPort(3010, scanMax, avoid);
   }
-  if (isExpressHealthy(preferredApiPort, healthPath, ownerDir)) {
+  if (
+    !blocked.has(preferredApiPort) &&
+    isExpressHealthy(preferredApiPort, healthPath, ownerDir)
+  ) {
     return preferredApiPort;
   }
-  if (!portListening(preferredApiPort)) {
+  if (!blocked.has(preferredApiPort) && !portListening(preferredApiPort)) {
     return preferredApiPort;
   }
-  return findAvailableApiPort(preferredApiPort, scanMax);
+  return findAvailableApiPort(preferredApiPort, scanMax, avoid);
 };
 
 /**
@@ -129,6 +154,33 @@ export const findNextWebUrl = (
 ): string | undefined => findWebUrlOnPorts(webPort, scanMax, ownerDir);
 
 /**
+ * Next.js for this repo anywhere in the 3000–3100 walk (cwd must match `ownerDir`).
+ */
+export const findOwnedNextWebUrl = (ownerDir?: string): string | undefined => {
+  const ports = listListeningTcpPorts()
+    .filter((port) => port >= WEB_PORT_WALK_START && port <= WEB_PORT_WALK_END)
+    .sort((a, b) => a - b);
+  for (const port of ports) {
+    if (isNextDevServerOnPort(port, ownerDir)) {
+      return `http://localhost:${port}`;
+    }
+  }
+  return undefined;
+};
+
+/**
+ * Port of this repo's Next.js dev server, if one is already listening.
+ */
+export const findOwnedNextPort = (ownerDir?: string): number | undefined => {
+  const url = findOwnedNextWebUrl(ownerDir);
+  if (!url) {
+    return undefined;
+  }
+  const port = Number(new URL(url).port);
+  return port > 0 ? port : undefined;
+};
+
+/**
  * Poll until Next.js responds on the assigned web port (up to maxSeconds).
  */
 export const waitForNextWebUrl = async (
@@ -145,6 +197,26 @@ export const waitForNextWebUrl = async (
     const ok = curlQuiet(`-o /dev/null "${url}"`);
     if (ok !== null) {
       return url;
+    }
+    await sleep(1000);
+  }
+  return undefined;
+};
+
+/**
+ * Poll until this repo's Next.js is listening somewhere in the 3000–3100 walk.
+ */
+export const waitForOwnedNextWebUrl = async (
+  maxSeconds = 120,
+  ownerDir?: string,
+): Promise<string | undefined> => {
+  for (let i = 0; i < maxSeconds; i += 1) {
+    const url = findOwnedNextWebUrl(ownerDir);
+    if (url) {
+      const ok = curlQuiet(`-o /dev/null "${url}"`);
+      if (ok !== null) {
+        return url;
+      }
     }
     await sleep(1000);
   }

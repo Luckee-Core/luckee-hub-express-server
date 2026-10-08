@@ -104,6 +104,12 @@
       "expressDir": "/Users/matthewruiz/github/qr-code-generator/qr-code-generator-open-source-express-server",
       "workspaceFile": "/Users/matthewruiz/github/qr-code-generator/qr-code-generator-open-source-express-server.code-workspace"
     },
+    "reddit-scraper": {
+      "enabled": true,
+      "webDir": "/Users/matthewruiz/github/reddit-studio/free-reddit-scraper-web",
+      "expressDir": "/Users/matthewruiz/github/reddit-studio/reddit-scraper-express-server-cms",
+      "webPortStart": 3063
+    },
     "tiktok-studio": {
       "enabled": true,
       "webDir": "/Users/matthewruiz/github/tiktok-studio/tiktok-studio",
@@ -164,6 +170,18 @@
       "webDir": "/Users/matthewruiz/github/my-health/speech-therapy-tracker-web",
       "expressDir": "/Users/matthewruiz/github/my-health/speech-therapy-tracker-express-server",
       "webPortStart": 3059
+    },
+    "upwork-manager": {
+      "enabled": true,
+      "webDir": "/Users/matthewruiz/github/upwork-manager/upwork-manager-web",
+      "expressDir": "/Users/matthewruiz/github/upwork-manager/upwork-manager-python-server",
+      "webPortStart": 3061
+    },
+    "extract-text": {
+      "enabled": true,
+      "webDir": "/Users/matthewruiz/github/extracttextfrompdf/extract-text-from-pdf-web",
+      "expressDir": "/Users/matthewruiz/github/extracttextfrompdf/extract-text-from-pdf-express-server",
+      "webPortStart": 3065
     }
   }
 }

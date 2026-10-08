@@ -30,8 +30,7 @@ export const processEnsureSupabaseConfigForRun = (projectId: string): EnsureResu
     projectId,
   });
   return {
-    error:
-      'Supabase env is incomplete — add URL, service role key, and database password on the project detail page',
+    error: probe.message ?? 'Supabase env is incomplete',
     status: 400,
   };
 };

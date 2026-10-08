@@ -15,6 +15,28 @@ export const portListening = (port: number): boolean => {
   }
 };
 
+/**
+ * TCP ports that currently have a listener. One `lsof` for the whole table.
+ */
+export const listListeningTcpPorts = (): number[] => {
+  try {
+    const raw = execSync('lsof -nP -iTCP -sTCP:LISTEN', {
+      encoding: 'utf8',
+      timeout: 2000,
+    });
+    const ports = new Set<number>();
+    for (const line of raw.split('\n')) {
+      const match = line.match(/:(\d+)\s+\(LISTEN\)/);
+      if (match) {
+        ports.add(Number(match[1]));
+      }
+    }
+    return [...ports];
+  } catch {
+    return [];
+  }
+};
+
 const getPidCwd = (pid: string): string | null => {
   try {
     const cwdOut = execSync(`lsof -a -p ${pid} -d cwd -Fn`, {

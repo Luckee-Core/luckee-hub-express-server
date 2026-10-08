@@ -1,6 +1,7 @@
 import fs from 'fs';
 import path from 'path';
 
+import { getSession } from '../terminals/session-registry';
 import type { LauncherJob } from './types';
 
 const HUB_TMP = '/tmp/luckee-hub/jobs';
@@ -15,5 +16,8 @@ export const processGetJob = (jobId: string): LauncherJob | null => {
   }
   const raw = fs.readFileSync(filePath, 'utf8');
   const parsed = JSON.parse(raw) as LauncherJob;
+  if (parsed.sessions) {
+    parsed.sessions = parsed.sessions.filter((session) => getSession(session.sessionId));
+  }
   return parsed;
 };

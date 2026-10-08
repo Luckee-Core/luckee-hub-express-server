@@ -26,6 +26,12 @@ A listener on a catalog port is **not** enough to attach a status tab or treat t
 
 Status PTYs (`kind: 'status'`) are pruned on `/api/terminals/sync` when the port is no longer owned by that project.
 
+Closing a tab (or Close project) suppresses that role until the next Run. Sync and job polling must not reopen a session the user just killed. Job polls only return sessions that are still in the registry.
+
+### Web port walk
+
+Run starts Next.js on the first free port from **3000** (3000 taken → 3001 → …), skipping the API port. The API stays on its catalog port when that port is free or already belongs to the project. If the catalog port is taken by another process, the API uses the next free port and the project list shows that live port.
+
 ### Run flow
 
 All **Run** jobs use embedded PTYs via `process-run-embedded.ts` (invoked from `src/services/launcher/process-run-studio.ts`).

@@ -2,6 +2,40 @@ import type { TerminalRole, TerminalSessionRecord, TerminalSessionInfo } from '.
 
 const sessions = new Map<string, TerminalSessionRecord>();
 
+/** Roles the user closed. Sync will not open a replacement tab until the next Run. */
+const suppressedRoles = new Set<string>();
+
+const roleKey = (projectId: string, role: TerminalRole): string => `${projectId}:${role}`;
+
+/**
+ * Remember that the user closed this project role so sync does not reopen the tab.
+ */
+export const suppressRole = (projectId: string, role: TerminalRole): void => {
+  suppressedRoles.add(roleKey(projectId, role));
+};
+
+/**
+ * Remember that the user closed every terminal for this project.
+ */
+export const suppressProjectRoles = (projectId: string): void => {
+  suppressRole(projectId, 'express');
+  suppressRole(projectId, 'web');
+};
+
+/**
+ * Allow Run to attach terminals again.
+ */
+export const clearSuppressedRoles = (projectId: string): void => {
+  suppressedRoles.delete(roleKey(projectId, 'express'));
+  suppressedRoles.delete(roleKey(projectId, 'web'));
+};
+
+/**
+ * True when the user closed this role and Run has not started again.
+ */
+export const isRoleSuppressed = (projectId: string, role: TerminalRole): boolean =>
+  suppressedRoles.has(roleKey(projectId, role));
+
 /**
  * Register a terminal session in the in-memory registry.
  */
@@ -46,11 +80,15 @@ export const listSessions = (): TerminalSessionInfo[] => {
 
 /**
  * Kill and remove a terminal session.
+ * `suppressRole` keeps sync from opening a replacement tab for that role.
  */
-export const killSession = (sessionId: string): boolean => {
+export const killSession = (sessionId: string, suppress = false): boolean => {
   const record = sessions.get(sessionId);
   if (!record) {
     return false;
+  }
+  if (suppress) {
+    suppressRole(record.projectId, record.role);
   }
   try {
     record.pty.kill();
@@ -65,6 +103,7 @@ export const killSession = (sessionId: string): boolean => {
  * Kill all sessions for a project.
  */
 export const killProjectSessions = (projectId: string): void => {
+  suppressProjectRoles(projectId);
   for (const [sessionId, record] of sessions) {
     if (record.projectId === projectId) {
       killSession(sessionId);

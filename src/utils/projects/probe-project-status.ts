@@ -6,11 +6,11 @@ import type {
   ProjectRegistryEntry,
   ProjectLocalEntry,
 } from '../../services/projects/types';
-import { findWebUrlOnPorts } from './port-probes';
 import { findExpressApiPort } from './resolve-project-ports';
+import { findOwnedNextWebUrl } from './wait-for-project-ready';
+import { apiDepsInstalled, detectApiRuntime } from './detect-api-runtime';
 import {
   getExpressRegistryRepo,
-  getNextjsRegistryRepo,
   projectHasExpressRepo,
   projectHasNextjsRepo,
 } from './get-registry-repo';
@@ -42,7 +42,6 @@ export const probeProjectStatus = (
   const hasWeb = projectHasNextjsRepo(registry);
   const hasExpress = projectHasExpressRepo(registry);
   const expressRepo = getExpressRegistryRepo(registry);
-  const nextjsRepo = getNextjsRegistryRepo(registry);
 
   const hookChecks: ProjectHookCheck[] = [
     {
@@ -88,16 +87,17 @@ export const probeProjectStatus = (
       ok: hasNodeModules(local.webDir),
     });
   }
+  const apiRuntime = detectApiRuntime(local.expressDir);
   if (hasExpress) {
     hookChecks.push({
       id: 'express-deps',
-      label: 'Express installed',
-      ok: hasNodeModules(local.expressDir),
+      label: apiRuntime === 'python' ? 'Python installed' : 'Express installed',
+      ok: apiDepsInstalled(local.expressDir),
     });
   }
 
   const webConfigured = !hasWeb || hasNodeModules(local.webDir);
-  const expressConfigured = !hasExpress || hasNodeModules(local.expressDir);
+  const expressConfigured = !hasExpress || apiDepsInstalled(local.expressDir);
 
   if (!webConfigured || !expressConfigured) {
     return { hookStatus: 'cloned', hookChecks };
@@ -123,9 +123,7 @@ export const probeProjectStatus = (
     findExpressApiPort(registry.id, registryApiPort, healthPath, 1, local.expressDir) !==
       undefined;
 
-  const webPortStart = local.webPortStart ?? nextjsRepo?.defaultWebPortStart ?? 3000;
-  const resolvedPorts = hasWeb ? findWebUrlOnPorts(webPortStart, 1, local.webDir) : undefined;
-  const webUrl = resolvedPorts;
+  const webUrl = hasWeb ? findOwnedNextWebUrl(local.webDir) : undefined;
   const webRunning = hasWeb && !!webUrl;
 
   if (hasExpress) {

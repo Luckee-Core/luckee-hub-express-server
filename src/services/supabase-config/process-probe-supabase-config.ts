@@ -35,9 +35,12 @@ export const processProbeSupabaseConfig = (projectId: string): SupabaseProbe => 
   const expectedTables = resolved.supabase.expectedTables;
 
   const hasSupabaseUrl = envKeyPresent(expressDir, 'SUPABASE_URL');
-  const hasServiceKey = envKeyPresent(expressDir, 'SUPABASE_SERVICE_KEY');
+  const hasServiceKey =
+    envKeyPresent(expressDir, 'SUPABASE_SERVICE_KEY') ||
+    envKeyPresent(expressDir, 'SUPABASE_SERVICE_ROLE_KEY');
   const hasDatabaseUrl = envKeyPresent(expressDir, 'DATABASE_URL');
-  const configured = hasSupabaseUrl && hasServiceKey && hasDatabaseUrl;
+  const missingKeys = resolved.supabase.envKeys.filter((key) => !envKeyPresent(expressDir, key));
+  const configured = missingKeys.length === 0;
 
   let schemaReady = false;
   if (hasDatabaseUrl && expectedTables.length > 0) {
@@ -67,6 +70,6 @@ export const processProbeSupabaseConfig = (projectId: string): SupabaseProbe => 
       ? schemaReady
         ? 'Supabase env keys and expected tables are present'
         : 'Supabase env keys are present — seed the table schema if needed'
-      : 'Add Supabase URL, service role key, and database password on this page',
+      : `Missing ${missingKeys.join(', ')} in Express .env`,
   };
 };

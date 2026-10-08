@@ -5,6 +5,7 @@ import type {
   ProjectLocalEntry,
   ProjectRegistryEntry,
 } from '../../services/projects/types';
+import { apiDepsInstalled, detectApiRuntime } from './detect-api-runtime';
 import { toGithubRepoUrl } from './to-github-repo-url';
 
 const dirExists = (p?: string): boolean => !!(p && fs.existsSync(p));
@@ -34,7 +35,12 @@ export const buildProjectRepos = (
       repoUrl: toGithubRepoUrl(githubOrg, repo.repoName),
       localDir,
       dirExists: localDir ? dirExists(localDir) : undefined,
-      depsInstalled: localDir ? hasNodeModules(localDir) : undefined,
+      depsInstalled: localDir
+        ? repo.repoType === 'express'
+          ? apiDepsInstalled(localDir)
+          : hasNodeModules(localDir)
+        : undefined,
+      apiRuntime: repo.repoType === 'express' ? detectApiRuntime(localDir) : undefined,
       defaultApiPort: repo.repoType === 'express' ? repo.defaultApiPort : undefined,
       defaultWebPortStart: repo.repoType === 'nextjs' ? repo.defaultWebPortStart : undefined,
       healthPath: repo.repoType === 'express' ? repo.healthPath : undefined,

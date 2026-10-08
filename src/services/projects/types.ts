@@ -63,6 +63,8 @@ export type HubProjectRepo = {
   localDir?: string;
   dirExists?: boolean;
   depsInstalled?: boolean;
+  /** Set for the API repo after filesystem detection. */
+  apiRuntime?: 'node' | 'python';
   defaultApiPort?: number;
   defaultWebPortStart?: number;
   healthPath?: string;

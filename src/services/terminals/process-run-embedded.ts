@@ -5,6 +5,8 @@ import { processEnsureLocalDatabaseForRun } from '../local-database/process-ensu
 import { processEnsureSupabaseConfigForRun } from '../supabase-config/process-ensure-supabase-config-for-run';
 import { applyWebOpenPath, openInChrome } from '../../utils/launcher';
 import {
+  apiDepsInstalled,
+  detectApiRuntime,
   mergeProjectConfig,
   projectHasNextjsRepo,
   readLocalConfig,
@@ -14,10 +16,10 @@ import {
   writeResolvedProjectPorts,
 } from '../../utils/projects';
 import {
-  findNextWebUrl,
+  findOwnedNextWebUrl,
   isExpressHealthy,
   waitForExpressHealth,
-  waitForNextWebUrl,
+  waitForOwnedNextWebUrl,
 } from '../../utils/projects/wait-for-project-ready';
 import {
   buildExpressPtyCommand,
@@ -25,6 +27,7 @@ import {
   spawnProjectPty,
 } from './spawn-project-pty';
 import { ensureProjectTerminalSessions } from './ensure-project-terminal-sessions';
+import { clearSuppressedRoles } from './session-registry';
 import type { RunEmbeddedResult, TerminalSessionInfo } from './types';
 import { writeJobFile } from './write-job-file';
 
@@ -94,12 +97,7 @@ const completeEmbeddedJob = async (
 
     let webUrl: string | undefined;
     if (merged.webDir && projectHasNextjsRepo(merged.registry)) {
-      const webPort = webPortStart;
-      webUrl =
-        findNextWebUrl(webPort, 1, merged.webDir) ??
-        (merged.webPortStart !== webPort
-          ? findNextWebUrl(merged.webPortStart, 1, merged.webDir)
-          : undefined);
+      webUrl = findOwnedNextWebUrl(merged.webDir);
 
       if (webUrl) {
         attachRunningStatusSessions(projectId, sessions);
@@ -116,7 +114,7 @@ const completeEmbeddedJob = async (
           jobId,
           projectId,
           status: 'running',
-          message: `Starting Web dev server on :${webPort}...`,
+          message: 'Starting Web dev server (first free port from 3000)...',
           sessions,
           updatedAt: new Date().toISOString(),
         });
@@ -126,9 +124,9 @@ const completeEmbeddedJob = async (
             projectId,
             role: 'web',
             label: `${projectId} / Web`,
-            command: buildWebOnlyPtyCommand(merged, webPort),
+            command: buildWebOnlyPtyCommand(merged),
             cwd: merged.webDir,
-            port: webPort,
+            port: webPortStart,
           });
           sessions.push(webSession);
         } catch (error: unknown) {
@@ -153,9 +151,9 @@ const completeEmbeddedJob = async (
           updatedAt: new Date().toISOString(),
         });
 
-        webUrl = await waitForNextWebUrl(webPort, 120, merged.webDir);
+        webUrl = await waitForOwnedNextWebUrl(120, merged.webDir);
         if (!webUrl) {
-          webUrl = findNextWebUrl(webPort, 1, merged.webDir);
+          webUrl = findOwnedNextWebUrl(merged.webDir);
         }
       }
       if (webUrl) {
@@ -226,17 +224,30 @@ export const processRunEmbedded = (projectId: string): RunEmbeddedResult | null 
   }
 
   const { apiPort, webPortStart, apiUrl } = resolveProjectPortsForRun(merged);
-  const runMerged = withResolvedApiPort(merged, apiPort);
+  const runMerged = {
+    ...withResolvedApiPort(merged, apiPort),
+    webPortStart,
+  };
+  clearSuppressedRoles(projectId);
+  writeResolvedProjectPorts(projectId, {
+    apiPort,
+    webPortStart,
+    apiUrl,
+  });
 
   const jobId = `${projectId}-${Date.now()}`;
   const sessions: TerminalSessionInfo[] = [];
 
-  if (runMerged.expressDir && !hasNodeModules(runMerged.expressDir)) {
+  const apiRuntime = detectApiRuntime(runMerged.expressDir);
+  if (runMerged.expressDir && !apiDepsInstalled(runMerged.expressDir)) {
     writeJobFile({
       jobId,
       projectId,
       status: 'failed',
-      message: 'Express dependencies are not installed — run Setup first',
+      message:
+        apiRuntime === 'python'
+          ? 'Python dependencies are not installed — run Setup first'
+          : 'Express dependencies are not installed — run Setup first',
       sessions,
       updatedAt: new Date().toISOString(),
     });
@@ -292,7 +303,7 @@ export const processRunEmbedded = (projectId: string): RunEmbeddedResult | null 
       const session = spawnProjectPty({
         projectId,
         role: 'express',
-        label: `${projectId} / Express`,
+        label: `${projectId} / ${apiRuntime === 'python' ? 'Python' : 'Express'}`,
         command: buildExpressPtyCommand(runMerged),
         cwd: runMerged.expressDir!,
         port: runMerged.apiPort,
@@ -316,7 +327,11 @@ export const processRunEmbedded = (projectId: string): RunEmbeddedResult | null 
     jobId,
     projectId,
     status: 'running',
-    message: needsExpressWait ? 'Starting Express...' : 'Starting Web...',
+    message: needsExpressWait
+      ? apiRuntime === 'python'
+        ? 'Starting Python...'
+        : 'Starting Express...'
+      : 'Starting Web...',
     sessions,
     updatedAt: new Date().toISOString(),
   });

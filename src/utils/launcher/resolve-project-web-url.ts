@@ -1,6 +1,7 @@
 import fs from 'fs';
 
-import { findNextWebUrl } from '../projects/wait-for-project-ready';
+import { isNextDevServerOnPort } from '../projects/port-probes';
+import { findOwnedNextWebUrl } from '../projects/wait-for-project-ready';
 import { readResolvedProjectPorts } from '../projects/resolve-project-ports';
 import { applyWebOpenPath } from './apply-web-open-path';
 
@@ -32,7 +33,7 @@ export const resolveProjectWebUrl = (
   const resolved = readResolvedProjectPorts(projectId);
   const assignedPort = getAssignedWebPort(webPortStart, resolved);
 
-  const liveUrl = findNextWebUrl(assignedPort, 1, webDir);
+  const liveUrl = findOwnedNextWebUrl(webDir);
   if (liveUrl) {
     return applyWebOpenPath(liveUrl, webOpenPath);
   }
@@ -50,7 +51,7 @@ export const resolveProjectWebUrl = (
     const saved = fs.readFileSync(savedPath, 'utf8').trim();
     if (saved.startsWith('http://')) {
       const savedPort = Number(new URL(saved).port);
-      if (savedPort === assignedPort) {
+      if (savedPort === assignedPort || isNextDevServerOnPort(savedPort, webDir)) {
         return applyWebOpenPath(saved, webOpenPath);
       }
     }
