@@ -195,6 +195,12 @@
       "expressDir": "/Users/matthewruiz/github/tradestocksusingai/trade-stocks-using-ai-express-server",
       "webPortStart": 3069,
       "_comment": "Hub Run still starts product web on 3069. Operator console is trade-stocks-using-ai-console on 3070 (npm run dev in that repo)."
+    },
+    "make-it-sound-like-me": {
+      "enabled": true,
+      "webDir": "/Users/matthewruiz/github/makeitsoundlikeme/make-it-sound-like-me-web",
+      "expressDir": "/Users/matthewruiz/github/makeitsoundlikeme/make-it-sound-like-me-express-server",
+      "webPortStart": 3072
     }
   }
 }

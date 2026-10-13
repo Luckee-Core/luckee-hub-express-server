@@ -714,5 +714,41 @@
       "expectedTables": ["users", "stocks", "stock_quotes"],
       "envKeys": ["SUPABASE_URL", "SUPABASE_SERVICE_ROLE_KEY"]
     }
+  },
+  {
+    "id": "make-it-sound-like-me",
+    "name": "Make It Sound Like Me",
+    "description": "About Me voice profiles, document extract, and AI rewrite in your style",
+    "repos": [
+      {
+        "repoType": "express",
+        "repoName": "make-it-sound-like-me-express-server",
+        "defaultApiPort": 3071,
+        "healthPath": "/api/health"
+      },
+      {
+        "repoType": "nextjs",
+        "repoName": "make-it-sound-like-me-web",
+        "defaultWebPortStart": 3072
+      }
+    ],
+    "supabase": {
+      "bootstrapSql": "supabase/000_full_schema_bootstrap.sql",
+      "expectedTables": [
+        "users",
+        "about_me_profile",
+        "about_me_source",
+        "exchange_table_registry"
+      ],
+      "envKeys": ["SUPABASE_URL", "SUPABASE_SERVICE_ROLE_KEY"]
+    },
+    "expressEnv": {
+      "groups": {
+        "ai": {
+          "label": "AI",
+          "keys": ["ANTHROPIC_API_KEY"]
+        }
+      }
+    }
   }
 ]
