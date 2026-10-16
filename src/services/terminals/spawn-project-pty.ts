@@ -135,6 +135,22 @@ export const buildRunningStatusPtyCommand = (
 /**
  * Build shell command to start Next.js only (Express already healthy).
  */
+/**
+ * Build shell command to start Storage Express (git pull + npm run dev).
+ */
+export const buildStorageExpressPtyCommand = (
+  merged: MergedProjectConfig,
+  storagePort: number,
+): string => {
+  const dir = shellEscape(merged.storageExpressDir ?? '');
+  const nvm = buildNvmPrefix(merged.nvmSh);
+  return (
+    `cd '${dir}' && ${nvm} && export PORT=${storagePort} && ` +
+    `echo '>>> ${merged.id} Storage (:${storagePort})' && ` +
+    `git pull --ff-only && npm run dev`
+  );
+};
+
 export const buildWebOnlyPtyCommand = (merged: MergedProjectConfig): string => {
   const dir = shellEscape(merged.webDir ?? '');
   const nvm = buildNvmPrefix(merged.nvmSh);

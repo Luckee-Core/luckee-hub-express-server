@@ -20,14 +20,22 @@ export const suppressRole = (projectId: string, role: TerminalRole): void => {
 export const suppressProjectRoles = (projectId: string): void => {
   suppressRole(projectId, 'express');
   suppressRole(projectId, 'web');
+  suppressRole(projectId, 'storage-express');
 };
 
 /**
- * Allow Run to attach terminals again.
+ * Allow list Run to attach dispatcher and web terminals again.
  */
 export const clearSuppressedRoles = (projectId: string): void => {
   suppressedRoles.delete(roleKey(projectId, 'express'));
   suppressedRoles.delete(roleKey(projectId, 'web'));
+};
+
+/**
+ * Allow Start storage to attach the storage terminal again.
+ */
+export const clearSuppressedStorageExpressRole = (projectId: string): void => {
+  suppressedRoles.delete(roleKey(projectId, 'storage-express'));
 };
 
 /**

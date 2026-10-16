@@ -33,7 +33,7 @@ export type ProjectHookCheck = {
   ok: boolean;
 };
 
-export type ProjectRegistryRepoType = 'express' | 'nextjs';
+export type ProjectRegistryRepoType = 'express' | 'nextjs' | 'storage-express';
 
 export type ProjectRegistryRepoEntry = {
   repoType: ProjectRegistryRepoType;
@@ -74,6 +74,7 @@ export type ProjectLocalEntry = {
   enabled?: boolean;
   webDir?: string;
   expressDir?: string;
+  storageExpressDir?: string;
   workspaceFile?: string;
   /** Override registry defaultWebPortStart (e.g. lead-studio → 3033). */
   webPortStart?: number;
@@ -107,6 +108,9 @@ export type HubProject = {
   supabaseSupported: boolean;
   expressEnvGroupIds: string[];
   postgresActiveConsumer?: boolean;
+  storageExpressSupported: boolean;
+  storagePort: number;
+  storageRunning?: boolean;
 };
 
 export type ListProjectsData = {
@@ -120,6 +124,7 @@ export type MergedProjectConfig = {
   local?: ProjectLocalEntry;
   webDir?: string;
   expressDir?: string;
+  storageExpressDir?: string;
   workspaceFile?: string;
   apiPort: number;
   webPortStart: number;

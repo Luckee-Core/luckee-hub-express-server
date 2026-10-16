@@ -1,4 +1,4 @@
-export type TerminalRole = 'express' | 'web';
+export type TerminalRole = 'express' | 'web' | 'storage-express';
 
 export type TerminalSessionKind = 'dev' | 'status';
 

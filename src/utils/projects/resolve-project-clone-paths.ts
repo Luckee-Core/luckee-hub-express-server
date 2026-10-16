@@ -1,7 +1,11 @@
 import path from 'path';
 
 import type { ProjectRegistryEntry } from '../../services/projects/types';
-import { getExpressRegistryRepo, getNextjsRegistryRepo } from './get-registry-repo';
+import {
+  getExpressRegistryRepo,
+  getNextjsRegistryRepo,
+  getStorageExpressRegistryRepo,
+} from './get-registry-repo';
 
 const LUCKEE_DIR = 'luckee';
 
@@ -10,6 +14,7 @@ export type ProjectClonePaths = {
   projectRoot: string;
   webDir?: string;
   expressDir?: string;
+  storageExpressDir?: string;
 };
 
 /**
@@ -23,11 +28,13 @@ export const resolveProjectClonePaths = (
   const projectRoot = path.join(luckeeRoot, registry.id);
   const expressRepo = getExpressRegistryRepo(registry);
   const nextjsRepo = getNextjsRegistryRepo(registry);
+  const storageRepo = getStorageExpressRegistryRepo(registry);
 
   return {
     luckeeRoot,
     projectRoot,
     webDir: nextjsRepo ? path.join(projectRoot, nextjsRepo.repoName) : undefined,
     expressDir: expressRepo ? path.join(projectRoot, expressRepo.repoName) : undefined,
+    storageExpressDir: storageRepo ? path.join(projectRoot, storageRepo.repoName) : undefined,
   };
 };

@@ -26,7 +26,11 @@ export const buildProjectRepos = (
         ? local?.webDir
         : repo.repoType === 'express'
           ? local?.expressDir
-          : undefined;
+          : repo.repoType === 'storage-express'
+            ? local?.storageExpressDir
+            : undefined;
+
+    const isApiLikeRepo = repo.repoType === 'express' || repo.repoType === 'storage-express';
 
     return {
       projectId: entry.id,
@@ -36,13 +40,13 @@ export const buildProjectRepos = (
       localDir,
       dirExists: localDir ? dirExists(localDir) : undefined,
       depsInstalled: localDir
-        ? repo.repoType === 'express'
+        ? isApiLikeRepo
           ? apiDepsInstalled(localDir)
           : hasNodeModules(localDir)
         : undefined,
-      apiRuntime: repo.repoType === 'express' ? detectApiRuntime(localDir) : undefined,
-      defaultApiPort: repo.repoType === 'express' ? repo.defaultApiPort : undefined,
+      apiRuntime: isApiLikeRepo ? detectApiRuntime(localDir) : undefined,
+      defaultApiPort: isApiLikeRepo ? repo.defaultApiPort : undefined,
       defaultWebPortStart: repo.repoType === 'nextjs' ? repo.defaultWebPortStart : undefined,
-      healthPath: repo.repoType === 'express' ? repo.healthPath : undefined,
+      healthPath: isApiLikeRepo ? repo.healthPath : undefined,
     };
   });

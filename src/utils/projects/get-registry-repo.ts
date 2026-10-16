@@ -27,3 +27,17 @@ export const projectHasExpressRepo = (entry: ProjectRegistryEntry): boolean =>
  */
 export const projectHasNextjsRepo = (entry: ProjectRegistryEntry): boolean =>
   !!getNextjsRegistryRepo(entry);
+
+/**
+ * Storage Express repo row from a project registry entry.
+ */
+export const getStorageExpressRegistryRepo = (
+  entry: ProjectRegistryEntry,
+): ProjectRegistryRepoEntry | undefined =>
+  entry.repos.find((repo) => repo.repoType === 'storage-express');
+
+/**
+ * Whether the project catalog includes a Storage Express repo.
+ */
+export const projectHasStorageExpressRepo = (entry: ProjectRegistryEntry): boolean =>
+  !!getStorageExpressRegistryRepo(entry);

@@ -1,3 +1,5 @@
+import type { TerminalRole } from '../terminals/types';
+
 export type LauncherJobStatus = 'running' | 'completed' | 'failed';
 
 export type SetupJobStepStatus = 'pending' | 'running' | 'done' | 'skipped' | 'failed';
@@ -12,7 +14,7 @@ export type SetupJobStep = {
 export type LauncherJobSession = {
   sessionId: string;
   projectId: string;
-  role: 'express' | 'web';
+  role: TerminalRole;
   label: string;
 };
 

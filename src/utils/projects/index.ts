@@ -2,8 +2,10 @@ export { buildProjectRepos } from './build-project-repos';
 export {
   getExpressRegistryRepo,
   getNextjsRegistryRepo,
+  getStorageExpressRegistryRepo,
   projectHasExpressRepo,
   projectHasNextjsRepo,
+  projectHasStorageExpressRepo,
 } from './get-registry-repo';
 export { mergeProjectConfig } from './merge-project-config';
 export { resolveProjectWorkspaceFile } from './resolve-project-workspace-file';

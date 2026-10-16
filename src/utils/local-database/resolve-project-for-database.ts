@@ -3,6 +3,7 @@ import path from 'path';
 import { mergeProjectConfig, readLocalConfig, readRegistry } from '../projects';
 import type { LocalDatabaseConfig } from '../../services/local-database/types';
 import type { MergedProjectConfig, ProjectRegistryEntry } from '../../services/projects/types';
+import { resolveDatabaseRepoDir } from './resolve-database-repo-dir';
 
 export type ResolvedProjectForDatabase = {
   entry: ProjectRegistryEntry;
@@ -24,7 +25,11 @@ export const resolveProjectForDatabase = (
     return null;
   }
   const merged = mergeProjectConfig(entry, localConfig);
-  if (!merged?.expressDir) {
+  if (!merged) {
+    return null;
+  }
+  const databaseRepoDir = resolveDatabaseRepoDir(merged, entry.localDatabase);
+  if (!databaseRepoDir) {
     return null;
   }
   return { entry, merged, localDatabase: entry.localDatabase };

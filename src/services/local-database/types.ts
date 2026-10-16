@@ -7,12 +7,16 @@ export type LocalDatabasePostgresConfig = {
   stopCommand?: string;
 };
 
+export type LocalDatabaseEnvRepo = 'express' | 'storage-express';
+
 export type LocalDatabaseConfig = {
   kind: 'postgres';
   databaseName: string;
   migrationsDir: string;
   migrationFiles: string[];
   expectedTables?: string[];
+  /** Which repo checkout receives DATABASE_URL and runs migrations. Default express. */
+  envRepo?: LocalDatabaseEnvRepo;
   postgres?: LocalDatabasePostgresConfig;
 };
 

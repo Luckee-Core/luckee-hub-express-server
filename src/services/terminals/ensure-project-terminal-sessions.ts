@@ -1,8 +1,10 @@
 import type { ProjectLocalEntry, ProjectRegistryEntry } from '../projects/types';
 import {
+  getStorageExpressRegistryRepo,
   mergeProjectConfig,
   projectHasExpressRepo,
   projectHasNextjsRepo,
+  projectHasStorageExpressRepo,
 } from '../../utils/projects';
 import {
   findOwnedNextWebUrl,
@@ -53,6 +55,38 @@ export const ensureProjectTerminalSessions = (
           command: buildRunningStatusPtyCommand(`${input.entry.name} API`, merged.apiPort, orphan),
           cwd: merged.expressDir,
           port: merged.apiPort,
+          kind: 'status',
+        }),
+      );
+    }
+  }
+
+  if (projectHasStorageExpressRepo(input.entry) && merged.storageExpressDir) {
+    const storageRepo = getStorageExpressRegistryRepo(input.entry);
+    const storagePort = storageRepo?.defaultApiPort ?? 3010;
+    const storageHealthPath = storageRepo?.healthPath ?? '/api/storage/health';
+    const storageHealthy = isExpressHealthy(
+      storagePort,
+      storageHealthPath,
+      merged.storageExpressDir,
+    );
+    if (
+      storageHealthy &&
+      !hasProjectRole(input.entry.id, 'storage-express') &&
+      !isRoleSuppressed(input.entry.id, 'storage-express')
+    ) {
+      spawned.push(
+        spawnProjectPty({
+          projectId: input.entry.id,
+          role: 'storage-express',
+          label: `${input.entry.name} Storage`,
+          command: buildRunningStatusPtyCommand(
+            `${input.entry.name} Storage`,
+            storagePort,
+            orphan,
+          ),
+          cwd: merged.storageExpressDir,
+          port: storagePort,
           kind: 'status',
         }),
       );

@@ -40,5 +40,6 @@ export {
 } from './postgres-brew';
 export { envConfigured, readEnvDatabaseUrl, upsertDatabaseUrlInEnv } from './env-database-url';
 export { getHubRoot, resolveProjectForDatabase } from './resolve-project-for-database';
+export { resolveDatabaseRepoDir } from './resolve-database-repo-dir';
 export { runShellCommand, runShellCommandQuiet } from './run-shell-command';
 export { validateDatabaseName } from './validate-database-name';

@@ -4,6 +4,8 @@ import {
   buildProjectRepos,
   DEFAULT_GITHUB_ORG,
   getExpressRegistryRepo,
+  getStorageExpressRegistryRepo,
+  projectHasStorageExpressRepo,
   probeProjectStatus,
   readLocalConfig,
   readRegistry,
@@ -36,11 +38,17 @@ export const processListProjects = (
 
   const projects = registry.map((entry) => {
     const local = localConfig.projects?.[entry.id];
-    const { hookStatus, webUrl, apiPort: liveApiPort } = probeProjectStatus(entry, local, {
-      liveProbe,
-    });
+    const { hookStatus, webUrl, apiPort: liveApiPort, storageRunning } = probeProjectStatus(
+      entry,
+      local,
+      {
+        liveProbe,
+      },
+    );
     const expressRepo = getExpressRegistryRepo(entry);
+    const storageRepo = getStorageExpressRegistryRepo(entry);
     const registryApiPort = expressRepo?.defaultApiPort ?? 0;
+    const storagePort = storageRepo?.defaultApiPort ?? 0;
 
     return {
       id: entry.id,
@@ -55,6 +63,9 @@ export const processListProjects = (
       supabaseSupported: !!entry.supabase,
       expressEnvGroupIds: entry.expressEnv?.groups ? Object.keys(entry.expressEnv.groups) : [],
       postgresActiveConsumer: entry.localDatabase ? isPostgresConsumer(entry.id) : false,
+      storageExpressSupported: projectHasStorageExpressRepo(entry),
+      storagePort,
+      storageRunning: liveProbe ? storageRunning : undefined,
     };
   });
 

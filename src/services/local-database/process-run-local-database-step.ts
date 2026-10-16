@@ -6,6 +6,7 @@ import {
   getHubRoot,
   getPostgresFormula,
   markPostgresStartedByHub,
+  resolveDatabaseRepoDir,
   resolveProjectForDatabase,
   runCreatedbStep,
   runEnvStep,
@@ -53,7 +54,10 @@ export const processRunLocalDatabaseStep = (
   };
 
   const { localDatabase, merged, databaseUrl } = context;
-  const expressDir = merged.expressDir!;
+  const databaseRepoDir = resolveDatabaseRepoDir(merged, localDatabase);
+  if (!databaseRepoDir) {
+    return { error: 'Database repo path is not configured', status: 400 };
+  }
 
   if (stepId === 'postgres-stop') {
     if (!context.postgresRunning) {
@@ -108,9 +112,14 @@ export const processRunLocalDatabaseStep = (
       message = runCreatedbStep(localDatabase.databaseName);
     } else if (stepId.startsWith('migration-')) {
       const file = stepId.slice('migration-'.length);
-      message = runMigrationStep(expressDir, databaseUrl, localDatabase.migrationsDir, file);
+      message = runMigrationStep(
+        databaseRepoDir,
+        databaseUrl,
+        localDatabase.migrationsDir,
+        file,
+      );
     } else if (stepId === 'env') {
-      message = runEnvStep(expressDir, databaseUrl);
+      message = runEnvStep(databaseRepoDir, databaseUrl);
     } else {
       return { error: `Unknown setup step: ${stepId}`, status: 400 };
     }

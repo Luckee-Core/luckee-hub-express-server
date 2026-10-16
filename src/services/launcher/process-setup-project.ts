@@ -41,6 +41,7 @@ export type SetupProjectResult = {
 export type SetupProjectPaths = {
   webDir?: string;
   expressDir?: string;
+  storageExpressDir?: string;
   workspaceFile?: string;
 };
 
@@ -56,6 +57,7 @@ const upsertProjectLocalEntry = (
     enabled: true,
     ...(paths.webDir ? { webDir: paths.webDir } : {}),
     ...(paths.expressDir ? { expressDir: paths.expressDir } : {}),
+    ...(paths.storageExpressDir ? { storageExpressDir: paths.storageExpressDir } : {}),
     ...(paths.workspaceFile ? { workspaceFile: paths.workspaceFile } : {}),
     ...(webPortStart !== undefined ? { webPortStart } : {}),
   };
@@ -71,10 +73,13 @@ const upsertProjectLocalEntry = (
 
 const resolveRepoDir = (
   paths: SetupProjectPaths,
-  repoType: 'express' | 'nextjs',
+  repoType: 'express' | 'nextjs' | 'storage-express',
 ): string | undefined => {
   if (repoType === 'express') {
     return paths.expressDir;
+  }
+  if (repoType === 'storage-express') {
+    return paths.storageExpressDir;
   }
   return paths.webDir;
 };
@@ -103,9 +108,15 @@ const resolveSetupPaths = (
   const existing = localConfig.projects?.[projectId];
   const existingWebDir = existingDirectory(existing?.webDir);
   const existingExpressDir = existingDirectory(existing?.expressDir);
+  const existingStorageExpressDir = existingDirectory(existing?.storageExpressDir);
   const webSatisfied = !cloned.webDir || !!existingWebDir;
   const expressSatisfied = !cloned.expressDir || !!existingExpressDir;
-  const usingExistingCheckout = webSatisfied && expressSatisfied && (!!existingWebDir || !!existingExpressDir);
+  const storageSatisfied = !cloned.storageExpressDir || !!existingStorageExpressDir;
+  const usingExistingCheckout =
+    webSatisfied &&
+    expressSatisfied &&
+    storageSatisfied &&
+    (!!existingWebDir || !!existingExpressDir || !!existingStorageExpressDir);
 
   if (!usingExistingCheckout) {
     return {
@@ -113,6 +124,7 @@ const resolveSetupPaths = (
       projectRoot: cloned.projectRoot,
       webDir: cloned.webDir,
       expressDir: cloned.expressDir,
+      storageExpressDir: cloned.storageExpressDir,
       workspaceFile: resolveProjectWorkspaceFilePath(cloned.projectRoot, projectId),
       preserveWorkspaceFile: false,
     };
@@ -120,7 +132,10 @@ const resolveSetupPaths = (
 
   const webDir = existingWebDir ?? cloned.webDir;
   const expressDir = existingExpressDir ?? cloned.expressDir;
-  const projectRoot = path.dirname(webDir ?? expressDir ?? cloned.projectRoot);
+  const storageExpressDir = existingStorageExpressDir ?? cloned.storageExpressDir;
+  const projectRoot = path.dirname(
+    webDir ?? expressDir ?? storageExpressDir ?? cloned.projectRoot,
+  );
   const existingWorkspace = existingDirectory(existing?.workspaceFile);
 
   return {
@@ -128,6 +143,7 @@ const resolveSetupPaths = (
     projectRoot,
     webDir,
     expressDir,
+    storageExpressDir,
     workspaceFile: existingWorkspace ?? resolveProjectWorkspaceFilePath(projectRoot, projectId),
     preserveWorkspaceFile: !!existingWorkspace,
   };

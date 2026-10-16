@@ -150,6 +150,7 @@
       "enabled": true,
       "webDir": "/Users/matthewruiz/github/my-gmail-manager/my-gmail-manager-web",
       "expressDir": "/Users/matthewruiz/github/my-gmail-manager/my-gmail-manager-express-server",
+      "storageExpressDir": "/Users/matthewruiz/github/my-gmail-manager/my-gmail-manager-storage-express-server",
       "workspaceFile": "/Users/matthewruiz/github/my-gmail-manager/my-gmail-manager-web.code-workspace",
       "webPortStart": 3053
     },

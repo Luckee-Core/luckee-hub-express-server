@@ -53,7 +53,14 @@ export const processProbeExpressEnvGroup = (
         ? group.keys.filter(
             (k) => k === 'GMAIL_SEND_AS_EMAIL' || k === 'GMAIL_SERVICE_ACCOUNT_JSON_PATH',
           )
-        : group.keys;
+        : groupId === 'storage'
+          ? group.keys.filter(
+              (k) =>
+                k === 'STORAGE_MODE' ||
+                k === 'STORAGE_EXPRESS_URL' ||
+                k === 'STORAGE_EXPRESS_SECRET',
+            )
+          : group.keys;
   const configured = requiredKeys.every((key) => keysPresent[key]);
 
   console.log('✅ [express-env.processProbeExpressEnvGroup] Probe complete', {

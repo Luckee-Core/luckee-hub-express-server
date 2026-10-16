@@ -525,11 +525,46 @@
         "healthPath": "/api/health"
       },
       {
+        "repoType": "storage-express",
+        "repoName": "my-gmail-manager-storage-express-server",
+        "defaultApiPort": 3010,
+        "healthPath": "/api/storage/health"
+      },
+      {
         "repoType": "nextjs",
         "repoName": "my-gmail-manager-web",
         "defaultWebPortStart": 3053
       }
-    ]
+    ],
+    "localDatabase": {
+      "kind": "postgres",
+      "databaseName": "gmail_manager",
+      "migrationsDir": "migrations",
+      "migrationFiles": ["setup.sql", "002-sync-ledger.sql"],
+      "expectedTables": ["gmail_accounts", "gmail_messages", "inbox_briefings"],
+      "envRepo": "storage-express",
+      "postgres": {
+        "host": "127.0.0.1",
+        "port": 5432,
+        "formula": "postgresql@16",
+        "installCommand": "brew install postgresql@16",
+        "startCommand": "brew services start postgresql@16",
+        "stopCommand": "brew services stop postgresql@16"
+      }
+    },
+    "expressEnv": {
+      "groups": {
+        "storage": {
+          "label": "Storage Express (remote)",
+          "keys": [
+            "STORAGE_MODE",
+            "STORAGE_EXPRESS_URL",
+            "STORAGE_EXPRESS_SECRET",
+            "STORAGE_REQUEST_TIMEOUT_MS"
+          ]
+        }
+      }
+    }
   },
   {
     "id": "mac-manager",
