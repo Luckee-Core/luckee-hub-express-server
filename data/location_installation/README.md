@@ -15,7 +15,7 @@ Use this as a **checklist**: complete each step in order on a fresh machine, or 
 | 3 | Hub repos + `luckeeParent` | Projects header → pick folder | Clone siblings, edit `hub.local.json` |
 | 4 | Hub Express + Web | Desktop app or `luckeehub` | `npm run dev` in both repos |
 | 5 | Per-project clone + env | Setup + Overview tabs | `git clone`, `npm install` |
-| 6 | Optional: Storage, Cursor, Chrome | Run / Open Cursor / Open Chrome | Project-specific docs |
+| 6 | Optional: Storage, Cursor, Chrome | Run / Open Cursor / Open Chrome | [Gmail two-device](./my-gmail-manager-two-device-deployment.md), other product docs |
 
 ---
 
@@ -255,7 +255,12 @@ Example keys for dispatcher + remote storage: `STORAGE_EXPRESS_URL`, `STORAGE_EX
 
 Registry may include `repoType: "storage-express"`. Setup clones a third repo; **Run** starts it on its registry port (e.g. `3010`). Local **Postgres + migrations** often target the storage repo when `localDatabase.envRepo` is `"storage-express"`.
 
-Multi-machine layouts (canonical DB on one host, dispatcher on another) are documented in each product repo (e.g. `STUDIO-DISPATCHER-SETUP.md`); the hub still expects Postgres available wherever you run storage locally.
+Multi-machine layouts (canonical DB on one host, dispatcher on another):
+
+- **[My Gmail Manager — two Macs](./my-gmail-manager-two-device-deployment.md)** (storage host + dispatcher host, hub paths, secrets, ports)
+- Product repos: `STUDIO-DISPATCHER-SETUP.md`, `STORAGE-HOST-SETUP.md`, `TWO-DEVICE-DEPLOYMENT.md` under `my-gmail-manager/`
+
+The hub still expects Postgres on the machine where you run **storage-express** locally.
 
 ### Cursor workspace
 
@@ -297,6 +302,7 @@ WebSocket terminal stream requires hub Express running; job logs for Setup live 
 | `.cursor/architecture/012-project-setup-into-luckee.md` | Setup clone layout |
 | `.cursor/architecture/013-supabase-config-service.md` | Supabase tab |
 | `.cursor/architecture/021-storage-express-launcher.md` | Storage repo + `envRepo` |
+| [my-gmail-manager-two-device-deployment.md](./my-gmail-manager-two-device-deployment.md) | Gmail: studio storage + laptop dispatcher |
 
 Product-specific install notes (dispatcher vs storage host) remain in each catalog repo’s markdown files.
 
@@ -308,3 +314,4 @@ Product-specific install notes (dispatcher vs storage host) remain in each catal
 |------|--------|
 | 2026-10-16 | Initial manual; Step 1 PostgreSQL |
 | 2026-10-16 | Full steps 2–6, checklist table, PATH/troubleshooting, hub step ids |
+| 2026-10-16 | Gmail two-device deployment guide |
