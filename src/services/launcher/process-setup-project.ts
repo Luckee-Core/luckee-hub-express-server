@@ -254,7 +254,12 @@ const runSetupJob = async (
       upsertProjectLocalEntry(
         localConfig,
         projectId,
-        { webDir: paths.webDir, expressDir: paths.expressDir, workspaceFile },
+        {
+          webDir: paths.webDir,
+          expressDir: paths.expressDir,
+          storageExpressDir: paths.storageExpressDir,
+          workspaceFile,
+        },
         webPortStart,
       ),
     );
@@ -317,7 +322,8 @@ const runSetupJob = async (
           {
             webDir: paths.webDir,
             expressDir: paths.expressDir,
-            workspaceFile: resolveProjectWorkspaceFilePath(paths.projectRoot, projectId),
+            storageExpressDir: paths.storageExpressDir,
+            workspaceFile: paths.workspaceFile ?? resolveProjectWorkspaceFilePath(paths.projectRoot, projectId),
           },
           webPortStart,
         ),
