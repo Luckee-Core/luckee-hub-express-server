@@ -16,7 +16,7 @@ type PtyEnvInput = {
 const buildPtyEnv = (input: PtyEnvInput): Record<string, string> => {
   const env: Record<string, string> = {};
   for (const [key, value] of Object.entries(process.env)) {
-    if (typeof value === 'string' && key !== 'PORT') {
+    if (typeof value === 'string' && key !== 'PORT' && key !== 'DATABASE_URL') {
       env[key] = value;
     }
   }
@@ -112,6 +112,18 @@ export const buildWebPtyCommand = (merged: MergedProjectConfig): string => {
 /**
  * Build shell command for a detected running service (no new server start).
  */
+/**
+ * Tail local-scheduler worker log file (spawned Express stdout/stderr).
+ */
+export const buildSchedulerWorkerLogPtyCommand = (logPath: string): string => {
+  const escaped = shellEscape(logPath);
+  return (
+    `echo '>>> Scheduler worker log (tail -F)' && ` +
+    `echo '>>> ${escaped}' && ` +
+    `touch '${escaped}' && exec tail -n 50 -F '${escaped}'`
+  );
+};
+
 export const buildRunningStatusPtyCommand = (
   label: string,
   port: number,

@@ -145,7 +145,35 @@
         "repoName": "local-scheduler-web",
         "defaultWebPortStart": 3023
       }
-    ]
+    ],
+    "localDatabase": {
+      "kind": "postgres",
+      "databaseName": "local_scheduler",
+      "migrationsDir": "sql/migrations",
+      "migrationFiles": ["001_scheduled_tasks_and_runs.sql"],
+      "expectedTables": ["scheduled_tasks", "scheduler_runs"],
+      "envRepo": "express",
+      "postgres": {
+        "host": "127.0.0.1",
+        "port": 5432,
+        "formula": "postgresql@16",
+        "installCommand": "brew install postgresql@16",
+        "startCommand": "brew services start postgresql@16",
+        "stopCommand": "brew services stop postgresql@16"
+      }
+    },
+    "expressEnv": {
+      "groups": {
+        "cron-workers": {
+          "label": "Worker cron secrets (must match worker Express apps)",
+          "keys": [
+            "GMAIL_MANAGER_CRON_SECRET",
+            "PHILLY_AI_CONSULTING_CRON_SECRET",
+            "CITY_NONPROFITS_CRON_SECRET"
+          ]
+        }
+      }
+    }
   },
   {
     "id": "luckee-blueprints",
