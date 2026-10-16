@@ -88,9 +88,8 @@ export const probeProjectStatus = (
 
   const webOk = !hasWeb || dirExists(local.webDir);
   const expressOk = !hasExpress || dirExists(local.expressDir);
-  const storageOk = !hasStorage || dirExists(local.storageExpressDir);
-
-  if (!webOk || !expressOk || !storageOk) {
+  // Storage Express is detail-only (ADR 021) — do not block list Run / hook status.
+  if (!webOk || !expressOk) {
     return { hookStatus: 'missing', hookChecks };
   }
 
@@ -119,9 +118,8 @@ export const probeProjectStatus = (
 
   const webConfigured = !hasWeb || hasNodeModules(local.webDir);
   const expressConfigured = !hasExpress || apiDepsInstalled(local.expressDir);
-  const storageConfigured = !hasStorage || apiDepsInstalled(local.storageExpressDir);
 
-  if (!webConfigured || !expressConfigured || !storageConfigured) {
+  if (!webConfigured || !expressConfigured) {
     return { hookStatus: 'cloned', hookChecks };
   }
 
