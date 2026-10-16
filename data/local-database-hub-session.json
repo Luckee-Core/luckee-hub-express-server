@@ -8,6 +8,7 @@
   ],
   "activeConsumers": [
     "speech-therapy-tracker",
-    "code-commit-summaries"
+    "code-commit-summaries",
+    "my-gmail-manager"
   ]
 }

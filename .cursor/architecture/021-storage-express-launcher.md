@@ -33,6 +33,8 @@ Handlers delegate to `processRunStorageExpress` / `processCloseStorageExpress`. 
 
 When `liveProbe`, set `storageRunning` via health check on storage port/path. Expose `storageExpressSupported` and `storagePort` on `HubProject`.
 
+`probeProjectStatus` still reports storage path/deps in `hookChecks`, but **does not** set `missing` / `cloned` when only storage is absent — list **Run** requires dispatcher + web only (storage runs on another Mac via detail **Start storage**).
+
 ### Express env
 
 `ExpressEnvGroupId` includes `storage`. Probe requires `STORAGE_MODE`, `STORAGE_EXPRESS_URL`, and `STORAGE_EXPRESS_SECRET`.
