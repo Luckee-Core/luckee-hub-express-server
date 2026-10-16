@@ -478,7 +478,22 @@
         "repoName": "innertube-web",
         "defaultWebPortStart": 3049
       }
-    ]
+    ],
+    "localDatabase": {
+      "kind": "postgres",
+      "databaseName": "innertube",
+      "migrationsDir": "migrations",
+      "migrationFiles": ["setup.sql"],
+      "expectedTables": ["videos"],
+      "postgres": {
+        "host": "127.0.0.1",
+        "port": 5432,
+        "formula": "postgresql@16",
+        "installCommand": "brew install postgresql@16",
+        "startCommand": "brew services start postgresql@16",
+        "stopCommand": "brew services stop postgresql@16"
+      }
+    }
   },
   {
     "id": "my-substack-manager",

@@ -26,6 +26,9 @@ import {
   createTerminalsRouter,
   killAllSessions,
 } from './src/services/terminals';
+import { createSystemMetricsRouter } from './src/services/system-metrics';
+app.use('/api/system-metrics', createSystemMetricsRouter());
+
 app.use('/api/projects', createProjectsRouter());
 app.use('/api/launcher', createLauncherRouter());
 app.use('/api/terminals', createTerminalsRouter());

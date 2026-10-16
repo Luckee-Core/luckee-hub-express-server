@@ -25,6 +25,7 @@ ADRs for **luckee-hub-express-server** (forked from express-server-template).
 13. [013 – Supabase config service](./013-supabase-config-service.md) — Upsert Supabase keys into express `.env` from Hub.
 14. [014 – Express env groups](./014-express-env-groups.md) — AI / Maps / Email env tabs upserting express `.env`.
 15. [015 – API runtime detection](./015-api-runtime-detection.md) — Node vs Python API repos.
+16. [016 – System metrics service](./016-system-metrics-service.md) — CPU/GPU + top processes (Apple Silicon).
 
 ## How to use
 

@@ -13,9 +13,10 @@
     "postinstall": "sh scripts/postinstall.sh"
   },
   "dependencies": {
-    "express": "^5.2.1",
+    "apple-silicon-metrics": "^0.1.2",
     "cors": "^2.8.6",
     "dotenv": "^17.4.2",
+    "express": "^5.2.1",
     "node-pty": "^1.0.0",
     "ws": "^8.18.0"
   },
@@ -24,9 +25,9 @@
     "@types/express": "^5.0.3",
     "@types/node": "^25.9.1",
     "@types/ws": "^8.5.14",
-    "typescript": "^6.0.3",
+    "nodemon": "^3.1.11",
     "ts-node": "^10.9.2",
-    "nodemon": "^3.1.11"
+    "typescript": "^6.0.3"
   },
   "engines": {
     "node": ">=20.0.0"
