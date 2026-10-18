@@ -21,6 +21,7 @@ export const suppressProjectRoles = (projectId: string): void => {
   suppressRole(projectId, 'express');
   suppressRole(projectId, 'web');
   suppressRole(projectId, 'storage-express');
+  suppressRole(projectId, 'scheduler-worker');
 };
 
 /**

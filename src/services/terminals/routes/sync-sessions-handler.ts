@@ -5,10 +5,10 @@ import { processSyncTerminalSessions } from '../process-sync-terminal-sessions';
 /**
  * POST /api/terminals/sync — restore PTY sessions and detect running project ports.
  */
-export const syncSessionsHandler = (_req: Request, res: Response): void => {
+export const syncSessionsHandler = async (_req: Request, res: Response): Promise<void> => {
   console.log('📥 [terminals.syncSessionsHandler] Request received');
   try {
-    const sessions = processSyncTerminalSessions();
+    const sessions = await processSyncTerminalSessions();
     console.log('✅ [terminals.syncSessionsHandler] Sessions synced', { count: sessions.length });
     console.log('📤 [terminals.syncSessionsHandler] Sending response', { statusCode: 200 });
     res.status(200).json({ success: true, data: sessions });

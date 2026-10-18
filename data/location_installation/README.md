@@ -15,7 +15,7 @@ Use this as a **checklist**: complete each step in order on a fresh machine, or 
 | 3 | Hub repos + `luckeeParent` | Projects header → pick folder | Clone siblings, edit `hub.local.json` |
 | 4 | Hub Express + Web | Desktop app or `luckeehub` | `npm run dev` in both repos |
 | 5 | Per-project clone + env | Setup + Overview tabs | `git clone`, `npm install` |
-| 6 | Optional: Storage, Cursor, Chrome | Run / Open Cursor / Open Chrome | [Gmail two-device](./my-gmail-manager-two-device-deployment.md), other product docs |
+| 6 | Optional: Storage, Cursor, Chrome, cron | Run / launchd / Open Cursor | [Gmail two-device](./my-gmail-manager-two-device-deployment.md), [Local scheduler studio](./local-scheduler-studio-deployment.md), [Three-device evolution](./three-device-gmail-and-cron-evolution.md) |
 
 ---
 
@@ -262,6 +262,16 @@ Multi-machine layouts (canonical DB on one host, dispatcher on another):
 
 The hub still expects Postgres on the machine where you run **storage-express** locally.
 
+### Local Scheduler (studio cron)
+
+On the Mac that runs **local-scheduler-express-server** (often the same studio host as Gmail storage):
+
+- **[Local Scheduler — studio deployment](./local-scheduler-studio-deployment.md)** — `local_scheduler` DB, `scheduler.local.json`, launchd, Gmail spawn/stop
+- **[Three-device evolution](./three-device-gmail-and-cron-evolution.md)** — apps / API / storage + moving cron to a dedicated Mac
+- Phase 0: [studio-deployment-inventory.template.md](./studio-deployment-inventory.template.md)
+
+Scheduler API and optional scheduler web bind **127.0.0.1** on the cron machine only.
+
 ### Cursor workspace
 
 Setup writes `{projectId}.code-workspace` under the project folder. **Open Cursor** uses `workspaceFile` + `cursorBin` from `hub.local.json`.
@@ -303,6 +313,9 @@ WebSocket terminal stream requires hub Express running; job logs for Setup live 
 | `.cursor/architecture/013-supabase-config-service.md` | Supabase tab |
 | `.cursor/architecture/021-storage-express-launcher.md` | Storage repo + `envRepo` |
 | [my-gmail-manager-two-device-deployment.md](./my-gmail-manager-two-device-deployment.md) | Gmail: studio storage + laptop dispatcher |
+| [local-scheduler-studio-deployment.md](./local-scheduler-studio-deployment.md) | Studio cron + `local_scheduler` |
+| [three-device-gmail-and-cron-evolution.md](./three-device-gmail-and-cron-evolution.md) | Apps / API / storage / cron phases |
+| [studio-deployment-inventory.template.md](./studio-deployment-inventory.template.md) | Phase 0 machine checklist |
 
 Product-specific install notes (dispatcher vs storage host) remain in each catalog repo’s markdown files.
 
@@ -315,3 +328,4 @@ Product-specific install notes (dispatcher vs storage host) remain in each catal
 | 2026-10-16 | Initial manual; Step 1 PostgreSQL |
 | 2026-10-16 | Full steps 2–6, checklist table, PATH/troubleshooting, hub step ids |
 | 2026-10-16 | Gmail two-device deployment guide |
+| 2026-10-16 | Local scheduler studio + three-device + inventory template |

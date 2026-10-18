@@ -27,7 +27,7 @@ ADRs for **luckee-hub-express-server** (forked from express-server-template).
 15. [015 – API runtime detection](./015-api-runtime-detection.md) — Node vs Python API repos.
 16. [016 – System metrics service](./016-system-metrics-service.md) — CPU/GPU + top processes (Apple Silicon).
 21. [021 – Storage Express launcher](./021-storage-express-launcher.md) — `storage-express` repo, launcher routes, local DB `envRepo`.
-
+22. [022 – Scheduler worker log terminals](./022-scheduler-worker-log-terminals.md) — `tail -F` PTYs from local-scheduler `/api/workers`.
 
 ## How to use
 

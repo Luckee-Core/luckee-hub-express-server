@@ -37,6 +37,26 @@ export const listListeningTcpPorts = (): number[] => {
   }
 };
 
+const getListeningPidsOnPort = (port: number): string[] => {
+  try {
+    const pidRaw = execSync(`lsof -iTCP:${port} -sTCP:LISTEN -t`, {
+      encoding: 'utf8',
+      timeout: 1000,
+    });
+    return [...new Set(pidRaw.trim().split('\n').map((pid) => pid.trim()).filter(Boolean))];
+  } catch {
+    return [];
+  }
+};
+
+const cwdOwnedByProjectDir = (cwd: string, projectDir: string): boolean => {
+  const normalizedDir = path.resolve(projectDir);
+  const normalizedCwd = path.resolve(cwd);
+  return (
+    normalizedCwd === normalizedDir || normalizedCwd.startsWith(`${normalizedDir}${path.sep}`)
+  );
+};
+
 const getPidCwd = (pid: string): string | null => {
   try {
     const cwdOut = execSync(`lsof -a -p ${pid} -d cwd -Fn`, {
@@ -88,14 +108,44 @@ export const portOwnedByDir = (port: number, projectDir?: string): boolean => {
   if (cwds.length === 0) {
     return false;
   }
-  const normalizedDir = path.resolve(projectDir);
-  return cwds.some((cwd) => {
-    const normalizedCwd = path.resolve(cwd);
-    return (
-      normalizedCwd === normalizedDir ||
-      normalizedCwd.startsWith(`${normalizedDir}${path.sep}`)
-    );
-  });
+  return cwds.some((cwd) => cwdOwnedByProjectDir(cwd, projectDir));
+};
+
+/**
+ * SIGTERM listeners on `port` whose cwd is under `ownerDir`. Returns killed PID count.
+ */
+export const killPortListenersOwnedByDir = (port: number, ownerDir: string): number => {
+  let killed = 0;
+  for (const pid of getListeningPidsOnPort(port)) {
+    const cwd = getPidCwd(pid);
+    if (!cwd || !cwdOwnedByProjectDir(cwd, ownerDir)) {
+      continue;
+    }
+    try {
+      execSync(`kill -TERM ${pid}`, { stdio: 'ignore', timeout: 2000 });
+      killed += 1;
+    } catch {
+      // Process may already be gone.
+    }
+  }
+  return killed;
+};
+
+/**
+ * Block until nothing listens on `port`, or timeout.
+ */
+export const waitForPortRelease = (port: number, maxAttempts = 15, intervalMs = 200): boolean => {
+  for (let attempt = 0; attempt < maxAttempts; attempt += 1) {
+    if (!portListening(port)) {
+      return true;
+    }
+    try {
+      execSync(`sleep ${intervalMs / 1000}`, { stdio: 'ignore', timeout: intervalMs + 500 });
+    } catch {
+      // ignore
+    }
+  }
+  return !portListening(port);
 };
 
 const curlProbe = (args: string): string | null => {

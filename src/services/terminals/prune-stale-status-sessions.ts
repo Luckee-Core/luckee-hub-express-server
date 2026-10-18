@@ -12,6 +12,10 @@ export const pruneStaleStatusSessions = (merged: MergedProjectConfig): void => {
       continue;
     }
 
+    if (record.role === 'scheduler-worker') {
+      continue;
+    }
+
     const owned =
       record.role === 'express'
         ? !!(merged.expressDir && isExpressHealthy(record.port, merged.healthPath, merged.expressDir))

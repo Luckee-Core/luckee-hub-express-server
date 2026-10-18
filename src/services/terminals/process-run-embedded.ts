@@ -26,32 +26,14 @@ import {
   buildWebOnlyPtyCommand,
   spawnProjectPty,
 } from './spawn-project-pty';
-import { ensureProjectTerminalSessions } from './ensure-project-terminal-sessions';
 import { clearSuppressedRoles } from './session-registry';
+import { stopProjectDevServersForRun } from './stop-project-dev-servers-for-run';
 import type { RunEmbeddedResult, TerminalSessionInfo } from './types';
 import { writeJobFile } from './write-job-file';
 
 const HUB_TMP = '/tmp/luckee-hub';
 
 const hasNodeModules = (dir?: string): boolean => !!(dir && fs.existsSync(`${dir}/node_modules`));
-
-const attachRunningStatusSessions = (projectId: string, sessions: TerminalSessionInfo[]): void => {
-  const hubRoot = path.resolve(__dirname, '../../..');
-  const registry = readRegistry(hubRoot);
-  const localConfig = readLocalConfig(hubRoot);
-  const entry = registry.find((project) => project.id === projectId);
-  const local = localConfig.projects?.[projectId];
-  if (!entry || !local || local.enabled === false) {
-    return;
-  }
-
-  const attached = ensureProjectTerminalSessions({ entry, local, localConfig });
-  for (const session of attached) {
-    if (!sessions.some((existing) => existing.role === session.role)) {
-      sessions.push(session);
-    }
-  }
-};
 
 /**
  * Background: wait for Express, spawn Web PTY, open Chrome, finalize job file.
@@ -97,64 +79,50 @@ const completeEmbeddedJob = async (
 
     let webUrl: string | undefined;
     if (merged.webDir && projectHasNextjsRepo(merged.registry)) {
-      webUrl = findOwnedNextWebUrl(merged.webDir);
+      writeJobFile({
+        jobId,
+        projectId,
+        status: 'running',
+        message: 'Starting Web dev server (first free port from 3000)...',
+        sessions,
+        updatedAt: new Date().toISOString(),
+      });
 
-      if (webUrl) {
-        attachRunningStatusSessions(projectId, sessions);
+      try {
+        const webSession = spawnProjectPty({
+          projectId,
+          role: 'web',
+          label: `${projectId} / Web`,
+          command: buildWebOnlyPtyCommand(merged),
+          cwd: merged.webDir,
+          port: webPortStart,
+        });
+        sessions.push(webSession);
+      } catch (error: unknown) {
+        const message = error instanceof Error ? error.message : 'Failed to spawn Web terminal';
         writeJobFile({
           jobId,
           projectId,
-          status: 'running',
-          message: 'Next.js already running',
+          status: 'failed',
+          message,
           sessions,
           updatedAt: new Date().toISOString(),
         });
-      } else {
-        writeJobFile({
-          jobId,
-          projectId,
-          status: 'running',
-          message: 'Starting Web dev server (first free port from 3000)...',
-          sessions,
-          updatedAt: new Date().toISOString(),
-        });
+        return;
+      }
 
-        try {
-          const webSession = spawnProjectPty({
-            projectId,
-            role: 'web',
-            label: `${projectId} / Web`,
-            command: buildWebOnlyPtyCommand(merged),
-            cwd: merged.webDir,
-            port: webPortStart,
-          });
-          sessions.push(webSession);
-        } catch (error: unknown) {
-          const message = error instanceof Error ? error.message : 'Failed to spawn Web terminal';
-          writeJobFile({
-            jobId,
-            projectId,
-            status: 'failed',
-            message,
-            sessions,
-            updatedAt: new Date().toISOString(),
-          });
-          return;
-        }
+      writeJobFile({
+        jobId,
+        projectId,
+        status: 'running',
+        message: 'Waiting for Next.js...',
+        sessions,
+        updatedAt: new Date().toISOString(),
+      });
 
-        writeJobFile({
-          jobId,
-          projectId,
-          status: 'running',
-          message: 'Waiting for Next.js...',
-          sessions,
-          updatedAt: new Date().toISOString(),
-        });
-
-        webUrl = await waitForOwnedNextWebUrl(120, merged.webDir);
-        if (!webUrl) {
-          webUrl = findOwnedNextWebUrl(merged.webDir);
-        }
+      webUrl = await waitForOwnedNextWebUrl(120, merged.webDir);
+      if (!webUrl) {
+        webUrl = findOwnedNextWebUrl(merged.webDir);
       }
       if (webUrl) {
         const { writeFileSync, mkdirSync } = await import('fs');
@@ -181,8 +149,6 @@ const completeEmbeddedJob = async (
     if (webUrl) {
       openInChrome(applyWebOpenPath(webUrl, merged.registry.webOpenPath));
     }
-
-    attachRunningStatusSessions(projectId, sessions);
 
     writeJobFile({
       jobId,
@@ -229,6 +195,7 @@ export const processRunEmbedded = (projectId: string): RunEmbeddedResult | null 
     webPortStart,
   };
   clearSuppressedRoles(projectId);
+  stopProjectDevServersForRun(projectId, entry, runMerged);
   writeResolvedProjectPorts(projectId, {
     apiPort,
     webPortStart,
@@ -335,8 +302,6 @@ export const processRunEmbedded = (projectId: string): RunEmbeddedResult | null 
     sessions,
     updatedAt: new Date().toISOString(),
   });
-
-  attachRunningStatusSessions(projectId, sessions);
 
   void completeEmbeddedJob(
     jobId,
