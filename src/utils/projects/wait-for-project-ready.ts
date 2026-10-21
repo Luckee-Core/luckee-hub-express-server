@@ -1,5 +1,3 @@
-import { execSync } from 'child_process';
-
 import {
   findWebUrlOnPorts,
   isExpressHealthOk,
@@ -15,11 +13,17 @@ export const WEB_PORT_WALK_END = 3100;
 const sleep = (ms: number): Promise<void> =>
   new Promise((resolve) => setTimeout(resolve, ms));
 
-const curlQuiet = (args: string): string | null => {
+/**
+ * True when Next.js responds on the URL without rendering the app (HEAD only).
+ * Full GET would run RSC and hammer project APIs during hub Run.
+ */
+const isNextWebUrlReady = (url: string, ownerDir?: string): boolean => {
   try {
-    return execSync(`curl -fsS ${args} 2>/dev/null`, { encoding: 'utf8', timeout: 3000 });
+    const parsed = new URL(url);
+    const port = Number(parsed.port) || 80;
+    return isNextDevServerOnPort(port, ownerDir);
   } catch {
-    return null;
+    return false;
   }
 };
 
@@ -194,8 +198,7 @@ export const waitForNextWebUrl = async (
       continue;
     }
     const url = `http://localhost:${webPort}`;
-    const ok = curlQuiet(`-o /dev/null "${url}"`);
-    if (ok !== null) {
+    if (isNextWebUrlReady(url, ownerDir)) {
       return url;
     }
     await sleep(1000);
@@ -212,11 +215,8 @@ export const waitForOwnedNextWebUrl = async (
 ): Promise<string | undefined> => {
   for (let i = 0; i < maxSeconds; i += 1) {
     const url = findOwnedNextWebUrl(ownerDir);
-    if (url) {
-      const ok = curlQuiet(`-o /dev/null "${url}"`);
-      if (ok !== null) {
-        return url;
-      }
+    if (url && isNextWebUrlReady(url, ownerDir)) {
+      return url;
     }
     await sleep(1000);
   }

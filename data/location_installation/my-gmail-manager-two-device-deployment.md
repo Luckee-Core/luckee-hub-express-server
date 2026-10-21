@@ -1,8 +1,12 @@
-# My Gmail Manager — storage host + dispatcher (two Macs)
+# My Gmail Manager — storage host + API host (two Macs)
+
+**Generic pattern (Next → Express API → remote storage on studio):** [web-express-remote-storage-deployment.md](./web-express-remote-storage-deployment.md)
 
 Catalog id: **`my-gmail-manager`** (`data/projects.registry.json`).
 
-Use this when **canonical Postgres and Storage Express** run on one Mac (e.g. **studio**) and **dispatcher Express + web UI** run on another (e.g. **laptop**). The hub on each machine still uses the same catalog entry; what differs is **which processes you start** and **which `.env` files you maintain**.
+Use this when **canonical Postgres and Storage Express** run on one Mac (e.g. **studio**) and **Express API + web UI** run on another (e.g. **laptop**). Express on the laptop still runs Gmail, OAuth, and AI locally; **CRUD** goes to studio storage when `STORAGE_MODE=remote`. The hub on each machine uses the same catalog entry; what differs is **which processes you start** and **which `.env` files you maintain**.
+
+**Gmail instance commands:** [my-gmail-manager/DEPLOYMENT.md](../../../my-gmail-manager/DEPLOYMENT.md)
 
 **Hub install checklist (any machine):** [README.md](./README.md)
 
@@ -15,18 +19,18 @@ Use this when **canonical Postgres and Storage Express** run on one Mac (e.g. **
 | Mac | Hub actions | Processes | Local Postgres |
 |-----|-------------|-----------|----------------|
 | **Storage host** (studio) | Local database → Setup; **Storage** → Start | `my-gmail-manager-storage-express-server` `:3010` | **Yes** — `gmail_manager` (`envRepo: storage-express`) |
-| **Dispatcher host** (laptop) | Express env → Storage group; **Run** | `my-gmail-manager-express-server` `:3052`, web `:3053` | **No** — `STORAGE_MODE=remote` |
+| **API host** (laptop) | Express env → Storage group; **Run** | `my-gmail-manager-express-server` `:3052`, web `:3053` | **No** — `STORAGE_MODE=remote` |
 
 ```text
-  Browser (dispatcher Mac, Next ~:3053)
+  Browser (laptop, Next ~:3053)
         │  NEXT_PUBLIC_EXPRESS_URL → :3052
         ▼
-  Dispatcher Express (dispatcher Mac)
+  Express API (laptop) — Gmail/OAuth/AI here; CRUD via storage when remote
         │  STORAGE_EXPRESS_URL + x-storage-secret
         ▼
-  Storage Express (storage Mac :3010)
+  Storage Express (studio :3010)
         ▼
-  Postgres 127.0.0.1 (storage Mac only)
+  Postgres 127.0.0.1 (studio only)
 ```
 
 Browsers never call Storage Express or remote Postgres.
@@ -109,7 +113,7 @@ Product detail: **`my-gmail-manager-storage-express-server/STORAGE-HOST-SETUP.md
 
 ---
 
-## Dispatcher host (laptop) — checklist
+## API host (laptop) — checklist
 
 1. **Postgres** — **not required** for remote dispatcher (skip Local database on laptop unless you want an optional local copy).
 2. **Clone / paths** — express + web on this Mac; `expressDir` / `webDir` in `hub.local.json`.

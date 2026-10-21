@@ -828,5 +828,51 @@
         }
       }
     }
+  },
+  {
+    "id": "my-vercel-analytics",
+    "name": "My Many Domains",
+    "description": "Unified dashboard for Vercel Web Analytics across many domains (mymanydomains.com)",
+    "repos": [
+      {
+        "repoType": "express",
+        "repoName": "my-vercel-analytics-express-server",
+        "defaultApiPort": 3073,
+        "healthPath": "/api/health"
+      },
+      {
+        "repoType": "nextjs",
+        "repoName": "my-vercel-analytics-web",
+        "defaultWebPortStart": 3074
+      },
+      {
+        "repoType": "nextjs",
+        "repoName": "my-vercel-analytics-console",
+        "defaultWebPortStart": 3075
+      }
+    ],
+    "localDatabase": {
+      "kind": "postgres",
+      "databaseName": "my_vercel_analytics",
+      "migrationsDir": "sql",
+      "migrationFiles": ["websites.sql"],
+      "expectedTables": ["websites"],
+      "postgres": {
+        "host": "127.0.0.1",
+        "port": 5432,
+        "formula": "postgresql@16",
+        "installCommand": "brew install postgresql@16",
+        "startCommand": "brew services start postgresql@16",
+        "stopCommand": "brew services stop postgresql@16"
+      }
+    },
+    "expressEnv": {
+      "groups": {
+        "vercel": {
+          "label": "Vercel Web Analytics",
+          "keys": ["VERCEL_ACCESS_TOKEN", "VERCEL_TEAM_ID"]
+        }
+      }
+    }
   }
 ]

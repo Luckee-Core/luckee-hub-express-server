@@ -202,6 +202,13 @@
       "webDir": "/Users/matthewruiz/github/makeitsoundlikeme/make-it-sound-like-me-web",
       "expressDir": "/Users/matthewruiz/github/makeitsoundlikeme/make-it-sound-like-me-express-server",
       "webPortStart": 3072
+    },
+    "my-vercel-analytics": {
+      "enabled": true,
+      "webDir": "/Users/matthewruiz/github/mymanydomains.com/my-vercel-analytics-web",
+      "expressDir": "/Users/matthewruiz/github/mymanydomains.com/my-vercel-analytics-express-server",
+      "webPortStart": 3074,
+      "_comment": "Hub Run starts product web on 3074. Operator console is my-vercel-analytics-console on 3075 (npm run dev in that repo)."
     }
   }
 }
