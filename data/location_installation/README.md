@@ -15,7 +15,7 @@ Use this as a **checklist**: complete each step in order on a fresh machine, or 
 | 3 | Hub repos + `luckeeParent` | Projects header → pick folder | Clone siblings, edit `hub.local.json` |
 | 4 | Hub Express + Web | Desktop app or `luckeehub` | `npm run dev` in both repos |
 | 5 | Per-project clone + env | Setup + Overview tabs | `git clone`, `npm install` |
-| 6 | Optional: Storage, Cursor, Chrome, cron | Run / launchd / Open Cursor | [Gmail two-device](./my-gmail-manager-two-device-deployment.md), [Local scheduler studio](./local-scheduler-studio-deployment.md), [Three-device evolution](./three-device-gmail-and-cron-evolution.md) |
+| 6 | Optional: Storage, Cursor, Chrome, cron | Run / launchd / Open Cursor | [Web → Express API → remote storage](./web-express-remote-storage-deployment.md), [Gmail hub checklist](./my-gmail-manager-two-device-deployment.md), [Local scheduler studio](./local-scheduler-studio-deployment.md), [Three-device evolution](./three-device-gmail-and-cron-evolution.md) |
 
 ---
 
@@ -240,7 +240,7 @@ Projects **without** `localDatabase` skip this tab (`supported: false`).
 
 Registry `expressEnv.groups` (e.g. My Gmail Manager **Storage Express**) defines keys to fill on the detail page. Secrets live only in the **cloned project `.env`**, not in `hub.local.json`.
 
-Example keys for dispatcher + remote storage: `STORAGE_EXPRESS_URL`, `STORAGE_EXPRESS_SECRET`, `STORAGE_MODE`, Google OAuth vars — see each project’s `.env.example`.
+Example keys for Express API + remote storage: `STORAGE_EXPRESS_URL`, `STORAGE_EXPRESS_SECRET`, `STORAGE_MODE`, Google OAuth vars — see each project’s `.env.example`.
 
 ### 5e — Run / Close
 
@@ -255,10 +255,11 @@ Example keys for dispatcher + remote storage: `STORAGE_EXPRESS_URL`, `STORAGE_EX
 
 Registry may include `repoType: "storage-express"`. Setup clones a third repo; **Run** starts it on its registry port (e.g. `3010`). Local **Postgres + migrations** often target the storage repo when `localDatabase.envRepo` is `"storage-express"`.
 
-Multi-machine layouts (canonical DB on one host, dispatcher on another):
+Multi-machine layouts (canonical DB on studio; Express API on studio and/or other Macs):
 
-- **[My Gmail Manager — two Macs](./my-gmail-manager-two-device-deployment.md)** (storage host + dispatcher host, hub paths, secrets, ports)
-- Product repos: `STUDIO-DISPATCHER-SETUP.md`, `STORAGE-HOST-SETUP.md`, `TWO-DEVICE-DEPLOYMENT.md` under `my-gmail-manager/`
+- **[Web → Express API → remote Storage Express](./web-express-remote-storage-deployment.md)** — Express handles integrations and logic; CRUD goes to studio storage when `STORAGE_MODE=remote`
+- **[My Gmail Manager — hub checklist](./my-gmail-manager-two-device-deployment.md)** — catalog id, registry ports, hub paths
+- Gmail instance: `my-gmail-manager/DEPLOYMENT.md`
 
 The hub still expects Postgres on the machine where you run **storage-express** locally.
 
@@ -312,12 +313,13 @@ WebSocket terminal stream requires hub Express running; job logs for Setup live 
 | `.cursor/architecture/012-project-setup-into-luckee.md` | Setup clone layout |
 | `.cursor/architecture/013-supabase-config-service.md` | Supabase tab |
 | `.cursor/architecture/021-storage-express-launcher.md` | Storage repo + `envRepo` |
-| [my-gmail-manager-two-device-deployment.md](./my-gmail-manager-two-device-deployment.md) | Gmail: studio storage + laptop dispatcher |
+| [web-express-remote-storage-deployment.md](./web-express-remote-storage-deployment.md) | Next → Express API → remote storage (studio CRUD; multi-machine UI) |
+| [my-gmail-manager-two-device-deployment.md](./my-gmail-manager-two-device-deployment.md) | Gmail: hub checklist for the pattern above |
 | [local-scheduler-studio-deployment.md](./local-scheduler-studio-deployment.md) | Studio cron + `local_scheduler` |
 | [three-device-gmail-and-cron-evolution.md](./three-device-gmail-and-cron-evolution.md) | Apps / API / storage / cron phases |
 | [studio-deployment-inventory.template.md](./studio-deployment-inventory.template.md) | Phase 0 machine checklist |
 
-Product-specific install notes (dispatcher vs storage host) remain in each catalog repo’s markdown files.
+Product-specific install notes (API vs storage host) remain in each catalog repo’s markdown files.
 
 ---
 

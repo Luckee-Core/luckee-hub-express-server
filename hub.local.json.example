@@ -211,6 +211,13 @@
       "expressDir": "/Users/matthewruiz/luckee/on-device-dispatcher/on-device-dispatcher-express-server",
       "webPortStart": 3074,
       "_comment": "Hub Run starts product web on 3074. Business console is on-device-dispatcher-console on 3075 (npm run dev). Studio LAN gateway often uses PORT=3010 in express .env — see STUDIO-GATEWAY-SETUP.md."
+    },
+    "my-vercel-analytics": {
+      "enabled": true,
+      "webDir": "/Users/matthewruiz/github/mymanydomains.com/my-vercel-analytics-web",
+      "expressDir": "/Users/matthewruiz/github/mymanydomains.com/my-vercel-analytics-express-server",
+      "webPortStart": 3077,
+      "_comment": "Hub Run starts product web on 3077. Operator console is my-vercel-analytics-console on 3078 (npm run dev). Express defaultApiPort 3076 in projects.registry.json."
     }
   }
 }

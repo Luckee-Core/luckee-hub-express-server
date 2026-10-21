@@ -1,13 +1,14 @@
 {
   "startedByHub": [
     {
-      "projectId": "my-health",
+      "projectId": "code-commit-summaries",
       "formula": "postgresql@16",
-      "startedAt": "2026-07-15T13:42:01.948Z"
+      "startedAt": "2026-10-21T15:50:27.961Z"
     }
   ],
   "activeConsumers": [
     "code-commit-summaries",
-    "local-scheduler"
+    "local-scheduler",
+    "my-vercel-analytics"
   ]
 }
