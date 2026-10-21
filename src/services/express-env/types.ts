@@ -1,4 +1,4 @@
-export type ExpressEnvGroupId = 'ai' | 'google-maps' | 'email' | 'storage';
+export type ExpressEnvGroupId = 'ai' | 'google-maps' | 'email' | 'storage' | 'gateway';
 
 export type ExpressEnvGroupConfig = {
   label: string;

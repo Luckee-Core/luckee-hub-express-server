@@ -23,6 +23,7 @@ Use this when the **Mac Studio** runs **canonical Gmail storage** (Postgres + St
 | Storage Express | Yes | 3010 | `gmail_manager` (storage repo) |
 | Local scheduler Express | Yes (launchd) | **3022** | `local_scheduler` |
 | Gmail dispatcher Express | No (spawn per job) | 3052 | none (`STORAGE_MODE=remote`) |
+| City Nonprofits Express | No (spawn per job) | 3028 | none (uses **production** Supabase via `.env`) |
 | Local scheduler web | Optional | 3023 | none |
 | Gmail web | Optional on studio | 3053 | none |
 
@@ -94,7 +95,7 @@ Copy from `scheduler.local.json.example` in the scheduler repo. Minimum for Gmai
 }
 ```
 
-Add other `workerProjectId` keys from `data/tasks.registry.json` (e.g. `philly-ai-consulting`).
+Add other `workerProjectId` keys from `data/tasks.registry.json` (e.g. `philly-ai-consulting`, **`city-nonprofits`**). See `scheduler.local.json.studio.example` in the scheduler repo.
 
 ### Scheduler `.env`
 
@@ -106,6 +107,7 @@ Copy `.env.example`. Required:
 | `DATABASE_URL` | `postgresql://USER@127.0.0.1:5432/local_scheduler` |
 | `GMAIL_MANAGER_CRON_SECRET` | Same value as dispatcher `.env` |
 | `PHILLY_AI_CONSULTING_CRON_SECRET` | If that worker is enabled |
+| `CITY_NONPROFITS_CRON_SECRET` | Monday digest tasks; same value as spawned `city-nonprofits-express-server` |
 
 Worker cron secrets must exist in **scheduler** `.env` (`authEnvKey` on each task).
 
@@ -123,6 +125,18 @@ Phase 1 highlights:
 - `STORAGE_EXPRESS_SECRET` = storage `STORAGE_DISPATCHER_SECRET`
 - `GMAIL_MANAGER_CRON_SECRET` = scheduler value
 - **No** `DATABASE_URL`
+
+### City Nonprofits Express `.env` (spawn target)
+
+On the **same Mac** as the scheduler (Monday digest enqueue + process-due):
+
+- `city-nonprofits-express-server/.env.studio-scheduler.example` → copy to `.env`
+- `PORT=3028`, `CITY_NONPROFITS_CRON_SECRET` = scheduler value
+- **Production** `SUPABASE_URL` + `SUPABASE_SERVICE_ROLE_KEY` and Gmail send vars (queue lives in prod Supabase)
+- Set `EMAIL_OPEN_TRACKING_BASE_URL` (or `RAILWAY_PUBLIC_DOMAIN`) to the **public Railway host** so digest pixels/links are not localhost
+- Run `npm run build` before relying on `npm start` from the scheduler
+
+**Supabase pg_cron:** Unschedule `invoke-monday-digest-enqueue` and `invoke-monday-digest-process-due` when studio owns digest (`city-nonprofits-express-server/supabase/cron-jobs/README.md`).
 
 ---
 
@@ -165,6 +179,16 @@ curl -s "http://127.0.0.1:3022/api/runs?limit=5"
 
 Worker spawn log: `/tmp/local-scheduler/workers/my-gmail-manager.log` (or `SCHEDULER_WORKERS_DIR`).
 
+City Nonprofits smoke (may send email if digest queue rows are due):
+
+```bash
+./scripts/verify-seeded-workers.sh --run-now
+# or:
+curl -s -X POST http://127.0.0.1:3022/api/tasks/city-nonprofits-monday-digest-process-due/run-now
+```
+
+Worker log: `${SCHEDULER_WORKERS_DIR:-/tmp/local-scheduler/workers}/city-nonprofits.log`
+
 ---
 
 ## Optional — scheduler web (studio desktop only)
@@ -186,7 +210,7 @@ Bind is local; do not expose on LAN. Not required on laptops used only for Gmail
 | **Production** | launchd | Spawn/stop per job |
 | **Dev** | hub **Run** on local-scheduler | hub **Run** on gmail — scheduler may **not** stop hub-started workers |
 
-Before relying on spawn/stop, **Close** gmail project in hub to free port 3052.
+Before relying on spawn/stop, **Close** gmail project in hub to free port 3052. Same for **city-nonprofits** on port **3028**.
 
 ---
 
@@ -200,6 +224,10 @@ Before relying on spawn/stop, **Close** gmail project in hub to free port 3052.
 | HTTP 401/403 on job | Align `GMAIL_MANAGER_CRON_SECRET` |
 | Port 3022 in use | hub Close local-scheduler or change `PORT` everywhere |
 | Duplicate morning sync | Second scheduler launchd on another Mac |
+| Digest HTTP 401 | Align `CITY_NONPROFITS_CRON_SECRET` scheduler + worker |
+| Digest enqueue 400 on Run now (not Monday) | Use CRM enqueue with `force` or wait until Monday |
+| Double digest sends | Studio cron + Supabase pg_cron both active — unschedule digest jobs |
+| Port 3028 in use | Hub **Close** city-nonprofits or stop manual `npm start` |
 
 ---
 
@@ -210,3 +238,4 @@ Before relying on spawn/stop, **Close** gmail project in hub to free port 3052.
 | Scheduler product README | `local-scheduler-express-server/README.md` |
 | ADR 009 | `local-scheduler-express-server/.cursor/architecture/009-local-scheduler-service.md` |
 | Gmail jobs ADR 018–019 | `my-gmail-manager-express-server/.cursor/architecture/` |
+| Monday digest ADR 026 | `city-nonprofits-express-server/.cursor/architecture/026-monday-digest-email.md` |

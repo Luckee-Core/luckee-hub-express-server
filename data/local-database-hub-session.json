@@ -7,9 +7,7 @@
     }
   ],
   "activeConsumers": [
-    "speech-therapy-tracker",
     "code-commit-summaries",
-    "local-scheduler",
-    "my-gmail-manager"
+    "local-scheduler"
   ]
 }

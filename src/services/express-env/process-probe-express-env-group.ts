@@ -60,7 +60,11 @@ export const processProbeExpressEnvGroup = (
                 k === 'STORAGE_EXPRESS_URL' ||
                 k === 'STORAGE_EXPRESS_SECRET',
             )
-          : group.keys;
+          : groupId === 'gateway'
+            ? group.keys.filter(
+                (k) => k === 'DISPATCHER_GATE_SECRET' || k === 'GMAIL_STORAGE_DISPATCHER_SECRET',
+              )
+            : group.keys;
   const configured = requiredKeys.every((key) => keysPresent[key]);
 
   console.log('✅ [express-env.processProbeExpressEnvGroup] Probe complete', {

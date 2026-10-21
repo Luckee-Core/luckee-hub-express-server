@@ -101,8 +101,10 @@
     },
     "qr-code-generator": {
       "enabled": true,
-      "expressDir": "/Users/matthewruiz/github/qr-code-generator/qr-code-generator-open-source-express-server",
-      "workspaceFile": "/Users/matthewruiz/github/qr-code-generator/qr-code-generator-open-source-express-server.code-workspace"
+      "webDir": "/Users/matthewruiz/github/luckee/qr-code-generator/qr-code-generator-web",
+      "expressDir": "/Users/matthewruiz/github/luckee/qr-code-generator/qr-code-generator-express-server-cms",
+      "workspaceFile": "/Users/matthewruiz/github/luckee/qr-code-generator/qr-code-generator.code-workspace",
+      "webPortStart": 3041
     },
     "reddit-scraper": {
       "enabled": true,
@@ -202,6 +204,13 @@
       "webDir": "/Users/matthewruiz/github/makeitsoundlikeme/make-it-sound-like-me-web",
       "expressDir": "/Users/matthewruiz/github/makeitsoundlikeme/make-it-sound-like-me-express-server",
       "webPortStart": 3072
+    },
+    "on-device-dispatcher": {
+      "enabled": true,
+      "webDir": "/Users/matthewruiz/luckee/on-device-dispatcher/on-device-dispatcher-web",
+      "expressDir": "/Users/matthewruiz/luckee/on-device-dispatcher/on-device-dispatcher-express-server",
+      "webPortStart": 3074,
+      "_comment": "Hub Run starts product web on 3074. Business console is on-device-dispatcher-console on 3075 (npm run dev). Studio LAN gateway often uses PORT=3010 in express .env — see STUDIO-GATEWAY-SETUP.md."
     }
   }
 }

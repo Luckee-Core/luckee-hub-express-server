@@ -150,8 +150,17 @@
       "kind": "postgres",
       "databaseName": "local_scheduler",
       "migrationsDir": "sql/migrations",
-      "migrationFiles": ["001_scheduled_tasks_and_runs.sql"],
-      "expectedTables": ["scheduled_tasks", "scheduler_runs"],
+      "migrationFiles": [
+        "001_scheduled_tasks_and_runs.sql",
+        "002_scheduler_project_and_repo.sql",
+        "003_city_nonprofits_repo_local.sql"
+      ],
+      "expectedTables": [
+        "scheduled_tasks",
+        "scheduler_runs",
+        "scheduler_project",
+        "scheduler_project_repo"
+      ],
       "envRepo": "express",
       "postgres": {
         "host": "127.0.0.1",
@@ -348,13 +357,18 @@
   {
     "id": "qr-code-generator",
     "name": "QR Code Generator",
-    "description": "QR generation API utilities",
+    "description": "QR generation product (marketing web + CMS API)",
     "repos": [
       {
         "repoType": "express",
-        "repoName": "qr-code-generator-open-source-express-server",
+        "repoName": "qr-code-generator-express-server-cms",
         "defaultApiPort": 3040,
         "healthPath": "/api/health"
+      },
+      {
+        "repoType": "nextjs",
+        "repoName": "qr-code-generator-web",
+        "defaultWebPortStart": 3041
       }
     ]
   },
@@ -825,6 +839,45 @@
         "ai": {
           "label": "AI",
           "keys": ["ANTHROPIC_API_KEY"]
+        }
+      }
+    }
+  },
+  {
+    "id": "on-device-dispatcher",
+    "name": "On-device dispatcher",
+    "description": "Studio gateway: lazy-start upstream Express services, proxy LAN callers (e.g. remote Gmail storage)",
+    "repos": [
+      {
+        "repoType": "express",
+        "repoName": "on-device-dispatcher-express-server",
+        "defaultApiPort": 3073,
+        "healthPath": "/api/dispatcher/health"
+      },
+      {
+        "repoType": "nextjs",
+        "repoName": "on-device-dispatcher-web",
+        "defaultWebPortStart": 3074
+      },
+      {
+        "repoType": "nextjs",
+        "repoName": "on-device-dispatcher-console",
+        "defaultWebPortStart": 3075
+      }
+    ],
+    "expressEnv": {
+      "groups": {
+        "gateway": {
+          "label": "Gateway (studio)",
+          "keys": [
+            "DISPATCHER_GATE_SECRET",
+            "DISPATCHER_INFRA_ADMIN_SECRET",
+            "GMAIL_STORAGE_DISPATCHER_SECRET",
+            "DISPATCHER_ALLOWED_CLIENT_IPS",
+            "DISPATCHER_SPAWN_ROOTS",
+            "DISPATCHER_BIND_HOST",
+            "PORT"
+          ]
         }
       }
     }
