@@ -133,6 +133,7 @@
       "enabled": true,
       "webDir": "/Users/matthewruiz/github/code-commit-summaries/code-commit-summaries-web",
       "expressDir": "/Users/matthewruiz/github/code-commit-summaries/code-commit-summaries-express-server",
+      "storageExpressDir": "/Users/matthewruiz/github/code-commit-summaries/code-commit-summaries-storage-express-server",
       "workspaceFile": "/Users/matthewruiz/github/code-commit-summaries/code-commit-summaries-web.code-workspace",
       "webPortStart": 3047
     },

@@ -511,6 +511,12 @@
         "healthPath": "/api/health"
       },
       {
+        "repoType": "storage-express",
+        "repoName": "code-commit-summaries-storage-express-server",
+        "defaultApiPort": 3079,
+        "healthPath": "/api/storage/health"
+      },
+      {
         "repoType": "nextjs",
         "repoName": "code-commit-summaries-web",
         "defaultWebPortStart": 3047
@@ -530,8 +536,12 @@
         "daily_summary_exchanges",
         "repo_summary_exchanges",
         "github_organization",
-        "github_repository"
+        "github_repository",
+        "content_project",
+        "github_commit",
+        "weekly_coding_summary"
       ],
+      "envRepo": "storage-express",
       "postgres": {
         "host": "127.0.0.1",
         "port": 5432,
@@ -539,6 +549,19 @@
         "installCommand": "brew install postgresql@16",
         "startCommand": "brew services start postgresql@16",
         "stopCommand": "brew services stop postgresql@16"
+      }
+    },
+    "expressEnv": {
+      "groups": {
+        "storage": {
+          "label": "Storage Express (remote)",
+          "keys": [
+            "STORAGE_MODE",
+            "STORAGE_EXPRESS_URL",
+            "STORAGE_EXPRESS_SECRET",
+            "STORAGE_REQUEST_TIMEOUT_MS"
+          ]
+        }
       }
     }
   },
