@@ -29,11 +29,49 @@
         "healthPath": "/api/health"
       },
       {
+        "repoType": "storage-express",
+        "repoName": "code-generator-storage-server",
+        "defaultApiPort": 3080,
+        "healthPath": "/api/storage/health"
+      },
+      {
         "repoType": "nextjs",
         "repoName": "code-control",
         "defaultWebPortStart": 3013
       }
-    ]
+    ],
+    "localDatabase": {
+      "kind": "postgres",
+      "databaseName": "code_control",
+      "migrationsDir": "migrations",
+      "migrationFiles": [
+        "000_helpers.sql",
+        "000a_create_customers.sql",
+        "001_workspaces_and_projects.sql"
+      ],
+      "expectedTables": ["customers", "customer_projects", "customer_project_repos"],
+      "envRepo": "storage-express",
+      "postgres": {
+        "host": "127.0.0.1",
+        "port": 5432,
+        "formula": "postgresql@16",
+        "installCommand": "brew install postgresql@16",
+        "startCommand": "brew services start postgresql@16",
+        "stopCommand": "brew services stop postgresql@16"
+      }
+    },
+    "expressEnv": {
+      "groups": {
+        "storage": {
+          "label": "Storage Express (remote)",
+          "keys": [
+            "STORAGE_EXPRESS_URL",
+            "STORAGE_EXPRESS_SECRET",
+            "STORAGE_REQUEST_TIMEOUT_MS"
+          ]
+        }
+      }
+    }
   },
   {
     "id": "code-your-resume",
