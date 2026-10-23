@@ -1,6 +1,7 @@
 import * as pty from 'node-pty';
 
 import { ensureSpawnHelperExecutable } from '../../utils/terminals/ensure-spawn-helper';
+import { readEnvKey } from '../../utils/supabase-config/upsert-env-keys';
 import { buildNvmShellPrefix, shellEscape } from '../../utils/projects/build-nvm-shell-prefix';
 import { detectApiRuntime } from '../../utils/projects/detect-api-runtime';
 import type { MergedProjectConfig } from '../projects/types';
@@ -35,13 +36,25 @@ const API_HEALTH_READY_PATTERN =
  * Build shell command to start the API dev server in a PTY.
  * Node runs npm. Python activates .venv and runs main.py.
  */
+const resolveExpressRunPort = (merged: MergedProjectConfig): number => {
+  const fromEnv = merged.expressDir ? readEnvKey(merged.expressDir, 'PORT') : null;
+  if (fromEnv) {
+    const port = Number(fromEnv);
+    if (Number.isFinite(port) && port > 0) {
+      return port;
+    }
+  }
+  return merged.apiPort;
+};
+
 export const buildExpressPtyCommand = (merged: MergedProjectConfig): string => {
   const dir = shellEscape(merged.expressDir ?? '');
+  const runPort = resolveExpressRunPort(merged);
   const runtime = detectApiRuntime(merged.expressDir);
   if (runtime === 'python') {
     return (
-      `cd '${dir}' && source .venv/bin/activate && export PORT=${merged.apiPort} && ` +
-      `echo '>>> ${merged.id} Python (:${merged.apiPort})' && python main.py`
+      `cd '${dir}' && source .venv/bin/activate && export PORT=${runPort} && ` +
+      `echo '>>> ${merged.id} Python (:${runPort})' && python main.py`
     );
   }
 
@@ -52,8 +65,8 @@ export const buildExpressPtyCommand = (merged: MergedProjectConfig): string => {
         `export WEB_ORIGIN='http://127.0.0.1:${merged.webPortStart}' && `
       : '';
   return (
-    `cd '${dir}' && ${nvm} && export PORT=${merged.apiPort} && ${webOriginExport}` +
-    `echo '>>> ${merged.id} Express (:${merged.apiPort})' && npm run dev`
+    `cd '${dir}' && ${nvm} && export PORT=${runPort} && ${webOriginExport}` +
+    `echo '>>> ${merged.id} Express (:${runPort})' && npm run dev`
   );
 };
 
