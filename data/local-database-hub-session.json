@@ -7,8 +7,6 @@
     }
   ],
   "activeConsumers": [
-    "code-commit-summaries",
-    "local-scheduler",
     "my-vercel-analytics"
   ]
 }
