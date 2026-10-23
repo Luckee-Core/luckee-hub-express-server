@@ -6,5 +6,7 @@
       "startedAt": "2026-10-21T15:50:27.961Z"
     }
   ],
-  "activeConsumers": ["code-commit-summaries", "my-vercel-analytics"]
+  "activeConsumers": [
+    "my-vercel-analytics"
+  ]
 }
