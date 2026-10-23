@@ -1,14 +1,6 @@
 {
-  "startedByHub": [
-    {
-      "projectId": "code-commit-summaries",
-      "formula": "postgresql@16",
-      "startedAt": "2026-10-21T15:50:27.961Z"
-    }
-  ],
+  "startedByHub": [],
   "activeConsumers": [
-    "code-commit-summaries",
-    "local-scheduler",
-    "my-vercel-analytics"
+    "code-commit-summaries"
   ]
 }
