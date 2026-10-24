@@ -14,6 +14,7 @@
       "enabled": true,
       "webDir": "/Users/matthewruiz/github/code-control/code-control",
       "expressDir": "/Users/matthewruiz/github/code-control/code-control-express-server",
+      "storageExpressDir": "/Users/matthewruiz/luckee/code-control/code-generator-storage-server",
       "webPortStart": 3013
     },
     "code-your-resume": {
