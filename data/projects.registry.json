@@ -63,10 +63,13 @@
     "expressEnv": {
       "groups": {
         "storage": {
-          "label": "Storage Express (remote)",
+          "label": "Code Control data (direct storage or main gateway)",
           "keys": [
-            "STORAGE_EXPRESS_URL",
-            "STORAGE_EXPRESS_SECRET",
+            "CODE_CONTROL_STORAGE_URL",
+            "CODE_CONTROL_STORAGE_SECRET",
+            "MAIN_GATEWAY_URL",
+            "DISPATCHER_GATE_SECRET",
+            "STORAGE_ACCESS_MODE",
             "STORAGE_REQUEST_TIMEOUT_MS"
           ]
         }
