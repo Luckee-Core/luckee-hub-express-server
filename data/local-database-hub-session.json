@@ -7,8 +7,6 @@
     }
   ],
   "activeConsumers": [
-    "code-commit-summaries",
-    "my-vercel-analytics",
-    "code-control"
+    "code-commit-summaries"
   ]
 }

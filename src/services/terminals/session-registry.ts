@@ -33,6 +33,21 @@ export const clearSuppressedRoles = (projectId: string): void => {
 };
 
 /**
+ * Clear suppression only for roles included in a selective Run.
+ */
+export const clearSuppressedRolesForTargets = (
+  projectId: string,
+  targets: Array<'express' | 'web'>,
+): void => {
+  if (targets.includes('express')) {
+    suppressedRoles.delete(roleKey(projectId, 'express'));
+  }
+  if (targets.includes('web')) {
+    suppressedRoles.delete(roleKey(projectId, 'web'));
+  }
+};
+
+/**
  * Allow Start storage to attach the storage terminal again.
  */
 export const clearSuppressedStorageExpressRole = (projectId: string): void => {

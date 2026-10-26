@@ -1,3 +1,4 @@
+import type { ProjectRunTarget } from './run-project-targets';
 import { processRunEmbedded } from '../terminals/process-run-embedded';
 import type { TerminalSessionInfo } from '../terminals/types';
 
@@ -9,5 +10,7 @@ export type RunProjectResult = {
 /**
  * Start project dev servers via embedded hub terminals.
  */
-export const processRunProject = (projectId: string): RunProjectResult | null =>
-  processRunEmbedded(projectId);
+export const processRunProject = (
+  projectId: string,
+  targets?: ProjectRunTarget[],
+): RunProjectResult | null => processRunEmbedded(projectId, { targets });

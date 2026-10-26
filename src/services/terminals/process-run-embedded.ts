@@ -26,7 +26,12 @@ import {
   buildWebOnlyPtyCommand,
   spawnProjectPty,
 } from './spawn-project-pty';
-import { clearSuppressedRoles } from './session-registry';
+import {
+  resolveRunTargets,
+  runTargetsInclude,
+  type ProjectRunTarget,
+} from '../launcher/run-project-targets';
+import { clearSuppressedRolesForTargets } from './session-registry';
 import { stopProjectDevServersForRun } from './stop-project-dev-servers-for-run';
 import type { RunEmbeddedResult, TerminalSessionInfo } from './types';
 import { writeJobFile } from './write-job-file';
@@ -46,9 +51,13 @@ const completeEmbeddedJob = async (
   needsExpressWait: boolean,
   webPortStart: number,
   apiUrl: string,
+  targets: ProjectRunTarget[],
 ): Promise<void> => {
+  const wantsWeb = runTargetsInclude(targets, 'web');
+  const wantsExpress = runTargetsInclude(targets, 'express');
+
   try {
-    if (needsExpressWait) {
+    if (needsExpressWait && wantsExpress) {
       writeJobFile({
         jobId,
         projectId,
@@ -78,7 +87,7 @@ const completeEmbeddedJob = async (
     }
 
     let webUrl: string | undefined;
-    if (merged.webDir && projectHasNextjsRepo(merged.registry)) {
+    if (wantsWeb && merged.webDir && projectHasNextjsRepo(merged.registry)) {
       writeJobFile({
         jobId,
         projectId,
@@ -138,7 +147,7 @@ const completeEmbeddedJob = async (
           webUrl,
         });
       }
-    } else if (merged.apiPort > 0) {
+    } else if (wantsExpress && merged.apiPort > 0) {
       writeResolvedProjectPorts(projectId, {
         apiPort: merged.apiPort,
         webPortStart,
@@ -150,11 +159,19 @@ const completeEmbeddedJob = async (
       openInChrome(applyWebOpenPath(webUrl, merged.registry.webOpenPath));
     }
 
+    const message = webUrl
+      ? 'Done'
+      : wantsWeb && !wantsExpress
+        ? 'Web running (API not started)'
+        : wantsExpress && !wantsWeb
+          ? 'Express running'
+          : 'Express running (Web URL not detected)';
+
     writeJobFile({
       jobId,
       projectId,
       status: 'completed',
-      message: webUrl ? 'Done' : 'Express running (Web URL not detected)',
+      message,
       webUrl,
       sessions,
       updatedAt: new Date().toISOString(),
@@ -172,10 +189,17 @@ const completeEmbeddedJob = async (
   }
 };
 
+type ProcessRunEmbeddedOptions = {
+  targets?: ProjectRunTarget[];
+};
+
 /**
  * Spawn embedded PTYs for a project Run job; Express first, Web after health (async).
  */
-export const processRunEmbedded = (projectId: string): RunEmbeddedResult | null => {
+export const processRunEmbedded = (
+  projectId: string,
+  options: ProcessRunEmbeddedOptions = {},
+): RunEmbeddedResult | null => {
   const hubRoot = path.resolve(__dirname, '../../..');
   const registry = readRegistry(hubRoot);
   const localConfig = readLocalConfig(hubRoot);
@@ -183,6 +207,14 @@ export const processRunEmbedded = (projectId: string): RunEmbeddedResult | null 
   if (!entry) {
     return null;
   }
+
+  const resolvedTargets = resolveRunTargets(entry, options.targets);
+  if ('error' in resolvedTargets) {
+    return null;
+  }
+  const targets = resolvedTargets;
+  const wantsExpress = runTargetsInclude(targets, 'express');
+  const wantsWeb = runTargetsInclude(targets, 'web');
 
   const merged = mergeProjectConfig(entry, localConfig);
   if (!merged) {
@@ -194,8 +226,8 @@ export const processRunEmbedded = (projectId: string): RunEmbeddedResult | null 
     ...withResolvedApiPort(merged, apiPort),
     webPortStart,
   };
-  clearSuppressedRoles(projectId);
-  stopProjectDevServersForRun(projectId, entry, runMerged);
+  clearSuppressedRolesForTargets(projectId, targets);
+  stopProjectDevServersForRun(projectId, entry, runMerged, targets);
   writeResolvedProjectPorts(projectId, {
     apiPort,
     webPortStart,
@@ -206,7 +238,7 @@ export const processRunEmbedded = (projectId: string): RunEmbeddedResult | null 
   const sessions: TerminalSessionInfo[] = [];
 
   const apiRuntime = detectApiRuntime(runMerged.expressDir);
-  if (runMerged.expressDir && !apiDepsInstalled(runMerged.expressDir)) {
+  if (wantsExpress && runMerged.expressDir && !apiDepsInstalled(runMerged.expressDir)) {
     writeJobFile({
       jobId,
       projectId,
@@ -221,7 +253,12 @@ export const processRunEmbedded = (projectId: string): RunEmbeddedResult | null 
     return { jobId, sessions };
   }
 
-  if (runMerged.webDir && projectHasNextjsRepo(runMerged.registry) && !hasNodeModules(runMerged.webDir)) {
+  if (
+    wantsWeb &&
+    runMerged.webDir &&
+    projectHasNextjsRepo(runMerged.registry) &&
+    !hasNodeModules(runMerged.webDir)
+  ) {
     writeJobFile({
       jobId,
       projectId,
@@ -233,8 +270,9 @@ export const processRunEmbedded = (projectId: string): RunEmbeddedResult | null 
     return { jobId, sessions };
   }
 
-  const ensureResult = processEnsureLocalDatabaseForRun(projectId);
-  if ('error' in ensureResult) {
+  if (wantsExpress) {
+    const ensureResult = processEnsureLocalDatabaseForRun(projectId);
+    if ('error' in ensureResult) {
     writeJobFile({
       jobId,
       projectId,
@@ -243,11 +281,13 @@ export const processRunEmbedded = (projectId: string): RunEmbeddedResult | null 
       sessions,
       updatedAt: new Date().toISOString(),
     });
-    return { jobId, sessions };
+      return { jobId, sessions };
+    }
   }
 
-  const supabaseEnsure = processEnsureSupabaseConfigForRun(projectId);
-  if ('error' in supabaseEnsure) {
+  if (wantsExpress) {
+    const supabaseEnsure = processEnsureSupabaseConfigForRun(projectId);
+    if ('error' in supabaseEnsure) {
     writeJobFile({
       jobId,
       projectId,
@@ -256,14 +296,18 @@ export const processRunEmbedded = (projectId: string): RunEmbeddedResult | null 
       sessions,
       updatedAt: new Date().toISOString(),
     });
-    return { jobId, sessions };
+      return { jobId, sessions };
+    }
   }
 
   const expressHealthy =
     !runMerged.expressDir ||
     isExpressHealthy(runMerged.apiPort, runMerged.healthPath, runMerged.expressDir);
 
-  const needsExpressWait = !!(runMerged.expressDir && !expressHealthy);
+  let needsExpressWait = false;
+  if (wantsExpress) {
+    needsExpressWait = !!(runMerged.expressDir && !expressHealthy);
+  }
 
   if (needsExpressWait) {
     try {
@@ -298,7 +342,9 @@ export const processRunEmbedded = (projectId: string): RunEmbeddedResult | null 
       ? apiRuntime === 'python'
         ? 'Starting Python...'
         : 'Starting Express...'
-      : 'Starting Web...',
+      : wantsWeb
+        ? 'Starting Web...'
+        : 'Starting...',
     sessions,
     updatedAt: new Date().toISOString(),
   });
@@ -311,6 +357,7 @@ export const processRunEmbedded = (projectId: string): RunEmbeddedResult | null 
     needsExpressWait,
     webPortStart,
     apiUrl,
+    targets,
   ).catch(
     (error: unknown) => {
       const message = error instanceof Error ? error.message : 'Embedded run failed';
