@@ -222,6 +222,12 @@
       "expressDir": "/Users/matthewruiz/github/mymanydomains.com/my-vercel-analytics-express-server",
       "webPortStart": 3077,
       "_comment": "Hub Run starts product web on 3077. Operator console is my-vercel-analytics-console on 3078 (npm run dev). Express defaultApiPort 3076 in projects.registry.json."
+    },
+    "twitterx-manager": {
+      "enabled": true,
+      "webDir": "/Users/matthewruiz/github/twitterx-manager/twitterx-manager-web",
+      "expressDir": "/Users/matthewruiz/github/twitterx-manager/twitterx-manager-express-server",
+      "webPortStart": 3082
     }
   }
 }

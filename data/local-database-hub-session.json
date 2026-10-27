@@ -9,6 +9,7 @@
   "activeConsumers": [
     "my-vercel-analytics",
     "local-scheduler",
-    "my-gmail-manager"
+    "my-gmail-manager",
+    "code-commit-summaries"
   ]
 }
