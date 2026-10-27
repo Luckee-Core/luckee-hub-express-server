@@ -7,7 +7,6 @@
     }
   ],
   "activeConsumers": [
-    "code-commit-summaries",
-    "speech-therapy-tracker"
+    "code-commit-summaries"
   ]
 }
