@@ -7,8 +7,8 @@
     }
   ],
   "activeConsumers": [
-    "code-commit-summaries",
     "my-vercel-analytics",
-    "code-control"
+    "local-scheduler",
+    "my-gmail-manager"
   ]
 }
