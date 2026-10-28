@@ -34,6 +34,8 @@ When a PTY exits, `removeSession` drops the registry entry and does **not** supp
 
 Run starts Next.js on the first free port from **3000** (3000 taken → 3001 → …), skipping the API port. The API stays on its catalog port when that port is free or already belongs to the project. If the catalog port is taken by another process, the API uses the next free port and the project list shows that live port.
 
+Web PTYs export `WEB_DEV_PORT_START` / `WEB_DEV_PORT_END` to that same shell-chosen port before `npm run dev`. Template repos that use `scripts/dev-with-dynamic-port.mjs` ignore `--port` CLI args; without the pin, Next can bind a port the hub does not detect (e.g. hub Express on `:3001`) and the run job hangs on “Waiting for Next.js…”.
+
 List live probes share one API lookup for `hookStatus` and `apiPort`: preferred port from `/tmp/luckee-hub/{id}-ports.json`, then the registry port if different. Two health checks at most — not a 10-port scan.
 
 ### Run flow

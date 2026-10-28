@@ -89,6 +89,13 @@ const buildNextDevPortWalk = (apiPort: number): string => {
   );
 };
 
+/**
+ * Pin `dev-with-dynamic-port.mjs` (Next template) to the shell-chosen port.
+ * Those scripts ignore `npm run dev -- --port`; they honor WEB_DEV_PORT_* instead.
+ */
+const buildWebDevPortPin = (): string =>
+  `export WEB_DEV_PORT_START="$port" && export WEB_DEV_PORT_END="$port" && `;
+
 const buildExpressApiEnvExports = (apiPort: number): string => {
   if (apiPort <= 0) {
     return '';
@@ -118,7 +125,8 @@ export const buildWebPtyCommand = (merged: MergedProjectConfig): string => {
     `echo '>>> ${merged.id} Web — waiting for ${apiLabel}...' && ` +
     `until curl -fsS '${healthUrl}' 2>/dev/null | grep -qE '${API_HEALTH_READY_PATTERN}'; do sleep 2; done && ` +
     `echo '>>> ${apiLabel} ready. Starting Next.js...' && ${buildNextDevPortWalk(merged.apiPort)}` +
-    `echo ">>> ${merged.id} Web (Next.js :$port)" && npm run dev -- --port "$port"`
+    `${buildWebDevPortPin()}` +
+    `echo ">>> ${merged.id} Web (Next.js :$port)" && npm run dev`
   );
 };
 
@@ -182,7 +190,8 @@ export const buildWebOnlyPtyCommand = (merged: MergedProjectConfig): string => {
   const apiEnv = buildExpressApiEnvExports(merged.apiPort);
   return (
     `cd '${dir}' && ${nvm} && ${apiEnv}${buildNextDevPortWalk(merged.apiPort)}` +
-    `echo ">>> ${merged.id} Web (Next.js :$port)" && npm run dev -- --port "$port"`
+    `${buildWebDevPortPin()}` +
+    `echo ">>> ${merged.id} Web (Next.js :$port)" && npm run dev`
   );
 };
 
