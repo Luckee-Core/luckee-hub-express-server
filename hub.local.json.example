@@ -155,6 +155,8 @@
       "webDir": "/Users/matthewruiz/github/my-gmail-manager/my-gmail-manager-web",
       "expressDir": "/Users/matthewruiz/github/my-gmail-manager/my-gmail-manager-express-server",
       "storageExpressDir": "/Users/matthewruiz/github/my-gmail-manager/my-gmail-manager-storage-express-server",
+      "dispatcherExpressDir": "/Users/matthewruiz/github/my-gmail-manager/my-gmail-manager-dispatcher-express-server",
+      "dispatcherWebDir": "/Users/matthewruiz/github/my-gmail-manager/my-gmail-manager-dispatcher-web",
       "workspaceFile": "/Users/matthewruiz/github/my-gmail-manager/my-gmail-manager-web.code-workspace",
       "webPortStart": 3053
     },
