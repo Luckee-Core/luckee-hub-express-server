@@ -10,6 +10,8 @@
     "my-vercel-analytics",
     "local-scheduler",
     "my-gmail-manager",
-    "code-commit-summaries"
+    "code-commit-summaries",
+    "speech-therapy-tracker",
+    "code-control"
   ]
 }

@@ -74,20 +74,24 @@ export const buildExpressPtyCommand = (merged: MergedProjectConfig): string => {
  * Build shell command to wait for Express health then start Next.js.
  */
 /**
- * Shell that picks the first free TCP port from 3000, skipping the API port.
- * Next is then started on that port so a busy 3000 walks to 3001, 3002, and so on.
+ * Shell that picks the first free TCP port from the catalog webPortStart (or 3000), skipping the API port.
+ * Next is then started on that port so a busy slot walks forward through 3100.
  */
-const buildNextDevPortWalk = (apiPort: number): string => {
+const buildNextDevPortWalk = (apiPort: number, webPortStart: number): string => {
+  const walkStart = webPortStart > 0 ? webPortStart : 3000;
   const skipApi = apiPort > 0 ? `[ "$port" -ne ${apiPort} ] && ` : '';
   return (
-    `unset PORT && port=3000 && ` +
+    `unset PORT && port=${walkStart} && ` +
     `while [ "$port" -le 3100 ]; do ` +
     `if ${skipApi}! lsof -nP -iTCP:"$port" -sTCP:LISTEN -t >/dev/null 2>&1; then break; fi; ` +
     `port=$((port + 1)); ` +
     `done && ` +
-    `if [ "$port" -gt 3100 ]; then echo '>>> No free Next.js port from 3000 through 3100'; exit 1; fi && `
+    `if [ "$port" -gt 3100 ]; then echo '>>> No free Next.js port from ${walkStart} through 3100'; exit 1; fi && `
   );
 };
+
+/** Plain `next dev` ignores WEB_DEV_PORT_*; pass --port so hub readiness probes match the listener. */
+const buildNextDevRun = (): string => `npm run dev -- --port "$port"`;
 
 /**
  * Pin `dev-with-dynamic-port.mjs` (Next template) to the shell-chosen port.
@@ -124,9 +128,9 @@ export const buildWebPtyCommand = (merged: MergedProjectConfig): string => {
     `cd '${dir}' && ${nvm} && ${apiEnv}` +
     `echo '>>> ${merged.id} Web — waiting for ${apiLabel}...' && ` +
     `until curl -fsS '${healthUrl}' 2>/dev/null | grep -qE '${API_HEALTH_READY_PATTERN}'; do sleep 2; done && ` +
-    `echo '>>> ${apiLabel} ready. Starting Next.js...' && ${buildNextDevPortWalk(merged.apiPort)}` +
+    `echo '>>> ${apiLabel} ready. Starting Next.js...' && ${buildNextDevPortWalk(merged.apiPort, merged.webPortStart)}` +
     `${buildWebDevPortPin()}` +
-    `echo ">>> ${merged.id} Web (Next.js :$port)" && npm run dev`
+    `echo ">>> ${merged.id} Web (Next.js :$port)" && ${buildNextDevRun()}`
   );
 };
 
@@ -189,9 +193,9 @@ export const buildWebOnlyPtyCommand = (merged: MergedProjectConfig): string => {
   const nvm = buildNvmPrefix(merged.nvmSh);
   const apiEnv = buildExpressApiEnvExports(merged.apiPort);
   return (
-    `cd '${dir}' && ${nvm} && ${apiEnv}${buildNextDevPortWalk(merged.apiPort)}` +
+    `cd '${dir}' && ${nvm} && ${apiEnv}${buildNextDevPortWalk(merged.apiPort, merged.webPortStart)}` +
     `${buildWebDevPortPin()}` +
-    `echo ">>> ${merged.id} Web (Next.js :$port)" && npm run dev`
+    `echo ">>> ${merged.id} Web (Next.js :$port)" && ${buildNextDevRun()}`
   );
 };
 
