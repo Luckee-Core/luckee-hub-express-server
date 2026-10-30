@@ -93,6 +93,13 @@
       "workspaceFile": "/Users/matthewruiz/github/my-ops-tracker/my-ops-tracker-web.code-workspace",
       "webPortStart": 3037
     },
+    "finances-manager": {
+      "enabled": true,
+      "webDir": "/Users/matthewruiz/github/finances-manager/finances-manager-web",
+      "expressDir": "/Users/matthewruiz/github/finances-manager/finances-manager-express-server",
+      "storageExpressDir": "/Users/matthewruiz/github/finances-manager/finances-manager-storage-express-server",
+      "webPortStart": 3093
+    },
     "personal-finances": {
       "enabled": true,
       "webDir": "/Users/matthewruiz/github/personal-finances/personal-finances",
@@ -228,6 +235,13 @@
       "webDir": "/Users/matthewruiz/github/twitterx-manager/twitterx-manager-web",
       "expressDir": "/Users/matthewruiz/github/twitterx-manager/twitterx-manager-express-server",
       "webPortStart": 3082
+    },
+    "estimate-and-proposals": {
+      "enabled": true,
+      "webDir": "/Users/matthewruiz/github/estimate-and-proposals/estimate-and-proposals-web",
+      "expressDir": "/Users/matthewruiz/github/estimate-and-proposals/estimate-and-proposals-express-server",
+      "storageExpressDir": "/Users/matthewruiz/github/estimate-and-proposals/estimate-and-proposals-storage-express-server",
+      "webPortStart": 3096
     }
   }
 }

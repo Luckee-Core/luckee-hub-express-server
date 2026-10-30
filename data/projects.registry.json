@@ -1009,5 +1009,141 @@
         "defaultWebPortStart": 3082
       }
     ]
+  },
+  {
+    "id": "finances-manager",
+    "name": "Finances Manager",
+    "description": "Customer retainers, subscriptions, and vendor software spend (CRM via ops-tracker proxy)",
+    "webOpenPath": "/finances",
+    "repos": [
+      {
+        "repoType": "storage-express",
+        "repoName": "finances-manager-storage-express-server",
+        "defaultApiPort": 3091,
+        "healthPath": "/api/storage/health"
+      },
+      {
+        "repoType": "express",
+        "repoName": "finances-manager-express-server",
+        "defaultApiPort": 3092,
+        "healthPath": "/api/health"
+      },
+      {
+        "repoType": "nextjs",
+        "repoName": "finances-manager-web",
+        "defaultWebPortStart": 3093
+      }
+    ],
+    "localDatabase": {
+      "kind": "postgres",
+      "databaseName": "finances_manager",
+      "migrationsDir": "migrations",
+      "migrationFiles": [
+        "001_extensions.sql",
+        "002_external_software.sql",
+        "003_subscriptions.sql",
+        "004_customer_retainers.sql",
+        "005_retainer_payments.sql",
+        "006_dispatcher_exposed_endpoints.sql"
+      ],
+      "expectedTables": [
+        "external_software",
+        "subscriptions",
+        "customer_retainers",
+        "retainer_payments",
+        "dispatcher_exposed_endpoints"
+      ],
+      "envRepo": "storage-express",
+      "postgres": {
+        "host": "127.0.0.1",
+        "port": 5432,
+        "formula": "postgresql@16",
+        "installCommand": "brew install postgresql@16",
+        "startCommand": "brew services start postgresql@16",
+        "stopCommand": "brew services stop postgresql@16"
+      }
+    },
+    "expressEnv": {
+      "groups": {
+        "storage": {
+          "label": "Finances storage (direct invoke)",
+          "keys": [
+            "FINANCES_MANAGER_STORAGE_URL",
+            "FINANCES_MANAGER_STORAGE_SECRET",
+            "CANONICAL_DATA_ACCESS_MODE"
+          ]
+        },
+        "ops-tracker": {
+          "label": "Ops Tracker CRM proxy",
+          "keys": ["OPS_TRACKER_EXPRESS_URL", "OPS_TRACKER_SERVICE_SECRET"]
+        }
+      }
+    }
+  },
+  {
+    "id": "estimate-and-proposals",
+    "name": "Estimate & Proposals",
+    "description": "Catalog estimates and proposal line items for ops-tracker CRM projects (Postgres storage + CRM proxy)",
+    "webOpenPath": "/estimates",
+    "repos": [
+      {
+        "repoType": "storage-express",
+        "repoName": "estimate-and-proposals-storage-express-server",
+        "defaultApiPort": 3094,
+        "healthPath": "/api/storage/health"
+      },
+      {
+        "repoType": "express",
+        "repoName": "estimate-and-proposals-express-server",
+        "defaultApiPort": 3095,
+        "healthPath": "/api/health"
+      },
+      {
+        "repoType": "nextjs",
+        "repoName": "estimate-and-proposals-web",
+        "defaultWebPortStart": 3096
+      }
+    ],
+    "localDatabase": {
+      "kind": "postgres",
+      "databaseName": "estimate_and_proposals",
+      "migrationsDir": "migrations",
+      "migrationFiles": [
+        "001_extensions.sql",
+        "002_estimates.sql",
+        "003_estimate_line_items.sql",
+        "004_dispatcher_exposed_endpoints.sql"
+      ],
+      "expectedTables": [
+        "estimates",
+        "estimate_line_items",
+        "dispatcher_exposed_endpoints"
+      ],
+      "envRepo": "storage-express",
+      "postgres": {
+        "host": "127.0.0.1",
+        "port": 5432,
+        "formula": "postgresql@16",
+        "installCommand": "brew install postgresql@16",
+        "startCommand": "brew services start postgresql@16",
+        "stopCommand": "brew services stop postgresql@16"
+      }
+    },
+    "expressEnv": {
+      "groups": {
+        "storage": {
+          "label": "Estimate & Proposals storage (direct invoke)",
+          "keys": [
+            "ESTIMATE_PROPOSALS_STORAGE_URL",
+            "ESTIMATE_PROPOSALS_STORAGE_SECRET",
+            "CANONICAL_DATA_ACCESS_MODE"
+          ]
+        },
+        "ops-tracker": {
+          "label": "Ops Tracker CRM proxy",
+          "keys": ["OPS_TRACKER_EXPRESS_URL", "OPS_TRACKER_SERVICE_SECRET"]
+        }
+      }
+    }
   }
 ]
