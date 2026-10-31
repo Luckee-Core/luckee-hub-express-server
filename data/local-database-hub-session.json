@@ -8,7 +8,8 @@
   ],
   "activeConsumers": [
     "local-scheduler",
-    "code-commit-summaries",
-    "speech-therapy-tracker"
+    "speech-therapy-tracker",
+    "my-ops-tracker",
+    "estimate-and-proposals"
   ]
 }

@@ -362,8 +362,14 @@
   {
     "id": "my-ops-tracker",
     "name": "My Ops Tracker",
-    "description": "Customers, projects, tickets, and time tracking",
+    "description": "Customers, projects, tickets, and time tracking (Postgres storage + CRM express)",
     "repos": [
+      {
+        "repoType": "storage-express",
+        "repoName": "my-ops-tracker-storage-express-server",
+        "defaultApiPort": 3091,
+        "healthPath": "/api/storage/health"
+      },
       {
         "repoType": "express",
         "repoName": "my-ops-tracker-express-server",
@@ -375,7 +381,50 @@
         "repoName": "my-ops-tracker-web",
         "defaultWebPortStart": 3037
       }
-    ]
+    ],
+    "localDatabase": {
+      "kind": "postgres",
+      "databaseName": "my_ops_tracker",
+      "migrationsDir": "migrations",
+      "migrationFiles": [
+        "001_extensions.sql",
+        "002_customers.sql",
+        "003_projects.sql",
+        "004_dispatcher_exposed_endpoints.sql",
+        "006_customer_contacts.sql",
+        "007_internal_projects.sql",
+        "008_tickets.sql",
+        "009_time_entries.sql",
+        "011_remove_users_table.sql",
+        "012_project_repos.sql",
+        "013_project_payments.sql",
+        "014_project_google_documents.sql",
+        "015_ticket_agent_runs.sql",
+        "016_tickets_project_repo_fk.sql"
+      ],
+      "expectedTables": [
+        "customers",
+        "customer_contacts",
+        "projects",
+        "internal_projects",
+        "project_repos",
+        "tickets",
+        "time_entries",
+        "project_payments",
+        "project_google_documents",
+        "ticket_agent_runs",
+        "dispatcher_exposed_endpoints"
+      ],
+      "envRepo": "storage-express",
+      "postgres": {
+        "host": "127.0.0.1",
+        "port": 5432,
+        "formula": "postgresql@16",
+        "installCommand": "brew install postgresql@16",
+        "startCommand": "brew services start postgresql@16",
+        "stopCommand": "brew services stop postgresql@16"
+      }
+    }
   },
   {
     "id": "personal-finances",
