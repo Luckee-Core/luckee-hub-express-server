@@ -9,6 +9,7 @@
   "activeConsumers": [
     "local-scheduler",
     "code-commit-summaries",
-    "speech-therapy-tracker"
+    "speech-therapy-tracker",
+    "code-control"
   ]
 }

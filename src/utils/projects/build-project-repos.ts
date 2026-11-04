@@ -19,8 +19,10 @@ export const buildProjectRepos = (
   entry: ProjectRegistryEntry,
   local: ProjectLocalEntry | undefined,
   githubOrg: string,
-): HubProjectRepo[] =>
-  entry.repos.map((repo) => {
+): HubProjectRepo[] => {
+  const projectGithubOrg = entry.githubOrg ?? githubOrg;
+
+  return entry.repos.map((repo) => {
     const localDir =
       repo.repoType === 'nextjs'
         ? local?.webDir
@@ -36,7 +38,7 @@ export const buildProjectRepos = (
       projectId: entry.id,
       repoType: repo.repoType,
       repoName: repo.repoName,
-      repoUrl: toGithubRepoUrl(githubOrg, repo.repoName),
+      repoUrl: toGithubRepoUrl(projectGithubOrg, repo.repoName),
       localDir,
       dirExists: localDir ? dirExists(localDir) : undefined,
       depsInstalled: localDir
@@ -50,3 +52,4 @@ export const buildProjectRepos = (
       healthPath: isApiLikeRepo ? repo.healthPath : undefined,
     };
   });
+};

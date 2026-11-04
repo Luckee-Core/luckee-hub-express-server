@@ -47,6 +47,8 @@ export type ProjectRegistryEntry = {
   id: string;
   name: string;
   description: string;
+  /** Override hub `githubOrg` / default `Luckee-Core` for this project's repos. */
+  githubOrg?: string;
   repos: ProjectRegistryRepoEntry[];
   /** Path opened in Chrome after Run (e.g. `/dashboard`). Origin `/` when omitted. */
   webOpenPath?: string;

@@ -32,6 +32,9 @@
     },
     "knowledge-studio": {
       "enabled": false,
+      "webDir": "/Users/matthewruiz/github/luckee/knowledge-studio/knowledge-studio-open-source",
+      "expressDir": "/Users/matthewruiz/github/luckee/knowledge-studio/knowledge-studio-express-server",
+      "storageExpressDir": "/Users/matthewruiz/github/luckee/knowledge-studio/knowledge-studio-storage-express-server",
       "webPortStart": 3019
     },
     "lead-studio": {
@@ -70,6 +73,7 @@
       "enabled": true,
       "webDir": "/Users/matthewruiz/github/my-fundraise/my-fundraise-web",
       "expressDir": "/Users/matthewruiz/github/my-fundraise/my-fundraise-express-server",
+      "storageExpressDir": "/Users/matthewruiz/github/my-fundraise/my-fundraise-storage-express-server",
       "workspaceFile": "/Users/matthewruiz/github/my-fundraise/my-fundraise-web.code-workspace",
       "webPortStart": 3031
     },
@@ -99,6 +103,21 @@
       "expressDir": "/Users/matthewruiz/github/finances-manager/finances-manager-express-server",
       "storageExpressDir": "/Users/matthewruiz/github/finances-manager/finances-manager-storage-express-server",
       "webPortStart": 3093
+    },
+    "integration-manager": {
+      "enabled": true,
+      "webDir": "/Users/matthewruiz/github/integration-manager/integration-manager-web",
+      "expressDir": "/Users/matthewruiz/github/integration-manager/integration-manager-express-server",
+      "storageExpressDir": "/Users/matthewruiz/github/integration-manager/integration-manager-storage-express-server",
+      "webPortStart": 3100
+    },
+    "on-device-express-dispatcher": {
+      "enabled": true,
+      "webDir": "/Users/matthewruiz/github/on-device-dispatcher/on-device-express-dispatcher-web",
+      "expressDir": "/Users/matthewruiz/github/on-device-dispatcher/on-device-express-dispatcher-express-server",
+      "storageExpressDir": "/Users/matthewruiz/github/on-device-dispatcher/on-device-express-dispatcher-storage-express-server",
+      "webPortStart": 3103,
+      "_comment": "Gateway Postgres (express_gateway) lives on dispatcher Express; storage-express repo may be added later for remote CRUD."
     },
     "personal-finances": {
       "enabled": true,
@@ -214,6 +233,7 @@
       "enabled": true,
       "webDir": "/Users/matthewruiz/github/makeitsoundlikeme/make-it-sound-like-me-web",
       "expressDir": "/Users/matthewruiz/github/makeitsoundlikeme/make-it-sound-like-me-express-server",
+      "storageExpressDir": "/Users/matthewruiz/github/makeitsoundlikeme/make-it-sound-like-me-storage-express-server",
       "webPortStart": 3072
     },
     "on-device-dispatcher": {

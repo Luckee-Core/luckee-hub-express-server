@@ -54,12 +54,7 @@ export const processProbeExpressEnvGroup = (
             (k) => k === 'GMAIL_SEND_AS_EMAIL' || k === 'GMAIL_SERVICE_ACCOUNT_JSON_PATH',
           )
         : groupId === 'storage'
-          ? group.keys.filter(
-              (k) =>
-                k === 'STORAGE_MODE' ||
-                k === 'STORAGE_EXPRESS_URL' ||
-                k === 'STORAGE_EXPRESS_SECRET',
-            )
+          ? group.keys.filter((k) => k !== 'STORAGE_REQUEST_TIMEOUT_MS')
           : groupId === 'gateway'
             ? group.keys.filter(
                 (k) => k === 'DISPATCHER_GATE_SECRET' || k === 'GMAIL_STORAGE_DISPATCHER_SECRET',

@@ -158,6 +158,7 @@ const runSetupJob = async (
   githubOrg: string,
 ): Promise<void> => {
   const paths = resolveSetupPaths(luckeeParent, registry, localConfig, projectId);
+  const projectGithubOrg = registry.githubOrg ?? githubOrg;
   const nvmSh = localConfig.nvmSh ?? `${process.env.HOME}/.nvm/nvm.sh`;
   const debugLog = createSetupDebugLog(jobId);
   let lastOutputFlushMs = 0;
@@ -206,7 +207,7 @@ const runSetupJob = async (
       debugLog.write(`🚀 [launcher.processSetupProject] Cloning ${repo.repoName} into ${destDir}`);
       publishStep(stepId, { status: 'running' }, `Cloning ${repo.repoName}...`);
 
-      const repoUrl = toGithubRepoUrl(githubOrg, repo.repoName);
+      const repoUrl = toGithubRepoUrl(projectGithubOrg, repo.repoName);
       if (!repoUrl) {
         throw new Error(`Missing repo URL for ${repo.repoName}`);
       }

@@ -7,7 +7,7 @@
       {
         "repoType": "express",
         "repoName": "blog-studio-open-source-express-server",
-        "defaultApiPort": 3010,
+        "defaultApiPort": 3104,
         "healthPath": "/api/health"
       },
       {
@@ -116,7 +116,14 @@
     "id": "knowledge-studio",
     "name": "Knowledge Studio",
     "description": "YouTube and knowledge workflows",
+    "githubOrg": "trouthouse-tech",
     "repos": [
+      {
+        "repoType": "storage-express",
+        "repoName": "knowledge-studio-storage-express-server",
+        "defaultApiPort": 3093,
+        "healthPath": "/api/storage/health"
+      },
       {
         "repoType": "express",
         "repoName": "knowledge-studio-express-server",
@@ -128,7 +135,66 @@
         "repoName": "knowledge-studio-open-source",
         "defaultWebPortStart": 3019
       }
-    ]
+    ],
+    "localDatabase": {
+      "kind": "postgres",
+      "databaseName": "knowledge_studio",
+      "migrationsDir": "migrations",
+      "migrationFiles": [
+        "001_create_users.sql",
+        "002_create_youtube_transcripts.sql",
+        "003_create_transcript_data_points.sql",
+        "004_alter_youtube_transcripts_category_tags.sql",
+        "005_create_transcript_fetch_errors.sql",
+        "006_create_knowledge_transcript_chat.sql",
+        "007_create_ai_prompts.sql",
+        "008_seed_knowledge_studio_dev_user.sql",
+        "009_create_knowledge_transcript_extract.sql",
+        "010_extract_ai_drop_user_id.sql",
+        "011_create_knowledge_transcript_auto_categorize_ai.sql",
+        "012_drop_knowledge_transcript_chat_user_id.sql",
+        "013_dispatcher_exposed_endpoints.sql"
+      ],
+      "expectedTables": [
+        "users",
+        "youtube_transcripts",
+        "transcript_data_points",
+        "transcript_fetch_errors",
+        "ai_prompts",
+        "knowledge_transcript_chat_requests",
+        "knowledge_transcript_chat_responses",
+        "knowledge_transcript_chat_exchanges",
+        "knowledge_transcript_extract_ai_requests",
+        "knowledge_transcript_extract_ai_responses",
+        "knowledge_transcript_extract_ai_exchanges",
+        "knowledge_transcript_auto_categorize_ai_requests",
+        "knowledge_transcript_auto_categorize_ai_responses",
+        "knowledge_transcript_auto_categorize_ai_exchanges",
+        "dispatcher_exposed_endpoints"
+      ],
+      "envRepo": "storage-express",
+      "postgres": {
+        "host": "127.0.0.1",
+        "port": 5432,
+        "formula": "postgresql@16",
+        "installCommand": "brew install postgresql@16",
+        "startCommand": "brew services start postgresql@16",
+        "stopCommand": "brew services stop postgresql@16"
+      }
+    },
+    "expressEnv": {
+      "groups": {
+        "storage": {
+          "label": "Knowledge Studio storage (direct invoke)",
+          "keys": [
+            "KNOWLEDGE_STUDIO_STORAGE_URL",
+            "KNOWLEDGE_STUDIO_STORAGE_SECRET",
+            "CANONICAL_DATA_ACCESS_MODE",
+            "STORAGE_REQUEST_TIMEOUT_MS"
+          ]
+        }
+      }
+    }
   },
   {
     "id": "lead-studio",
@@ -285,6 +351,12 @@
     "description": "Investors CRM, graphics studio (TSX preview), and pitch deck slide coach",
     "repos": [
       {
+        "repoType": "storage-express",
+        "repoName": "my-fundraise-storage-express-server",
+        "defaultApiPort": 3097,
+        "healthPath": "/api/storage/health"
+      },
+      {
         "repoType": "express",
         "repoName": "my-fundraise-express-server",
         "defaultApiPort": 3030,
@@ -295,7 +367,69 @@
         "repoName": "my-fundraise-web",
         "defaultWebPortStart": 3031
       }
-    ]
+    ],
+    "localDatabase": {
+      "kind": "postgres",
+      "databaseName": "my_fundraise",
+      "migrationsDir": "migrations",
+      "migrationFiles": [
+        "001_extensions.sql",
+        "002_investors_pitch_decks.sql",
+        "003_investor_profile_extract_ledgers.sql",
+        "004_image_graphics.sql",
+        "005_pitch_deck_slide_studio.sql",
+        "006_image_graphics_canvas_columns.sql",
+        "007_business_context.sql",
+        "008_pitch_deck_slides_freeform.sql",
+        "009_drop_pitch_decks_user_fk.sql",
+        "010_seed_deck_e_on_prem_graphics.sql",
+        "011_drop_image_graphics_user_fk.sql",
+        "013_dispatcher_exposed_endpoints.sql"
+      ],
+      "expectedTables": [
+        "investors",
+        "investor_contacts",
+        "pitch_decks",
+        "pitch_deck_slides",
+        "pitch_deck_sends",
+        "image_graphics",
+        "pitch_deck_intro_slide_graphics",
+        "business_context_sections",
+        "business_facts",
+        "pitch_deck_slide_studio_requests",
+        "pitch_deck_slide_studio_responses",
+        "pitch_deck_slide_studio_exchanges",
+        "investor_firm_profile_extract_requests",
+        "investor_firm_profile_extract_responses",
+        "investor_firm_profile_extract_exchanges",
+        "investor_contact_sheet_extract_requests",
+        "investor_contact_sheet_extract_responses",
+        "investor_contact_sheet_extract_exchanges",
+        "dispatcher_exposed_endpoints"
+      ],
+      "envRepo": "storage-express",
+      "postgres": {
+        "host": "127.0.0.1",
+        "port": 5432,
+        "formula": "postgresql@16",
+        "installCommand": "brew install postgresql@16",
+        "startCommand": "brew services start postgresql@16",
+        "stopCommand": "brew services stop postgresql@16"
+      }
+    },
+    "expressEnv": {
+      "groups": {
+        "storage": {
+          "label": "My Fundraise storage (direct invoke)",
+          "keys": [
+            "MY_FUNDRAISE_STORAGE_URL",
+            "MY_FUNDRAISE_STORAGE_SECRET",
+            "CANONICAL_DATA_ACCESS_MODE",
+            "STORAGE_REQUEST_TIMEOUT_MS"
+          ]
+        }
+      }
+    }
   },
   {
     "id": "my-health",
@@ -633,7 +767,7 @@
       {
         "repoType": "storage-express",
         "repoName": "my-gmail-manager-storage-express-server",
-        "defaultApiPort": 3010,
+        "defaultApiPort": 3084,
         "healthPath": "/api/storage/health"
       },
       {
@@ -883,11 +1017,39 @@
         "healthPath": "/api/health"
       },
       {
+        "repoType": "storage-express",
+        "repoName": "make-it-sound-like-me-storage-express-server",
+        "defaultApiPort": 3083,
+        "healthPath": "/api/storage/health"
+      },
+      {
         "repoType": "nextjs",
         "repoName": "make-it-sound-like-me-web",
         "defaultWebPortStart": 3072
       }
     ],
+    "localDatabase": {
+      "kind": "postgres",
+      "databaseName": "make_it_sound_like_me",
+      "migrationsDir": "migrations",
+      "migrationFiles": [],
+      "expectedTables": [
+        "users",
+        "about_me_profile",
+        "about_me_source",
+        "exchange_table_registry",
+        "dispatcher_exposed_endpoints"
+      ],
+      "envRepo": "storage-express",
+      "postgres": {
+        "host": "127.0.0.1",
+        "port": 5432,
+        "formula": "postgresql@16",
+        "installCommand": "brew install postgresql@16",
+        "startCommand": "brew services start postgresql@16",
+        "stopCommand": "brew services stop postgresql@16"
+      }
+    },
     "supabase": {
       "bootstrapSql": "supabase/000_full_schema_bootstrap.sql",
       "expectedTables": [
@@ -903,6 +1065,15 @@
         "ai": {
           "label": "AI",
           "keys": ["ANTHROPIC_API_KEY"]
+        },
+        "gateway": {
+          "label": "On-device Express gateway (storage access)",
+          "keys": [
+            "ON_DEVICE_DISPATCHER_GATEWAY_URL",
+            "DISPATCHER_GATE_SECRET",
+            "MISLM_STORAGE_ACCESS_MODE",
+            "MISLM_STORAGE_DIRECT_URL"
+          ]
         }
       }
     }
@@ -1076,6 +1247,160 @@
         "ops-tracker": {
           "label": "Ops Tracker CRM proxy",
           "keys": ["OPS_TRACKER_EXPRESS_URL", "OPS_TRACKER_SERVICE_SECRET"]
+        }
+      }
+    }
+  },
+  {
+    "id": "integration-manager",
+    "name": "Integration Manager",
+    "description": "Catalog and wire third-party integrations across Luckee OSS products (storage + API + console)",
+    "repos": [
+      {
+        "repoType": "storage-express",
+        "repoName": "integration-manager-storage-express-server",
+        "defaultApiPort": 3098,
+        "healthPath": "/api/storage/health"
+      },
+      {
+        "repoType": "express",
+        "repoName": "integration-manager-express-server",
+        "defaultApiPort": 3099,
+        "healthPath": "/api/health"
+      },
+      {
+        "repoType": "nextjs",
+        "repoName": "integration-manager-web",
+        "defaultWebPortStart": 3100
+      }
+    ],
+    "localDatabase": {
+      "kind": "postgres",
+      "databaseName": "integration_manager",
+      "migrationsDir": "migrations",
+      "migrationFiles": [],
+      "expectedTables": [
+        "integrations",
+        "integration_connections",
+        "integration_credentials",
+        "dispatcher_exposed_endpoints"
+      ],
+      "envRepo": "storage-express",
+      "postgres": {
+        "host": "127.0.0.1",
+        "port": 5432,
+        "formula": "postgresql@16",
+        "installCommand": "brew install postgresql@16",
+        "startCommand": "brew services start postgresql@16",
+        "stopCommand": "brew services stop postgresql@16"
+      }
+    },
+    "expressEnv": {
+      "groups": {
+        "storage": {
+          "label": "Integration Manager storage (direct invoke)",
+          "keys": [
+            "INTEGRATION_MANAGER_STORAGE_URL",
+            "INTEGRATION_MANAGER_STORAGE_SECRET",
+            "CANONICAL_DATA_ACCESS_MODE",
+            "STORAGE_REQUEST_TIMEOUT_MS"
+          ]
+        }
+      }
+    }
+  },
+  {
+    "id": "on-device-express-dispatcher",
+    "name": "On-device Express dispatcher",
+    "description": "Postgres-backed Express gateway: registry, spawn sessions, and LAN proxy for storage/API workers",
+    "repos": [
+      {
+        "repoType": "storage-express",
+        "repoName": "on-device-express-dispatcher-storage-express-server",
+        "defaultApiPort": 3101,
+        "healthPath": "/api/storage/health"
+      },
+      {
+        "repoType": "express",
+        "repoName": "on-device-express-dispatcher-express-server",
+        "defaultApiPort": 3102,
+        "healthPath": "/api/health"
+      },
+      {
+        "repoType": "nextjs",
+        "repoName": "on-device-express-dispatcher-web",
+        "defaultWebPortStart": 3103
+      }
+    ],
+    "localDatabase": {
+      "kind": "postgres",
+      "databaseName": "express_gateway",
+      "migrationsDir": "migrations",
+      "migrationFiles": [
+        "000_schema_migrations.sql",
+        "001_registry_services.sql",
+        "002_gateway_projects.sql",
+        "003_gate_access_audit.sql",
+        "004_code_control_gateway.sql",
+        "005_code_commit_gateway.sql",
+        "006_worker_sessions_code_control_and_code_commit.sql",
+        "007_worker_session_spawn_client.sql",
+        "008_my_gmail_manager_gateway.sql",
+        "009_my_gmail_manager_worker_sessions.sql",
+        "010_gmail_registry_path_prefix_fix.sql",
+        "011_estimate_and_proposals_gateway.sql",
+        "012_estimate_and_proposals_worker_sessions.sql",
+        "013_finances_manager_gateway.sql",
+        "013_my_ops_tracker_gateway.sql",
+        "014_finances_manager_worker_sessions.sql",
+        "014_my_ops_tracker_worker_sessions.sql"
+      ],
+      "expectedTables": [
+        "schema_migrations",
+        "registry_services",
+        "gateway_projects",
+        "gate_access_audit",
+        "code_control_dispatcher_sessions",
+        "code_control_storage_sessions",
+        "code_control_api_sessions",
+        "code_commit_summaries_dispatcher_sessions",
+        "code_commit_summaries_storage_sessions",
+        "code_commit_summaries_api_sessions",
+        "my_gmail_manager_dispatcher_sessions",
+        "my_gmail_manager_storage_sessions",
+        "my_gmail_manager_api_sessions",
+        "estimate_and_proposals_dispatcher_sessions",
+        "estimate_and_proposals_storage_sessions",
+        "estimate_and_proposals_api_sessions",
+        "finances_manager_dispatcher_sessions",
+        "finances_manager_storage_sessions",
+        "finances_manager_api_sessions",
+        "my_ops_tracker_dispatcher_sessions",
+        "my_ops_tracker_storage_sessions",
+        "my_ops_tracker_api_sessions"
+      ],
+      "envRepo": "express",
+      "postgres": {
+        "host": "127.0.0.1",
+        "port": 5432,
+        "formula": "postgresql@16",
+        "installCommand": "brew install postgresql@16",
+        "startCommand": "brew services start postgresql@16",
+        "stopCommand": "brew services stop postgresql@16"
+      }
+    },
+    "expressEnv": {
+      "groups": {
+        "gateway": {
+          "label": "Gateway (studio)",
+          "keys": [
+            "DISPATCHER_GATE_SECRET",
+            "DISPATCHER_INFRA_ADMIN_SECRET",
+            "DISPATCHER_ALLOWED_CLIENT_IPS",
+            "DISPATCHER_SPAWN_ROOTS",
+            "DISPATCHER_BIND_HOST",
+            "PORT"
+          ]
         }
       }
     }
