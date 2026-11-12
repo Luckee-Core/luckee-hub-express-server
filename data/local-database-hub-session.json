@@ -1,15 +1,7 @@
 {
-  "startedByHub": [
-    {
-      "projectId": "code-commit-summaries",
-      "formula": "postgresql@16",
-      "startedAt": "2026-10-21T15:50:27.961Z"
-    }
-  ],
+  "startedByHub": [],
   "activeConsumers": [
-    "local-scheduler",
-    "code-commit-summaries",
     "speech-therapy-tracker",
-    "code-control"
+    "my-vercel-analytics"
   ]
 }

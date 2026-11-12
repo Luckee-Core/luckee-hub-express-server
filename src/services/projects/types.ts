@@ -1,5 +1,4 @@
 import type { LocalDatabaseConfig } from '../local-database/types';
-import type { ExpressEnvConfig } from '../express-env/types';
 import type { SupabaseConfig } from '../supabase-config/types';
 
 export type { LocalDatabaseConfig, LocalDatabaseCleanupResult, LocalDatabaseProbe, LocalDatabaseSetupResult, LocalDatabaseStepResult } from '../local-database/types';
@@ -9,13 +8,7 @@ export type {
   SupabaseConfigSaveInput,
   SupabaseConfigSaveResult,
 } from '../supabase-config/types';
-export type {
-  ExpressEnvConfig,
-  ExpressEnvGroupConfig,
-  ExpressEnvGroupId,
-  ExpressEnvGroupProbe,
-  ExpressEnvGroupSaveResult,
-} from '../express-env/types';
+export type { ProjectEnvProbe, ProjectEnvSection, ProjectEnvKey, DataPlaneProbe } from '../project-env/types';
 
 export type HookStatus =
   | 'catalog'
@@ -35,12 +28,39 @@ export type ProjectHookCheck = {
 
 export type ProjectRegistryRepoType = 'express' | 'nextjs' | 'storage-express';
 
+export type HubProjectRepoRole =
+  | 'web'
+  | 'express'
+  | 'storage'
+  | 'console'
+  | 'dispatcher-web'
+  | 'dispatcher'
+  | 'mobile';
+
+export type DataPlaneOption = {
+  id: string;
+  label: string;
+  value: string;
+  keys: string[];
+  usesLocalDatabase?: boolean;
+};
+
+export type DataPlaneConfig = {
+  modeKey: string;
+  options: DataPlaneOption[];
+};
+
 export type ProjectRegistryRepoEntry = {
   repoType: ProjectRegistryRepoType;
   repoName: string;
+  role: HubProjectRepoRole;
   defaultApiPort?: number;
   defaultWebPortStart?: number;
   healthPath?: string;
+};
+
+export type ExpressEnvRegistryConfig = {
+  requiredKeys?: string[];
 };
 
 export type ProjectRegistryEntry = {
@@ -54,12 +74,14 @@ export type ProjectRegistryEntry = {
   webOpenPath?: string;
   localDatabase?: LocalDatabaseConfig;
   supabase?: SupabaseConfig;
-  expressEnv?: ExpressEnvConfig;
+  expressEnv?: ExpressEnvRegistryConfig;
+  dataPlane?: DataPlaneConfig;
 };
 
 export type HubProjectRepo = {
   projectId: string;
   repoType: ProjectRegistryRepoType;
+  role: HubProjectRepoRole;
   repoName: string;
   repoUrl?: string;
   localDir?: string;
@@ -77,6 +99,8 @@ export type ProjectLocalEntry = {
   webDir?: string;
   expressDir?: string;
   storageExpressDir?: string;
+  dispatcherDir?: string;
+  repoDirs?: Record<string, string>;
   workspaceFile?: string;
   /** Override registry defaultWebPortStart (e.g. lead-studio → 3033). */
   webPortStart?: number;
@@ -108,7 +132,7 @@ export type HubProject = {
   };
   localDatabaseSupported: boolean;
   supabaseSupported: boolean;
-  expressEnvGroupIds: string[];
+  dataPlane?: DataPlaneConfig;
   postgresActiveConsumer?: boolean;
   storageExpressSupported: boolean;
   storagePort: number;
@@ -127,6 +151,7 @@ export type MergedProjectConfig = {
   webDir?: string;
   expressDir?: string;
   storageExpressDir?: string;
+  dispatcherDir?: string;
   workspaceFile?: string;
   apiPort: number;
   webPortStart: number;

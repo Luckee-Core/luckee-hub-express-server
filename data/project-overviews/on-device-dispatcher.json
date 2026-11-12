@@ -1,0 +1,137 @@
+{
+  "projectId": "on-device-dispatcher",
+  "updatedAt": "2026-11-12",
+  "tagline": "The studio's front door on port 3010: one gateway that lazily starts each project's services and proxies LAN callers to them behind a shared gate secret.",
+  "summary": [
+    "The on-device dispatcher (the \"main gateway\") runs on the studio Mac and lets laptops and other apps reach studio-hosted services through one address. A request to `http://<studio>:3010/<project-id>/...` is matched against a registry by longest path prefix, the gateway starts the target service if it isn't running, and proxies the call to its loopback port. Callers prove themselves with `x-dispatcher-gate-secret`.",
+    "Most projects sit behind their own **project dispatcher** (code-commit-summaries, code-control, my-gmail-manager, estimate-and-proposals, my-ops-tracker, finances-manager); the main gateway forwards to it and injects that project's secret, and the child only exposes paths listed in its storage's `dispatcher_exposed_endpoints`. The gateway keeps its registry, project catalog, access audit and per-project worker sessions in its own `on_device_gateway` Postgres, and the web admin shows projects, sessions and live worker terminals."
+  ],
+  "audience": [
+    "You run a homelab \"studio\" Mac that owns the canonical databases for several Luckee projects.",
+    "You want laptops and other apps to reach those services without exposing each port on the LAN.",
+    "You operate the stack and need to see which workers are running and why."
+  ],
+  "notFor": [
+    "Internet-facing traffic — upstreams must be loopback HTTP and the gateway is meant for the LAN.",
+    "A general-purpose reverse proxy or service mesh.",
+    "Projects that keep data locally and don't use the studio pattern."
+  ],
+  "capabilities": [
+    { "title": "Prefix routing with lazy start", "detail": "`dispatcher.services.json` / `registry_services` map `pathPrefix` → loopback `upstreamBaseUrl`; services with `spawn` config start on first request." },
+    { "title": "Gate secret and admin secret", "detail": "`x-dispatcher-gate-secret` on proxied routes; `x-dispatcher-admin-secret` on `/api/dispatcher/*` (except health); optional client IP allowlist and spawn roots." },
+    { "title": "Project dispatchers", "detail": "`gateway_projects` points at each child dispatcher; the child's endpoint catalog is loaded at runtime from its `GET /api/dispatcher/catalog`." },
+    { "title": "Upstream auth modes", "detail": "`forward-header`, `inject-from-env` (e.g. `MY_OPS_TRACKER_DISPATCHER_GATE_SECRET`) or `none`." },
+    { "title": "Worker sessions", "detail": "One table per project × tier (dispatcher, storage, api) records start, activity and end; `POST /api/gateway/jobs/reconcile-stale-sessions` stops idle workers." },
+    { "title": "Gate access audit", "detail": "`gate_access_audit` logs every gated request (`GET /api/gateway/gate-access-audit`)." },
+    { "title": "Admin web", "detail": "`/dashboard`, `/dispatcher-detail-page` and `/gateway-admin-page`: projects, registry, sessions, sign-ups and users." },
+    { "title": "Terminal dock", "detail": "Live worker output over WebSocket (`node-pty` + `ws`) from `data/workers/{serviceId}.log`." }
+  ],
+  "components": [
+    {
+      "repoName": "on-device-dispatcher-express-server",
+      "name": "Main gateway",
+      "stack": "Express + TypeScript, `pg`, `node-pty`, `ws`, Supabase JS",
+      "runsOn": "Studio Mac, port 3010, bound to `0.0.0.0`",
+      "owns": "Registry and proxy, lazy spawn, project dispatcher forwarding, secrets injection, `on_device_gateway` Postgres (`migrations/`), worker sessions, audit, admin and catalog APIs, terminal WebSockets.",
+      "doesNotOwn": "Product data — each project's storage owns its own database and endpoint list.",
+      "inHub": true
+    },
+    {
+      "repoName": "on-device-dispatcher-web",
+      "name": "Gateway web",
+      "stack": "Next.js, Redux Toolkit, Supabase JS, xterm.js",
+      "runsOn": "Studio or laptop (Hub port 3074)",
+      "owns": "Admin UI, project/session tables, terminal dock. A server-side proxy validates Supabase sessions and calls the gateway with `GATEWAY_WEB_PROXY_SECRET`.",
+      "doesNotOwn": "Gate secrets.",
+      "inHub": true
+    },
+    {
+      "repoName": "on-device-dispatcher-console",
+      "name": "Console",
+      "stack": "Next.js",
+      "runsOn": "—",
+      "owns": "Listed in the registry for operator admin, but not cloned on this machine.",
+      "doesNotOwn": "—",
+      "inHub": true
+    }
+  ],
+  "dataFlow": [
+    "A caller (laptop API, another app) sends `GET/POST http://<studio>:3010/<project-id>/api/...` with `x-dispatcher-gate-secret`.",
+    "The gateway checks the secret (and IP allowlist), finds the longest matching prefix, and records the access.",
+    "If the target isn't healthy it spawns it (records a worker session) and waits for readiness.",
+    "It proxies to the loopback upstream — usually the project dispatcher, injecting that project's gate secret — which forwards only exposed endpoints to storage or the API.",
+    "Responses pass through unchanged; idle workers are stopped by the reconcile job."
+  ],
+  "trust": [
+    { "title": "LAN callers", "detail": "Must present `DISPATCHER_GATE_SECRET`. `DISPATCHER_GATE_INSECURE_ALLOW=true` in the example turns that off — don't leave it on." },
+    { "title": "Gateway", "detail": "Holds every project dispatcher's gate/admin secret and `DATABASE_URL` for `on_device_gateway`. Spawns processes only under `DISPATCHER_SPAWN_ROOTS`." },
+    { "title": "Project dispatchers / storage", "detail": "Accept only the secret the gateway injects and only their exposed endpoint list." },
+    { "title": "Web admin", "detail": "Supabase sign-in, then a server-to-server secret (`GATEWAY_WEB_PROXY_SECRET`)." }
+  ],
+  "commonTasks": [
+    {
+      "title": "Set up the studio gateway",
+      "when": "New studio Mac.",
+      "steps": [
+        "Follow `STUDIO-GATEWAY-SETUP.md` in the express repo.",
+        "`createdb on_device_gateway` and run `npm run db:apply-migrations`.",
+        "Set `DISPATCHER_GATE_SECRET`, `DISPATCHER_INFRA_ADMIN_SECRET`, `DISPATCHER_SPAWN_ROOTS`, `DISPATCHER_PUBLIC_BASE_URL`, and set `DISPATCHER_GATE_INSECURE_ALLOW=false`.",
+        "Add each project's `*_DISPATCHER_GATE_SECRET` / `*_ADMIN_SECRET`.",
+        "Start it and check `curl http://127.0.0.1:3010/api/dispatcher/health`."
+      ]
+    },
+    {
+      "title": "Add a new project behind the gateway",
+      "when": "A project gets a storage server and dispatcher.",
+      "steps": [
+        "Follow `Add a new project dispatcher.md`: add a `gateway_projects` row (migration), worker session tables, and the child dispatcher's spawn config.",
+        "Seed the project's `dispatcher_exposed_endpoints` in its storage.",
+        "Add the injected secret env var and reload (`POST /api/dispatcher/config/reload`)."
+      ]
+    },
+    {
+      "title": "Expose one more endpoint",
+      "when": "A caller needs a new path.",
+      "steps": [
+        "Follow `Exposing a new endpoint.md`: add the row to the project's storage `dispatcher_exposed_endpoints`.",
+        "Reload the child dispatcher; no change to the main gateway."
+      ]
+    },
+    {
+      "title": "Debug a stuck worker",
+      "when": "A project call hangs.",
+      "steps": [
+        "Open the project in the web admin and check active sessions and the terminal dock.",
+        "Stop/start the service (`POST /api/dispatcher/services/:id/stop|start`) or run the stale-session reconcile."
+      ]
+    }
+  ],
+  "troubleshooting": [
+    { "symptom": "Callers get 401/403", "fix": "Wrong or missing `x-dispatcher-gate-secret`, or the caller's IP isn't in `DISPATCHER_ALLOWED_CLIENT_IPS`." },
+    { "symptom": "404 for a project path", "fix": "No registry prefix matches, or the child dispatcher doesn't list that endpoint as exposed." },
+    { "symptom": "First call after idle is slow or times out", "fix": "The gateway is spawning the worker. Raise the caller's timeout (e.g. `STORAGE_REQUEST_TIMEOUT_MS`) or keep the worker warm." },
+    { "symptom": "Spawn fails", "fix": "The service's `cwd` isn't under `DISPATCHER_SPAWN_ROOTS`, or `DISPATCHER_SHELL_INIT` / nvm isn't set up for that shell." },
+    { "symptom": "Gateway won't start without Postgres", "fix": "Create `on_device_gateway` and apply migrations, or set `GATEWAY_ALLOW_JSON_FALLBACK=true` for dev only." }
+  ],
+  "glossary": [
+    { "term": "Main gateway", "definition": "This server on port 3010." },
+    { "term": "Project dispatcher", "definition": "A per-project child (e.g. my-ops-tracker on 3095) that starts storage/API and enforces the exposed endpoint list." },
+    { "term": "Exposed endpoint", "definition": "A method + path in a project's storage `dispatcher_exposed_endpoints` the gateway may forward." },
+    { "term": "Worker session", "definition": "A recorded lifetime of a spawned dispatcher, storage or API process." },
+    { "term": "Gate secret", "definition": "`x-dispatcher-gate-secret` header required on proxied routes." }
+  ],
+  "hubNotes": [
+    "hub.local.json points at `~/github/luckee/on-device-dispatcher/...`, but the repos are at `~/github/on-device-dispatcher/`. Hub can't run this project until those paths are fixed.",
+    "Web port 3074 is also my-vercel-analytics' `webPortStart` in hub.local.json — running both at once will clash.",
+    "`on-device-dispatcher-console` is in the registry but isn't cloned. The same folder has an experimental `on-device-express-dispatcher-*` set (express gateway, storage, web) that isn't registered.",
+    "Projects that depend on this gateway: code-commit-summaries, code-control, my-gmail-manager, estimate-and-proposals, my-ops-tracker, finances-manager, make-it-sound-like-me, my-fundraise."
+  ],
+  "links": [
+    { "label": "Studio gateway setup", "path": "on-device-dispatcher-express-server/STUDIO-GATEWAY-SETUP.md" },
+    { "label": "Add a new project dispatcher", "path": "on-device-dispatcher-express-server/Add a new project dispatcher.md" },
+    { "label": "Exposing a new endpoint", "path": "on-device-dispatcher-express-server/Exposing a new endpoint.md" },
+    { "label": "Security", "path": "on-device-dispatcher-express-server/SECURITY.md" },
+    { "label": "On-device gateway", "path": "on-device-dispatcher-express-server/.cursor/architecture/001-on-device-gateway.md" },
+    { "label": "Project dispatchers", "path": "on-device-dispatcher-express-server/.cursor/architecture/005-project-dispatchers.md" }
+  ]
+}

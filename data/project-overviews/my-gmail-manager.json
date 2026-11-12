@@ -1,0 +1,140 @@
+{
+  "projectId": "my-gmail-manager",
+  "updatedAt": "2026-11-12",
+  "tagline": "One unread inbox across all your Gmail accounts, with an AI that learns your keep/delete/unsubscribe decisions and queues deletions for you to approve.",
+  "summary": [
+    "My Gmail Manager connects several Gmail accounts with Google OAuth and syncs their unread mail into one inbox. You review emails one at a time: Claude suggests **delete**, **keep** or **unsubscribe** using how you've treated similar mail from the same sender, and nothing is deleted or unsubscribed until you confirm. Your decisions, notes and declined unsubscribes become the precedent for next time.",
+    "It also runs unattended. Local Scheduler calls job endpoints on weekday mornings: sync unread mail, work through an AI process queue one message at a time (so rate limits and cost stay predictable), produce an inbox briefing once the queue is empty, and fill a deletion queue that you approve on the dashboard before messages are moved to Gmail Trash. Data can live locally or on the studio behind a storage server."
+  ],
+  "audience": [
+    "You juggle several Gmail accounts (personal, work, side projects) and want one place to triage them.",
+    "Your inboxes fill with newsletters and notifications you mean to clean up but never do.",
+    "You want AI help that asks before deleting anything."
+  ],
+  "notFor": [
+    "Writing or sending email — it reads, judges, labels, unsubscribes and trashes.",
+    "Non-Gmail providers.",
+    "Fully automatic deletion — every deletion needs your approval on the dashboard."
+  ],
+  "capabilities": [
+    { "title": "Connected accounts", "detail": "`/connected-accounts` adds Gmail accounts via Google OAuth (`/api/gmail/oauth/start` → `/oauth-callback-page`). Tokens are encrypted at rest." },
+    { "title": "Unified inbox", "detail": "`/inbox` lists unread mail across accounts after **Sync** (`POST /api/gmail/sync-unread`)." },
+    { "title": "Email review with AI judgment", "detail": "`/email-detail-page`: **Decide** asks Claude with same-sender history; you confirm delete, keep or unsubscribe and can add notes and labels." },
+    { "title": "Unsubscribe with memory", "detail": "Unsubscribe from a list, or record that you declined so future suggestions respect it." },
+    { "title": "Inbox briefing", "detail": "A label-keyed summary of past decisions, suggestions for the five newest emails, and an overall summary — changes nothing by itself." },
+    { "title": "Dashboard queues", "detail": "`/dashboard` shows inbox and accounts, the AI process queue, TO DO items needing direction and the deletion queue to approve or reject." },
+    { "title": "Scheduled jobs", "detail": "`POST /api/gmail/jobs/morning-inbox` and `/jobs/process-ai-queue`, called by Local Scheduler with `GMAIL_MANAGER_CRON_SECRET`." },
+    { "title": "AI costs", "detail": "`/ai-costs` lists every judgment, briefing and decision-profile exchange with estimated cost." },
+    { "title": "Public pages", "detail": "Landing, privacy policy and terms of service (needed for Google OAuth verification)." }
+  ],
+  "components": [
+    {
+      "repoName": "my-gmail-manager-web",
+      "name": "Web app",
+      "stack": "Next.js, Redux Toolkit",
+      "runsOn": "Your machine (port 3053)",
+      "owns": "Landing, legal pages, dashboard, inbox, email review, accounts, AI costs. Calls the API at `NEXT_PUBLIC_EXPRESS_URL` with `x-api-key`.",
+      "doesNotOwn": "Gmail tokens, database.",
+      "inHub": true
+    },
+    {
+      "repoName": "my-gmail-manager-express-server",
+      "name": "API",
+      "stack": "Express + TypeScript, `googleapis`, Anthropic SDK, `pg`",
+      "runsOn": "Your machine (registry 3052; `.env.example` 3009)",
+      "owns": "Google OAuth, Gmail API calls (sync, labels, unsubscribe, trash), AI judgment/briefing/queues, cron job routes. Uses Postgres directly (`STORAGE_MODE=local`) or storage HTTP (`remote`).",
+      "doesNotOwn": "Canonical data in remote mode.",
+      "inHub": true
+    },
+    {
+      "repoName": "my-gmail-manager-storage-express-server",
+      "name": "Storage server",
+      "stack": "Express + TypeScript, `pg`",
+      "runsOn": "Studio or your machine (`.env.example` 3011; registry 3084)",
+      "owns": "`gmail_manager` Postgres (accounts, messages, labels, queues, ledgers, sync state), invoke + worker-credentials routes, `dispatcher_exposed_endpoints`.",
+      "doesNotOwn": "Gmail or AI calls.",
+      "inHub": true
+    }
+  ],
+  "dataFlow": [
+    "You connect an account: Google OAuth redirects to the API's `GOOGLE_OAUTH_REDIRECT_URI`; refresh/access tokens are encrypted with `TOKEN_ENCRYPTION_KEY` and stored.",
+    "Sync pulls unread messages from the Gmail API into `gmail_messages`.",
+    "Decide sends one email plus same-sender decided history to Claude and logs request/response/exchange rows.",
+    "Morning job: sync → seed the AI process queue → the queue worker recommends deletions one message at a time → briefing when empty.",
+    "You approve deletion-queue rows on the dashboard; a job moves them to Gmail Trash.",
+    "In remote mode, all CRUD goes to storage via `STORAGE_EXPRESS_URL` (studio gateway `…:3010/my-gmail-manager` with `DISPATCHER_GATE_SECRET`, or direct with `STORAGE_EXPRESS_SECRET`)."
+  ],
+  "trust": [
+    { "title": "Browser", "detail": "API URL and `NEXT_PUBLIC_GMAIL_MANAGER_API_KEY` (a local guard, visible to anyone with the page)." },
+    { "title": "API", "detail": "Google client secret, `TOKEN_ENCRYPTION_KEY`, `ANTHROPIC_API_KEY`, cron secret, storage/gateway secret. Never returns tokens in JSON." },
+    { "title": "Storage host", "detail": "`DATABASE_URL` and the encryption key (to hand worker credentials to the API)." },
+    { "title": "Google / Anthropic", "detail": "Gmail access is limited to the scopes you grant; email content goes to Anthropic when judged." }
+  ],
+  "commonTasks": [
+    {
+      "title": "First-time setup (one machine)",
+      "when": "Fresh clone.",
+      "steps": [
+        "Run **Setup** in Hub.",
+        "On the **Storage Express** repo, **Set up local database** (`gmail_manager`, `migrations/setup.sql` then numbered files).",
+        "Create a Google Cloud OAuth client with the Gmail API enabled; set `GOOGLE_CLIENT_ID`, `GOOGLE_CLIENT_SECRET` and `GOOGLE_OAUTH_REDIRECT_URI=http://localhost:<api-port>/api/gmail/oauth/callback`.",
+        "Generate `TOKEN_ENCRYPTION_KEY` (`openssl rand -base64 32`), set `ANTHROPIC_API_KEY`, `WEB_APP_ORIGIN` and `GMAIL_MANAGER_API_KEY`.",
+        "On the web set `NEXT_PUBLIC_EXPRESS_URL` and the same API key, then **Run** and connect accounts."
+      ]
+    },
+    {
+      "title": "Two-device setup (studio storage)",
+      "when": "Data on the studio, UI and API on a laptop.",
+      "steps": [
+        "Follow `DEPLOYMENT.md` in `~/github/my-gmail-manager/` and Hub's `data/location_installation/my-gmail-manager-two-device-deployment.md`.",
+        "Pick the **remote** data plane on the API and point `STORAGE_EXPRESS_URL` at the studio gateway with `DISPATCHER_GATE_SECRET`."
+      ]
+    },
+    {
+      "title": "Triage your inbox",
+      "when": "Daily.",
+      "steps": [
+        "Sync on `/inbox`, open an email, click **Decide**.",
+        "Confirm or override; add a note so future decisions on that sender are better.",
+        "Approve or reject pending deletions on `/dashboard`."
+      ]
+    },
+    {
+      "title": "Automate mornings",
+      "when": "You want the inbox pre-processed.",
+      "steps": [
+        "Set the same `GMAIL_MANAGER_CRON_SECRET` on this API and in Local Scheduler.",
+        "Enable the `gmail-manager-*` tasks in Local Scheduler (morning inbox, process AI queue, briefing, deletions)."
+      ]
+    }
+  ],
+  "troubleshooting": [
+    { "symptom": "OAuth fails with redirect_uri_mismatch", "fix": "`GOOGLE_OAUTH_REDIRECT_URI` must exactly match the Google Cloud console entry, including host and port." },
+    { "symptom": "After OAuth you land on the wrong origin or see CORS errors", "fix": "`WEB_APP_ORIGIN` must match how you open the web (localhost vs 127.0.0.1 are different origins)." },
+    { "symptom": "All API calls return 401", "fix": "`NEXT_PUBLIC_GMAIL_MANAGER_API_KEY` on the web doesn't match `GMAIL_MANAGER_API_KEY` on the API." },
+    { "symptom": "Scheduled jobs return 401", "fix": "Local Scheduler's `GMAIL_MANAGER_CRON_SECRET` differs from the API's." },
+    { "symptom": "Decide skips a message as needing direction", "fix": "No precedent for that sender. Add a note or decide a few messages from the sender manually first." },
+    { "symptom": "Remote mode times out", "fix": "Studio storage or gateway is down; check `<gateway>/my-gmail-manager/api/storage/health` or raise `STORAGE_REQUEST_TIMEOUT_MS`." }
+  ],
+  "glossary": [
+    { "term": "Decide", "definition": "AI judgment on one email (delete / keep / unsubscribe) using same-sender history." },
+    { "term": "AI process queue", "definition": "Serial queue of messages awaiting deletion recommendations." },
+    { "term": "Deletion queue", "definition": "AI-recommended deletions waiting for your approval." },
+    { "term": "Needs direction / TO DO", "definition": "A message with no precedent for its sender; the AI won't guess." },
+    { "term": "Inbox briefing", "definition": "Read-only summary of decisions and suggestions for the newest mail." }
+  ],
+  "hubNotes": [
+    "Port mismatch: the API `.env.example` uses `PORT=3009` and an OAuth redirect on 3009, but the registry and web default expect 3052. The redirect URI must follow the real port.",
+    "Storage port also differs: `.env.example` 3011, `DEPLOYMENT.md` 3010, registry 3084.",
+    "Local Scheduler's seeded tasks target this API on port 3052.",
+    "Web and API READMEs are templates; read `DEPLOYMENT.md`, `TWO-DEVICE-DEPLOYMENT.md` and the ADRs."
+  ],
+  "links": [
+    { "label": "Deployment instance", "path": "~/github/my-gmail-manager/DEPLOYMENT.md" },
+    { "label": "Two-device checklist", "path": "luckee-hub-express-server/data/location_installation/my-gmail-manager-two-device-deployment.md" },
+    { "label": "OAuth and API auth", "path": "my-gmail-manager-express-server/.cursor/architecture/009-gmail-oauth-and-api-auth.md" },
+    { "label": "Token security", "path": "my-gmail-manager-express-server/.cursor/architecture/010-gmail-token-security.md" },
+    { "label": "Scheduled jobs and deletion queue", "path": "my-gmail-manager-express-server/.cursor/architecture/018-scheduled-jobs-and-deletion-queue.md" },
+    { "label": "Storage / dispatcher split", "path": "my-gmail-manager-express-server/.cursor/architecture/020-storage-dispatcher-split.md" }
+  ]
+}

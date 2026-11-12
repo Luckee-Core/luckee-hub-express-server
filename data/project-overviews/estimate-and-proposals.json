@@ -1,0 +1,134 @@
+{
+  "projectId": "estimate-and-proposals",
+  "updatedAt": "2026-11-12",
+  "tagline": "Build catalog estimates and proposals for My Ops Tracker customers and projects — website builds, Google Business Profile, Yelp, Facebook and social posting.",
+  "summary": [
+    "Estimate & Proposals writes estimates for a fixed catalog of repeatable services: `website_build`, `google_business_profile`, `yelp_reviews`, `facebook_posting` and `social_posting`. Each estimate belongs to a customer and project that live in My Ops Tracker's CRM; this app reads those through the studio gateway and stores only the estimates and their line items.",
+    "A draft estimate is an editable set of line items. Once sent, accepted or declined it becomes a read-only proposal with **Print / PDF**, and accepted estimates show a payment panel. A document-payload endpoint flattens an estimate, its line items and CRM data into placeholders for templates and for My Ops Tracker to read."
+  ],
+  "audience": [
+    "You run a small agency selling packaged local-business services and send many similar proposals.",
+    "Your customers and projects already live in My Ops Tracker.",
+    "You run the studio stack: on-device dispatcher (main gateway on port 3010) and my-ops-tracker storage."
+  ],
+  "notFor": [
+    "Custom, free-form quotes — only the five catalog kinds; `custom` is out of scope in v1.",
+    "Managing customers or projects — those are read from My Ops Tracker.",
+    "Invoicing or collecting payment — accepted estimates only show payment details."
+  ],
+  "capabilities": [
+    { "title": "Estimates list", "detail": "`/estimates` lists estimates with status filters; the create modal picks one of the five catalog kinds." },
+    { "title": "Estimate detail by status", "detail": "`/estimate-detail-page`: drafts show the line-item table; sent/declined show the read-only proposal with **Print / PDF**; accepted adds a payment panel." },
+    { "title": "Customers and projects from the CRM", "detail": "`/customers`, `/projects` and their detail pages read My Ops Tracker data via `GET /api/crm/*`." },
+    { "title": "Dashboard", "detail": "`/dashboard` summarizes estimates and team." },
+    { "title": "Document payload", "detail": "`GET /api/estimates/:estimateId/document-payload` returns estimate, line items, CRM entities, computed totals and flat placeholders." },
+    { "title": "Gateway exposure", "detail": "External automation reaches the API only through the main gateway and the project dispatcher, limited to rows in `dispatcher_exposed_endpoints`." }
+  ],
+  "components": [
+    {
+      "repoName": "estimate-and-proposals-web",
+      "name": "Web app",
+      "stack": "Next.js, Redux Toolkit, Tailwind",
+      "runsOn": "Your machine (Hub port 3096)",
+      "owns": "All UI. Same-origin Next route handlers proxy to the main gateway (`MAIN_GATEWAY_URL` + `MAIN_GATEWAY_PROJECT_ID` + `DISPATCHER_GATE_SECRET`), or to Express directly for debugging.",
+      "doesNotOwn": "Data or CRM access of its own.",
+      "inHub": true
+    },
+    {
+      "repoName": "estimate-and-proposals-express-server",
+      "name": "API",
+      "stack": "Express + TypeScript",
+      "runsOn": "Studio or laptop (env default port 3082)",
+      "owns": "Estimate and line-item routes (`/api/data/*`, `/api/estimates/*`), catalog kind rules, document payload, and the CRM proxy (`/api/crm/*`) to My Ops Tracker storage.",
+      "doesNotOwn": "SQL — it calls the storage server's `invoke` directly or through the gateway.",
+      "inHub": true
+    },
+    {
+      "repoName": "estimate-and-proposals-storage-express-server",
+      "name": "Storage server",
+      "stack": "Express + TypeScript, `pg`",
+      "runsOn": "The machine with the `estimate_and_proposals` database (env default port 3081)",
+      "owns": "Migrations (`estimates`, `estimate_line_items`, `dispatcher_exposed_endpoints`), all SQL behind `POST /api/storage/v1/invoke`, seed export/import.",
+      "doesNotOwn": "HTTP for browsers or CRM data.",
+      "inHub": true
+    },
+    {
+      "repoName": "estimate-and-proposals-express-dispatcher-server",
+      "name": "Project dispatcher",
+      "stack": "Express (placeholder)",
+      "runsOn": "Studio (port 3085 per its README)",
+      "owns": "Intended to be spawned by the main gateway and proxy only exposed endpoints. Currently a README and setup notes — the implementation still has to be copied in.",
+      "doesNotOwn": "—",
+      "inHub": false
+    }
+  ],
+  "dataFlow": [
+    "The browser calls the web app's own `/api/*` routes.",
+    "Next forwards to the main gateway (`http://127.0.0.1:3010/estimate-and-proposals/...`) with the gate secret, which reaches the E&P Express API.",
+    "Express reads and writes estimates via storage: **direct** (`ESTIMATE_PROPOSALS_STORAGE_URL` + secret) or **gateway** (`CANONICAL_DATA_ACCESS_MODE=gateway`).",
+    "Customer and project reads go Express → main gateway → my-ops-tracker storage (`OPS_TRACKER_GATEWAY_PROJECT_ID`).",
+    "My Ops Tracker can read an estimate back through the document-payload endpoint."
+  ],
+  "trust": [
+    { "title": "Browser", "detail": "No secrets; only `NEXT_PUBLIC_API_TIMEOUT_MS`. The gate secret is added server-side by Next." },
+    { "title": "Web / API servers", "detail": "Hold `DISPATCHER_GATE_SECRET` and the storage secret. Never hold `DATABASE_URL`." },
+    { "title": "Storage host", "detail": "Only place with `DATABASE_URL`; accepts callers with `STORAGE_DISPATCHER_SECRET`." },
+    { "title": "Main gateway", "detail": "Only forwards paths listed in `dispatcher_exposed_endpoints`." }
+  ],
+  "commonTasks": [
+    {
+      "title": "Run on the studio",
+      "when": "First setup on the machine that owns the data.",
+      "steps": [
+        "Run **Setup** in Hub.",
+        "On the **Storage Express** repo, **Set up local database** to create `estimate_and_proposals` and apply `migrations/` (005 adds sample estimates; 006–007 expose CRM and data endpoints).",
+        "Set `STORAGE_DISPATCHER_SECRET` on storage and the same value as `ESTIMATE_PROPOSALS_STORAGE_SECRET` on the API (**Direct** data plane).",
+        "Set `MAIN_GATEWAY_URL`, `DISPATCHER_GATE_SECRET` and `OPS_TRACKER_GATEWAY_PROJECT_ID=my-ops-tracker` on the API and the gateway vars on the web.",
+        "Press **Run** and open `/estimates`."
+      ]
+    },
+    {
+      "title": "Use from a laptop",
+      "when": "Data stays on the studio.",
+      "steps": [
+        "Pick the **gateway** data plane on the API (`CANONICAL_DATA_ACCESS_MODE=gateway`, `MAIN_GATEWAY_PROJECT_ID=estimate-and-proposals`).",
+        "Point `MAIN_GATEWAY_URL` at the studio (`http://<studio-ip>:3010`) on both web and API."
+      ]
+    },
+    {
+      "title": "Write and send an estimate",
+      "when": "A customer asks for a quote.",
+      "steps": [
+        "Make sure the customer and project exist in My Ops Tracker.",
+        "On `/estimates`, create an estimate, pick the kind, customer and project.",
+        "Fill in line items on the draft, then move it to **sent** and use **Print / PDF**."
+      ]
+    }
+  ],
+  "troubleshooting": [
+    { "symptom": "Customers / projects don't load", "fix": "The CRM proxy can't reach My Ops Tracker. Check `MAIN_GATEWAY_URL`, `DISPATCHER_GATE_SECRET` and that my-ops-tracker storage exposes customers (its `004_dispatcher_exposed_endpoints.sql`)." },
+    { "symptom": "Web requests return 401/403 from the gateway", "fix": "`DISPATCHER_GATE_SECRET` on the web doesn't match the gateway, or the path isn't listed in `dispatcher_exposed_endpoints` (apply migrations 006–007)." },
+    { "symptom": "Estimate routes return 500", "fix": "Storage unreachable or secret mismatch. `curl <storage>/api/storage/health` and compare secrets." },
+    { "symptom": "Can't create a 'custom' estimate", "fix": "By design — only the five catalog kinds exist in v1." }
+  ],
+  "glossary": [
+    { "term": "Estimate kind", "definition": "One of five code-defined catalogs (website build, GBP, Yelp reviews, Facebook posting, social posting)." },
+    { "term": "Document payload", "definition": "Flattened estimate + CRM data + placeholders for templates." },
+    { "term": "Main gateway", "definition": "The studio on-device dispatcher on port 3010 that routes `/<project-id>/…` to project services." },
+    { "term": "Exposed endpoint", "definition": "A row in `dispatcher_exposed_endpoints` allowing the gateway to forward one method + path." }
+  ],
+  "hubNotes": [
+    "Ports disagree: the registry says storage 3094 / API 3095 / dispatcher 3093, but the `.env.example` files and dispatcher README use 3081 / 3082 / 3085. Make the API's `ESTIMATE_PROPOSALS_STORAGE_URL` match whatever storage actually runs on.",
+    "The registry lists `estimate-and-proposals-express-dispatcher-server`, which is cloned locally but isn't a git repo and has no code yet (README only). hub.local.json has no path for it.",
+    "Repo READMEs for web, API and storage are still the templates; the ADRs carry the real design.",
+    "Depends on the my-ops-tracker project and the on-device dispatcher being up."
+  ],
+  "links": [
+    { "label": "Catalog estimate kinds", "path": "estimate-and-proposals-express-server/.cursor/architecture/011-catalog-estimate-kinds.md" },
+    { "label": "Hybrid CRM via gateway", "path": "estimate-and-proposals-express-server/.cursor/architecture/010-hybrid-crm-ops-tracker.md" },
+    { "label": "Dispatcher exposure", "path": "estimate-and-proposals-express-server/.cursor/architecture/012-project-dispatcher-exposure.md" },
+    { "label": "Document payload", "path": "estimate-and-proposals-express-server/.cursor/architecture/013-document-payload.md" },
+    { "label": "Estimate status views", "path": "estimate-and-proposals-web/.cursor/architecture/020-estimate-status-views.md" },
+    { "label": "Dispatcher setup", "path": "estimate-and-proposals-express-dispatcher-server/SETUP.md" }
+  ]
+}

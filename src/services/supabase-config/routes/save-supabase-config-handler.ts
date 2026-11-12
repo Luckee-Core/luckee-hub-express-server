@@ -13,7 +13,6 @@ export const saveSupabaseConfigHandler = (req: Request, res: Response): void => 
     const result = processSaveSupabaseConfig(projectId, {
       supabaseUrl: String(req.body?.supabaseUrl ?? ''),
       serviceKey: String(req.body?.serviceKey ?? ''),
-      databasePassword: String(req.body?.databasePassword ?? ''),
     });
 
     if ('error' in result) {

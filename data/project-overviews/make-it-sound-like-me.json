@@ -1,0 +1,141 @@
+{
+  "projectId": "make-it-sound-like-me",
+  "updatedAt": "2026-11-12",
+  "tagline": "Teach the AI how you write — from your documents, LinkedIn and X history — then rewrite any draft so it sounds like you, for a specific audience and platform.",
+  "summary": [
+    "Make It Sound Like Me (MISLM) builds an **About me** voice profile. You upload documents (txt, md, docx, pdf) and pick what each one is (bio, how I talk, …); Claude extracts structured facts. It can also scrape your LinkedIn and X posts and comments through Apify and summarize how you speak on each platform into versioned speaking guidance.",
+    "With the profile in place you paste a draft into **Content**, choose a writing audience, a platform (LinkedIn or X) and an approach, and get a structured, voice-matched rewrite to compare against your original. For X drafts it can also suggest tweets and refine them from your feedback. Other Luckee apps (e.g. TwitterX Manager) call it through an integrations API to rewrite text in your voice."
+  ],
+  "audience": [
+    "Founders and consultants who post on LinkedIn and X and want AI help that doesn't sound generic.",
+    "You have writing samples (bios, posts, docs) the AI can learn from.",
+    "You use other Luckee content tools that should share one voice profile."
+  ],
+  "notFor": [
+    "Scheduling or publishing posts — it writes and rewrites; posting happens elsewhere.",
+    "Multi-tenant SaaS today — product data moved to single-tenant local storage (one instance key per install).",
+    "Ghostwriting without your input — it needs your own samples to work well."
+  ],
+  "capabilities": [
+    { "title": "About me profile", "detail": "`/about-me` tabs for profile facts, documents, overview and social handles; **Analyze** extracts each saved document with Claude (deferred, not on upload)." },
+    { "title": "AI overview", "detail": "`POST /api/about-me/overview/generate` summarizes the saved profile." },
+    { "title": "LinkedIn and X import", "detail": "Apify scrapes your LinkedIn posts/comments and X posts; **Summarize** produces versioned per-platform speaking guidance and talk topics." },
+    { "title": "Writing audiences", "detail": "`/audiences` and `/audience-detail-page` define who you're writing for; every compare needs one." },
+    { "title": "Content compare", "detail": "`/content` and `/content-detail-page`: paste a draft, pick audience, platform and approach, and get a structured rewrite next to your original." },
+    { "title": "Suggested tweets", "detail": "Generate post ideas per draft; `/suggested-tweet-detail-page` regenerates one from feedback, and later batches learn from those corrections." },
+    { "title": "AI provider picker", "detail": "Choose Anthropic or Gemini for X features." },
+    { "title": "Integrations API", "detail": "`/api/integrations/create-content` lets other tools rewrite text in your voice, logged to a separate ledger." },
+    { "title": "AI costs, auth and waitlist", "detail": "`/ai-costs` ledger view; Supabase email/Google sign-in; production waitlist protected by reCAPTCHA." }
+  ],
+  "components": [
+    {
+      "repoName": "make-it-sound-like-me-web",
+      "name": "Web app",
+      "stack": "Next.js, Redux Toolkit, Supabase JS",
+      "runsOn": "Vercel / your machine (Hub port 3072)",
+      "owns": "Landing, auth, dashboard, About me, audiences, content, suggested tweets, AI costs. Calls the API at `NEXT_PUBLIC_CMS_URL` with the Supabase JWT.",
+      "doesNotOwn": "AI keys or data access.",
+      "inHub": true
+    },
+    {
+      "repoName": "make-it-sound-like-me-express-server",
+      "name": "API",
+      "stack": "Express + TypeScript, Anthropic SDK, Google GenAI, Supabase JS, `mammoth`, `pdf-parse`, `multer`",
+      "runsOn": "Your machine (port 3071)",
+      "owns": "Document parsing and extraction, social scrape/summarize, content compare, post suggestions, integrations API, waitlist. Verifies Supabase JWTs. Reads/writes product data via storage invoke.",
+      "doesNotOwn": "Relational product data since the single-tenant cutover — that's in storage.",
+      "inHub": true
+    },
+    {
+      "repoName": "make-it-sound-like-me-storage-express-server",
+      "name": "Storage server",
+      "stack": "Express + TypeScript, `pg`",
+      "runsOn": "Your machine or studio (port 3083)",
+      "owns": "`make_it_sound_like_me` Postgres: About me, content, audiences, AI ledgers, integration ledger, `dispatcher_exposed_endpoints`.",
+      "doesNotOwn": "Auth, file storage, AI calls.",
+      "inHub": true
+    }
+  ],
+  "dataFlow": [
+    "You sign in with Supabase; the web app sends the JWT to the API.",
+    "Uploaded documents go to the Supabase Storage bucket `about-me-sources`; **Analyze** extracts text (mammoth / pdf-parse) and sends it to Claude.",
+    "Social import calls Apify actors for LinkedIn and X, then Claude or Gemini summarizes speaking style.",
+    "Content compare builds a prompt from About me, platform guidance, audience and approach, and returns structured JSON.",
+    "Every AI round trip writes a request / response / exchange ledger. Relational data goes to storage (`MISLM_STORAGE_DIRECT_URL` or the main gateway), scoped by `MISLM_LOCAL_INSTANCE_KEY`."
+  ],
+  "trust": [
+    { "title": "Browser", "detail": "Supabase anon key, reCAPTCHA site key and the API URL." },
+    { "title": "API", "detail": "Supabase service role, Anthropic, Gemini, Apify and reCAPTCHA secrets; storage/gateway secret." },
+    { "title": "Storage host", "detail": "Only place with `DATABASE_URL`; accepts callers with `STORAGE_DISPATCHER_SECRET`." },
+    { "title": "Supabase", "detail": "Still holds auth, the `about-me-sources` file bucket and the waitlist." },
+    { "title": "Third parties", "detail": "Your documents and posts go to Anthropic/Gemini; Apify scrapes your public profiles." }
+  ],
+  "commonTasks": [
+    {
+      "title": "First-time setup",
+      "when": "Fresh clone.",
+      "steps": [
+        "Run **Setup** in Hub (add the storage repo path to hub.local.json first — see Hub notes).",
+        "On the **Storage Express** repo, **Set up local database** to create `make_it_sound_like_me` and apply `migrations/`.",
+        "On the API set `SUPABASE_URL`, `SUPABASE_SERVICE_ROLE_KEY`, `ANTHROPIC_API_KEY`, `GEMINI_API_KEY`, `APIFY_API_TOKEN`, plus `MISLM_STORAGE_DIRECT_URL=http://127.0.0.1:3083` and `MISLM_STORAGE_DISPATCHER_SECRET`.",
+        "On the web set `NEXT_PUBLIC_CMS_URL` to the API's port (3071) and the Supabase public vars.",
+        "Press **Run**, sign in and open `/about-me`."
+      ]
+    },
+    {
+      "title": "Build your voice profile",
+      "when": "Before rewriting anything.",
+      "steps": [
+        "Fill in profile facts and upload documents on `/about-me`, choosing a type for each.",
+        "Click **Analyze** per document, then generate the overview.",
+        "Add LinkedIn and X handles, import, and run **Summarize** for each platform."
+      ]
+    },
+    {
+      "title": "Rewrite a draft",
+      "when": "You have a post to polish.",
+      "steps": [
+        "Create an audience on `/audiences` if you don't have one.",
+        "On `/content`, paste the draft, choose audience, platform and approach, and run compare.",
+        "For X, generate suggested tweets and refine with feedback."
+      ]
+    },
+    {
+      "title": "Import legacy data from Supabase",
+      "when": "One-time move to single-tenant storage.",
+      "steps": [
+        "Set `MISLM_IMPORT_FROM_SUPABASE_ENABLED=true` (optionally `MISLM_IMPORT_LEGACY_USER_ID`).",
+        "Run the import from the dashboard (About me import status) and check counts."
+      ]
+    }
+  ],
+  "troubleshooting": [
+    { "symptom": "Everything returns 401", "fix": "No Supabase session reached the API, or the API's Supabase URL/service key doesn't match the web project." },
+    { "symptom": "About me / content routes 500", "fix": "Storage unreachable or secret mismatch: `curl http://127.0.0.1:3083/api/storage/health` and compare `MISLM_STORAGE_DISPATCHER_SECRET`." },
+    { "symptom": "Analyze fails on a PDF", "fix": "Scanned/image-only PDFs have no text for `pdf-parse`; export a text PDF or paste the text." },
+    { "symptom": "LinkedIn/X import returns nothing", "fix": "Check `APIFY_API_TOKEN` and the handle; tune `LINKEDIN_PROFILE_POSTS_MAX` / `TWITTER_SCRAPE_MAX_ITEMS`." },
+    { "symptom": "Compare is blocked", "fix": "The draft needs an audience (`assertHasAudienceForCompare`)." },
+    { "symptom": "Waitlist rejects submissions in production", "fix": "Set `RECAPTCHA_SECRET_KEY` on the API and the matching site key on the web." }
+  ],
+  "glossary": [
+    { "term": "About me", "definition": "Your voice profile: facts, documents, overview and per-platform speaking guidance." },
+    { "term": "Writing audience", "definition": "Who a draft is for; required for every compare." },
+    { "term": "Approach", "definition": "A built-in writing style/structure applied to a draft (separate from audience and platform)." },
+    { "term": "Instance key", "definition": "`MISLM_LOCAL_INSTANCE_KEY` — scopes single-tenant storage rows (default `default`)." },
+    { "term": "Integration ledger", "definition": "AI log for external rewrite calls, kept apart from your own content compares." }
+  ],
+  "hubNotes": [
+    "hub.local.json has no `storageExpressDir`, though `make-it-sound-like-me-storage-express-server` is cloned at `~/github/makeitsoundlikeme/` — add it so Hub can run storage.",
+    "The web `.env.example` sets `NEXT_PUBLIC_CMS_URL=http://localhost:3072`, which is the web's own Hub port; the API runs on 3071.",
+    "The latest web commit removed the code-commit-summary content features; express ADRs 030–032 describe code that's no longer used by the UI.",
+    "Web and API READMEs are still templates; the ADRs (web 015–035, express 011–035) are the real docs."
+  ],
+  "links": [
+    { "label": "Document extract", "path": "make-it-sound-like-me-express-server/.cursor/architecture/011-about-me-document-extract.md" },
+    { "label": "Social speaking generate", "path": "make-it-sound-like-me-express-server/.cursor/architecture/021-about-me-social-speaking-generate.md" },
+    { "label": "Content compare", "path": "make-it-sound-like-me-express-server/.cursor/architecture/022-content-compare.md" },
+    { "label": "Integrations create-content", "path": "make-it-sound-like-me-express-server/.cursor/architecture/033-external-integrations-create-content.md" },
+    { "label": "Single-tenant storage cutover", "path": "make-it-sound-like-me-express-server/.cursor/architecture/035-single-tenant-mislm-storage-cutover.md" },
+    { "label": "Storage single-tenant schema", "path": "make-it-sound-like-me-storage-express-server/.cursor/architecture/035-single-tenant-product-storage.md" }
+  ]
+}

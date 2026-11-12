@@ -1,0 +1,116 @@
+{
+  "projectId": "qr-code-generator",
+  "updatedAt": "2026-11-12",
+  "tagline": "Free QR codes made right in your browser (manageqrcodes.com) — sign in with Luckee only if you want to save them to My codes.",
+  "summary": [
+    "Manage QR Codes generates styled QR codes entirely in the browser with `qr-code-styling`: pick a type (URL, Wi-Fi, vCard, email, SMS, phone, text, location, event, WhatsApp, PayPal, Zoom), fill in the fields, style it and download PNG/SVG or PDF. No server call is needed to create or download a code.",
+    "A Luckee account is optional. After your first code a modal offers to save it; signed-in users get **My codes**, a list they can reopen and edit, stored through a small hosted CMS API backed by Supabase. A separate open-source Express server offers `POST /api/generate-code` (URL → PNG) for integrators; the web app doesn't use it."
+  ],
+  "audience": [
+    "Anyone who needs a quick QR code without signing up.",
+    "Small businesses who want to keep and re-edit their codes (menus, Wi-Fi, contact cards).",
+    "Developers who want a tiny self-hosted URL → PNG QR endpoint."
+  ],
+  "notFor": [
+    "Dynamic / trackable QR codes with scan analytics — codes encode content directly.",
+    "Bulk generation in the web app — one code at a time (integrators can script the OSS API).",
+    "Gating — generating and downloading never require an account."
+  ],
+  "capabilities": [
+    { "title": "In-browser generator", "detail": "The landing page's `#generator` section: 12 QR types, design controls and live preview, all client-side." },
+    { "title": "Downloads", "detail": "PNG/SVG from `qr-code-styling` and PDF via `jspdf`." },
+    { "title": "Optional save", "detail": "A one-time modal after your first code (\"Continue without saving\" available) signs you up or in and saves the code." },
+    { "title": "My codes", "detail": "`/codes` and `/code-detail-page` (signed-in only) list and edit saved codes via `/api/qr-codes`." },
+    { "title": "Learn page", "detail": "`/learn` explains the system and repos." },
+    { "title": "OSS QR API", "detail": "`POST /api/generate-code` with `{ url }` returns a PNG; `/docs` and `/api-docs.json` document it." }
+  ],
+  "components": [
+    {
+      "repoName": "qr-code-generator-web",
+      "name": "Web app",
+      "stack": "Next.js, Redux Toolkit, `qr-code-styling`, `jspdf`, Supabase JS, Vercel Analytics",
+      "runsOn": "Vercel (manageqrcodes.com) / your machine (Hub port 3041)",
+      "owns": "Landing + generator, Luckee sign-in/sign-up, My codes, `/learn`. Calls the CMS at `NEXT_PUBLIC_CMS_URL` with the Supabase JWT.",
+      "doesNotOwn": "Saved-code storage.",
+      "inHub": true
+    },
+    {
+      "repoName": "qr-code-generator-express-server-cms",
+      "name": "Save API (CMS)",
+      "stack": "Express + TypeScript, Supabase JS",
+      "runsOn": "Railway / your machine (port 3042)",
+      "owns": "Saved QR codes CRUD and account sync for signed-in users (`supabase/migrations/`).",
+      "doesNotOwn": "Code generation.",
+      "inHub": true
+    },
+    {
+      "repoName": "qr-code-generator-open-source-express-server",
+      "name": "OSS QR API",
+      "stack": "Express + TypeScript, `qrcode`",
+      "runsOn": "Anywhere (default port 3023)",
+      "owns": "`POST /api/generate-code` (URL → PNG), docs page and API catalog. Stateless.",
+      "doesNotOwn": "Accounts or storage.",
+      "inHub": false
+    }
+  ],
+  "dataFlow": [
+    "The browser builds the QR payload for the chosen type and renders it with `qr-code-styling`; downloads happen locally.",
+    "If you choose to save, the browser signs in with Luckee Supabase and calls the CMS (`NEXT_PUBLIC_CMS_URL`) with the JWT.",
+    "The CMS verifies the JWT, syncs the account and stores the code in Supabase.",
+    "Separately, integrators call the OSS server's `POST /api/generate-code` to get a PNG."
+  ],
+  "trust": [
+    { "title": "Browser", "detail": "Everything you type into a code stays in the browser unless you save it." },
+    { "title": "CMS", "detail": "Supabase service role key; trusts only valid Luckee JWTs." },
+    { "title": "OSS QR API", "detail": "No secrets, no storage." }
+  ],
+  "commonTasks": [
+    {
+      "title": "Run the web app locally",
+      "when": "Working on the generator or landing.",
+      "steps": [
+        "Clone `qr-code-generator-web` (Hub has no web path for this project yet — see Hub notes).",
+        "Set `NEXT_PUBLIC_SUPABASE_URL`, `NEXT_PUBLIC_SUPABASE_ANON_KEY` and `NEXT_PUBLIC_CMS_URL=http://localhost:3042`.",
+        "`npm run dev`; the generator works even without the CMS."
+      ]
+    },
+    {
+      "title": "Run the save API",
+      "when": "Testing My codes.",
+      "steps": [
+        "Apply `supabase/migrations/` to the Luckee Supabase project.",
+        "Set `SUPABASE_URL` and `SUPABASE_SERVICE_ROLE_KEY` in the CMS `.env` (port 3042) and start it."
+      ]
+    },
+    {
+      "title": "Generate a PNG from a script",
+      "when": "Integrating QR generation elsewhere.",
+      "steps": [
+        "Run `qr-code-generator-open-source-express-server` (`npm run dev`, port 3023).",
+        "`curl -X POST http://localhost:3023/api/generate-code -H 'Content-Type: application/json' -d '{\"url\":\"https://example.com\"}' --output qr.png`."
+      ]
+    }
+  ],
+  "troubleshooting": [
+    { "symptom": "Saving fails after sign-in", "fix": "The CMS isn't reachable at `NEXT_PUBLIC_CMS_URL` or its Supabase env is wrong." },
+    { "symptom": "Sign-up says check your email but nothing arrives", "fix": "Confirm Supabase email settings and that the site URL is in the redirect list." },
+    { "symptom": "Scanned code opens the wrong thing", "fix": "Check the type-specific fields (e.g. Wi-Fi security type, vCard fields) in the preview before downloading." },
+    { "symptom": "Hub runs the wrong API", "fix": "hub.local.json points at the OSS server, not the CMS the web app uses." }
+  ],
+  "glossary": [
+    { "term": "CMS", "definition": "The hosted save API for My codes (qr-code-generator-express-server-cms)." },
+    { "term": "OSS QR API", "definition": "The standalone URL → PNG server for integrators." },
+    { "term": "My codes", "definition": "Saved codes for signed-in Luckee users." }
+  ],
+  "hubNotes": [
+    "hub.local.json has no `webDir` for this project and its `expressDir` points at `qr-code-generator-open-source-express-server`, while the registry lists `qr-code-generator-express-server-cms` + `qr-code-generator-web`. All three are cloned in `~/github/qr-code-generator/`.",
+    "With no `webPortStart`, the web would fall back to the registry's 3041, which website-site-scraper also uses.",
+    "The CMS README is still the template; its `.env.example` (port 3042, Supabase) is accurate."
+  ],
+  "links": [
+    { "label": "Wire contract", "path": "qr-code-generator-web/docs/oss/wire-contract.md" },
+    { "label": "Learn page ADR", "path": "qr-code-generator-web/.cursor/architecture/014-learn-system-overview-page.md" },
+    { "label": "Browser Supabase auth", "path": "qr-code-generator-web/.cursor/architecture/013-browser-supabase-auth.md" },
+    { "label": "OSS QR API README", "path": "qr-code-generator-open-source-express-server/README.md" }
+  ]
+}

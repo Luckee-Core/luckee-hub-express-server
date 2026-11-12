@@ -5,12 +5,12 @@ import { processProbeSupabaseConfig } from '../process-probe-supabase-config';
 /**
  * GET /api/projects/:id/supabase — probe Supabase env presence in express .env.
  */
-export const probeSupabaseConfigHandler = (req: Request, res: Response): void => {
+export const probeSupabaseConfigHandler = async (req: Request, res: Response): Promise<void> => {
   const projectId = String(req.params.id ?? '');
   console.log('📥 [supabase-config.probeSupabaseConfigHandler] Request received', { projectId });
 
   try {
-    const probe = processProbeSupabaseConfig(projectId);
+    const probe = await processProbeSupabaseConfig(projectId);
     console.log('✅ [supabase-config.probeSupabaseConfigHandler] Probe complete', { projectId });
     console.log('📤 [supabase-config.probeSupabaseConfigHandler] Sending response', {
       statusCode: 200,

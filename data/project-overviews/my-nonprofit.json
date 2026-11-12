@@ -1,0 +1,115 @@
+{
+  "projectId": "my-nonprofit",
+  "updatedAt": "2026-11-12",
+  "tagline": "A step-by-step wizard for forming a Pennsylvania / Philadelphia nonprofit — checklist, board, AI-drafted governing documents and a filing tracker.",
+  "summary": [
+    "My Nonprofit walks a founder through forming a nonprofit in Pennsylvania and Philadelphia. Each **formation case** is one organization: a 12-step PA/Philadelphia checklist with per-step status, board members and officers, a set of facts about the organization, and a filing tracker where you record what you've submitted.",
+    "From those facts, Claude drafts the governing documents — mission statement, articles of incorporation, bylaws, conflict-of-interest policy and board consent — as reviewable drafts you can edit and export to Markdown. It never files anything for you and isn't legal advice. Data lives in a Supabase project you control."
+  ],
+  "audience": [
+    "Founders starting a nonprofit in Pennsylvania, especially Philadelphia.",
+    "Advisors helping several groups through formation (one case per organization).",
+    "You can create a Supabase project and get an Anthropic key."
+  ],
+  "notFor": [
+    "Other states — the checklist and drafts are PA/Philadelphia-specific.",
+    "Filing with PA DOS, the IRS or Philly eCLIPSE — status is tracked manually.",
+    "Legal advice — drafts are starting points for review by a professional."
+  ],
+  "capabilities": [
+    { "title": "Getting started wizard", "detail": "`/getting-started` and `/setup` check Supabase connectivity (`GET /api/setup/status`) before you begin." },
+    { "title": "Formation cases", "detail": "`/dashboard` and `/formation-workspace-page` list and open cases." },
+    { "title": "12-step checklist", "detail": "`/formation-detail-page/checklist` tracks each PA/Philadelphia step." },
+    { "title": "Board and officers", "detail": "`/formation-detail-page/board` and `/formation-board-member-detail-page`." },
+    { "title": "Organization facts", "detail": "`/formation-facts-page` captures the details documents are drafted from." },
+    { "title": "AI document drafts", "detail": "`/formation-detail-page/documents`: mission, articles, bylaws, conflict policy and board consent, exportable as Markdown." },
+    { "title": "Filing tracker", "detail": "`/formation-detail-page/filings` records manual filing status." },
+    { "title": "Prompts, costs and API docs", "detail": "`/ai-prompts` (editable per document type), `/ai-costs` (exchange registry ledger) and `/docs/api`." }
+  ],
+  "components": [
+    {
+      "repoName": "my-nonprofit-console",
+      "name": "Console",
+      "stack": "Next.js, Redux Toolkit, lucide-react",
+      "runsOn": "Your machine (README 3081; Hub port 3035)",
+      "owns": "Landing, setup wizard, cases, checklist, board, documents, filings, prompts and costs. Next rewrites API calls to `EXPRESS_API_URL` and can add `FORMATION_API_SECRET` server-side.",
+      "doesNotOwn": "Supabase or Anthropic access.",
+      "inHub": true
+    },
+    {
+      "repoName": "my-nonprofit-express-server",
+      "name": "API",
+      "stack": "Express + TypeScript, Supabase JS, Anthropic SDK",
+      "runsOn": "Your machine, `127.0.0.1` (README 3080; registry 3034)",
+      "owns": "Formation cases, checklist, board, case fields/facts, documents, filings, AI prompts and the exchange registry in your Supabase project; AI drafting.",
+      "doesNotOwn": "User accounts — single trusted operator, optional shared secret.",
+      "inHub": true
+    }
+  ],
+  "dataFlow": [
+    "Run `docs/supabase-setup.sql` in your Supabase project (schema, checklist seed, AI prompts, error logs).",
+    "The console calls same-origin routes that Next rewrites to Express (`EXPRESS_API_URL`).",
+    "Express reads/writes Supabase with the service role key.",
+    "Drafting a document sends case facts and board info plus the stored prompt to Anthropic; each exchange is logged with cost."
+  ],
+  "trust": [
+    { "title": "Browser", "detail": "No secrets; never talks to Supabase or Anthropic directly." },
+    { "title": "Console server", "detail": "Optional `FORMATION_API_SECRET` added to rewritten requests." },
+    { "title": "API (your machine)", "detail": "Supabase service role and `ANTHROPIC_API_KEY`. Binds to 127.0.0.1." },
+    { "title": "Supabase / Anthropic", "detail": "Your formation data lives in your Supabase project; facts are sent to Anthropic when drafting." }
+  ],
+  "commonTasks": [
+    {
+      "title": "First-time setup",
+      "when": "Fresh clone.",
+      "steps": [
+        "Run **Setup** in Hub.",
+        "Create a Supabase project and run `docs/supabase-setup.sql` in its SQL editor.",
+        "Set `SUPABASE_URL`, `SUPABASE_SERVICE_ROLE_KEY` and `ANTHROPIC_API_KEY` on the API.",
+        "Set `EXPRESS_API_URL` on the console to the API's real port.",
+        "Press **Run** and follow `/getting-started`."
+      ]
+    },
+    {
+      "title": "Form a nonprofit",
+      "when": "Starting a new organization.",
+      "steps": [
+        "Create a case and fill in facts on `/formation-facts-page`.",
+        "Add board members and officers.",
+        "Draft each document, review and edit, then export Markdown.",
+        "Work through the checklist and record filings as you submit them."
+      ]
+    },
+    {
+      "title": "Adjust how documents are drafted",
+      "when": "Drafts need a different tone or structure.",
+      "steps": [
+        "Open `/ai-prompts`, pick the document type and edit the prompt.",
+        "Regenerate and compare cost in `/ai-costs`."
+      ]
+    }
+  ],
+  "troubleshooting": [
+    { "symptom": "Setup check says Supabase is unreachable", "fix": "Check `SUPABASE_URL` / service role key and that `docs/supabase-setup.sql` ran." },
+    { "symptom": "Document drafting fails", "fix": "`ANTHROPIC_API_KEY` is missing or `ANTHROPIC_MODEL` is invalid." },
+    { "symptom": "Console returns 401 from the API", "fix": "`FORMATION_API_SECRET` is set on one side but not the other." },
+    { "symptom": "Console can't reach the API", "fix": "`EXPRESS_API_URL` defaults to 127.0.0.1:3080; under Hub the API may be on 3034." }
+  ],
+  "glossary": [
+    { "term": "Formation case", "definition": "One nonprofit being formed, with its checklist, board, facts, documents and filings." },
+    { "term": "Case facts", "definition": "Key details (name, purpose, address, …) used to draft documents." },
+    { "term": "Filing tracker", "definition": "Manual record of what's been submitted to the state, IRS or city." }
+  ],
+  "hubNotes": [
+    "README ports (API 3080, console 3081) clash with code-control's storage (3080) and other storage servers on 3081; the registry gives 3034 / 3035 — set `PORT` and `EXPRESS_API_URL` to match.",
+    "No local Postgres — data lives in your Supabase project, so Hub's database setup doesn't apply.",
+    "The express `docs/` folder has a full guide set (overview, architecture, schema, setup)."
+  ],
+  "links": [
+    { "label": "Project overview", "path": "my-nonprofit-express-server/docs/01-project-overview.md" },
+    { "label": "Setup and local development", "path": "my-nonprofit-express-server/docs/05-setup-and-local-development.md" },
+    { "label": "Database and schema", "path": "my-nonprofit-express-server/docs/04-database-and-schema.md" },
+    { "label": "Supabase setup SQL", "path": "my-nonprofit-express-server/docs/supabase-setup.sql" },
+    { "label": "Wire contract", "path": "my-nonprofit-console/docs/wire-contract.md" }
+  ]
+}

@@ -1,0 +1,136 @@
+{
+  "projectId": "code-control",
+  "updatedAt": "2026-11-12",
+  "tagline": "The catalog of every software system you build — which customer it's for, which GitHub repos make it up, and one-click repo creation from your templates.",
+  "summary": [
+    "Code Control is the source of truth for software systems: a named product or workspace, tied to a customer, with its list of GitHub repos. From a system's page you can create new repos from your own template repos (Express, Next.js web, Python, React Native) or link repos that already exist. Other Luckee apps — Code Commit Summaries in particular — read their project list from here.",
+    "It's built as three pieces. The web app talks to an Express API that has no database connection of its own; every read and write is forwarded to a storage server that owns the `code_control` Postgres, either directly or through the studio's main gateway (on-device dispatcher). Customers aren't stored here at all — they're read from My Ops Tracker's CRM through the same gateway."
+  ],
+  "audience": [
+    "You run a studio or freelance practice and start new repos for customers from a set of templates.",
+    "You want one list of software systems that other tools (commit summaries, dashboards) can rely on.",
+    "You already run the studio stack: on-device dispatcher and My Ops Tracker."
+  ],
+  "notFor": [
+    "A code generator — the old codegen tables were dropped (`091_drop_codegen.sql`); it creates repos from templates, nothing more.",
+    "Managing customers or engagements — those live in My Ops Tracker; Code Control only reads them.",
+    "Running standalone without the storage server — the API can't reach Postgres by itself."
+  ],
+  "capabilities": [
+    { "title": "Software systems", "detail": "`/software-systems` and `/software-system-detail-page` list systems and their linked repos (`software_systems`, `software_system_repos`)." },
+    { "title": "Create repos from templates", "detail": "Create Express, web, Python or React Native repos in an allowed GitHub org from your template repos, or **link** an existing repo." },
+    { "title": "Customers from the CRM", "detail": "`/customers` and `/customer-detail-page` show customers read from My Ops Tracker via `GET /api/crm/*`; a sync modal reconciles names." },
+    { "title": "Dashboard with stack check", "detail": "`/dashboard` shows a setup gate until the API reports storage and Postgres healthy." },
+    { "title": "Gateway-friendly storage", "detail": "The storage server exposes `POST /api/storage/v1/invoke` plus a dispatcher exposed-endpoints list so the studio gateway can route to it." },
+    { "title": "Studio seed / migration", "detail": "`POST /api/studio-seed/import-to-local` copies data from a canonical storage into a local one (laptop → studio)." }
+  ],
+  "components": [
+    {
+      "repoName": "code-control",
+      "name": "Web app",
+      "stack": "Next.js, Redux Toolkit, Tailwind, Luxon (Supabase auth scaffold only)",
+      "runsOn": "Your machine (Hub port 3013)",
+      "owns": "UI for software systems, repo setup and customers. Next.js rewrites `/api/*` to `CODE_CONTROL_API_URL`. No login required locally.",
+      "doesNotOwn": "GitHub tokens, database access.",
+      "inHub": true
+    },
+    {
+      "repoName": "code-control-express-server",
+      "name": "API",
+      "stack": "Express + TypeScript, `express-rate-limit`, Luxon",
+      "runsOn": "Your machine (Hub port 3012; standalone default 3010)",
+      "owns": "HTTP routes for software systems and repo setup, GitHub template repo creation (PAT), the CRM proxy to My Ops Tracker, health of the storage chain.",
+      "doesNotOwn": "SQL — every `src/data` function calls the storage server's `invoke` with the same function name.",
+      "inHub": true
+    },
+    {
+      "repoName": "code-generator-storage-server",
+      "name": "Storage server",
+      "stack": "Express + TypeScript, `pg`",
+      "runsOn": "The machine that owns the `code_control` database (port 3080), normally the studio",
+      "owns": "The Postgres schema in `migrations/`, all SQL, `v1/invoke`, seed export/import, dispatcher exposed endpoints.",
+      "doesNotOwn": "GitHub, customers, browser traffic.",
+      "inHub": true
+    }
+  ],
+  "dataFlow": [
+    "The browser calls Next.js `/api/*`, which rewrites to the Express API.",
+    "Express forwards CRUD to storage: **direct** (`CODE_CONTROL_DIRECT_URL` + secret, e.g. `http://127.0.0.1:3080`) or through the **studio gateway** (`MAIN_GATEWAY_URL` + `MAIN_GATEWAY_PROJECT_ID` + `DISPATCHER_GATE_SECRET`).",
+    "Storage runs the matching SQL against local Postgres `code_control`.",
+    "Customer reads go Express → main gateway → My Ops Tracker storage (`OPS_TRACKER_GATEWAY_PROJECT_ID=my-ops-tracker`).",
+    "Repo creation calls the GitHub API with the PAT on Express and records the new repo on the software system."
+  ],
+  "trust": [
+    { "title": "Browser", "detail": "No secrets. `NEXT_PUBLIC_*` only (API URL, allowed orgs, optional Supabase anon key)." },
+    { "title": "API machine", "detail": "Holds the GitHub PAT and the storage / gateway secrets. Never holds `DATABASE_URL`." },
+    { "title": "Storage host", "detail": "Only place with `DATABASE_URL`. Postgres binds to 127.0.0.1; the storage server accepts only callers with `STORAGE_DISPATCHER_SECRET`." },
+    { "title": "Studio gateway", "detail": "Authenticates with `DISPATCHER_GATE_SECRET` and only forwards endpoints listed as exposed." }
+  ],
+  "commonTasks": [
+    {
+      "title": "Run everything on one machine",
+      "when": "Laptop or studio, all three repos local.",
+      "steps": [
+        "Run **Setup** in Hub.",
+        "On the **Storage Express** repo, **Set up local database** to create `code_control` and apply `migrations/`.",
+        "Set `STORAGE_DISPATCHER_SECRET` on storage and the same value as `CODE_CONTROL_DIRECT_SECRET` on the API; choose the **Direct storage** data plane with `CODE_CONTROL_DIRECT_URL=http://127.0.0.1:3080`.",
+        "Set the GitHub PAT and template repo env vars on the API (see the OSS quickstart).",
+        "Press **Run**; `curl <api>/api/health` should show storage and database `ok`."
+      ]
+    },
+    {
+      "title": "Use the studio's data from a laptop",
+      "when": "Canonical storage runs on the studio Mac.",
+      "steps": [
+        "Pick the **Studio gateway** data plane on the API.",
+        "Set `MAIN_GATEWAY_URL=http://<studio-ip>:3010`, `MAIN_GATEWAY_PROJECT_ID=code-control` and `DISPATCHER_GATE_SECRET`.",
+        "You don't need to run the storage repo locally."
+      ]
+    },
+    {
+      "title": "Start a new software system",
+      "when": "A new product or customer build.",
+      "steps": [
+        "Make sure the customer exists in My Ops Tracker.",
+        "Create the software system for that customer in `/software-systems`.",
+        "On its detail page, create the repos you need from templates or link existing ones."
+      ]
+    },
+    {
+      "title": "Connect your GitHub org and templates",
+      "when": "First time, or moving to a new org.",
+      "steps": [
+        "Create template repos (Express, web, etc.) in your org and mark them as GitHub templates.",
+        "Set the PAT, allowed owners and template names on the API per `docs/oss-quickstart.md#connect-github`.",
+        "Set `NEXT_PUBLIC_GITHUB_ALLOWED_ORGS` / `NEXT_PUBLIC_GITHUB_DEFAULT_ORG` on the web to match."
+      ]
+    }
+  ],
+  "troubleshooting": [
+    { "symptom": "Dashboard stuck on the setup gate / health shows storage down", "fix": "The storage server isn't running or the secret doesn't match. Start it and compare `STORAGE_DISPATCHER_SECRET` with the API's direct/storage secret." },
+    { "symptom": "Customers list is empty or errors", "fix": "Customers come from My Ops Tracker via the main gateway. Check `MAIN_GATEWAY_URL`, `DISPATCHER_GATE_SECRET` and that my-ops-tracker storage exposes customers." },
+    { "symptom": "Creating a repo fails", "fix": "Check the PAT's scopes, that the target org is allowed, and that the template repo exists and is marked as a template." },
+    { "symptom": "Web calls return 404/502", "fix": "`CODE_CONTROL_API_URL` doesn't match the API's port (3012 under Hub, 3010 standalone)." },
+    { "symptom": "Errors about missing `customer_projects` or `customers` tables", "fix": "Old schema. Apply migrations through `096_rename_projects_to_software_systems.sql`." }
+  ],
+  "glossary": [
+    { "term": "Software system", "definition": "A product/workspace with its GitHub repos, keyed by a My Ops CRM customer id (formerly `customer_projects`)." },
+    { "term": "Storage server", "definition": "code-generator-storage-server — owns Postgres and all SQL; the API calls it via `invoke`." },
+    { "term": "Main gateway", "definition": "The studio's on-device dispatcher (port 3010) that routes `/<project-id>/…` to each project's storage." },
+    { "term": "Hybrid CRM", "definition": "Customers are read live from My Ops Tracker instead of a local table." }
+  ],
+  "hubNotes": [
+    "The registry's `expectedTables` (`customers`, `customer_projects`, `customer_project_repos`) are out of date — migration 095 drops `customers` and 096 renames the others to `software_systems` / `software_system_repos`. The database check will report them missing on a current schema.",
+    "hub.local.json points `storageExpressDir` at `~/github/code-control/code-generator-storage-server`, while the example file uses `~/luckee/code-control/...`.",
+    "The README route table still says `/api/data/projects`; the live routes are `/api/data/software-systems*`.",
+    "There's a stray file in `~/github/code-control/` whose name contains a dispatcher gate secret (`x-dispatcher-gate-secret: …`). Delete it and consider rotating that secret."
+  ],
+  "links": [
+    { "label": "OSS quickstart", "path": "code-control-express-server/docs/oss-quickstart.md" },
+    { "label": "Studio setup", "path": "code-control-express-server/docs/studio-local-postgres-setup.md" },
+    { "label": "Deployment (storage / API split)", "path": "code-control-express-server/DEPLOYMENT.md" },
+    { "label": "Storage / API split", "path": "code-control-express-server/.cursor/architecture/009-storage-api-split.md" },
+    { "label": "Hybrid CRM via gateway", "path": "code-control-express-server/.cursor/architecture/010-hybrid-crm-ops-tracker.md" },
+    { "label": "Software systems naming", "path": "code-control/.cursor/architecture/014-software-systems-naming.md" }
+  ]
+}

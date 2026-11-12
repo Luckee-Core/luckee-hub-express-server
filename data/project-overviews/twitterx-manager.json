@@ -1,0 +1,119 @@
+{
+  "projectId": "twitterx-manager",
+  "updatedAt": "2026-11-12",
+  "tagline": "Compose, schedule and post to your X account from a local app — with optional rewrites in your own voice via Make It Sound Like Me.",
+  "summary": [
+    "Twitter/X Manager posts to a single X profile through a local Express API using your OAuth 2 user tokens. **Compose** writes and posts a tweet now; the **post queue** schedules tweets for later and a worker in the API posts them when they're due; **Posts** shows history, including your own timeline imported for a date range.",
+    "When the integration is enabled, Compose can rewrite a draft so it sounds like you: the API looks up the route in integration-manager's catalog and calls Make It Sound Like Me's create-content integration through the on-device express gateway. History, queue and rewrite ledgers live in local Postgres."
+  ],
+  "audience": [
+    "Founders and creators who post to one X account and want scheduling without a SaaS.",
+    "You already use Make It Sound Like Me for your voice profile.",
+    "You can create an X developer app and generate OAuth 2 user tokens."
+  ],
+  "notFor": [
+    "Multiple X accounts or teams — one profile, tokens in env.",
+    "Analytics, replies or DMs — compose, schedule, post and import history only.",
+    "Running in the cloud — it's a local API with a local secret."
+  ],
+  "capabilities": [
+    { "title": "Compose and post", "detail": "The home page composes a tweet (≤280 chars) and posts it via `POST /api/x/posts`." },
+    { "title": "Post queue", "detail": "`/post-queue` schedules text for a time; the API's worker posts due items and records status (`pending`, `posted`, `failed`, `cancelled`)." },
+    { "title": "Post history", "detail": "`/posts` lists posted tweets stored in `x_posted_tweet`." },
+    { "title": "Timeline import", "detail": "`POST /api/x/posts/sync` imports your own tweets for a date range (up to 31 days, excluding retweets/replies by default)." },
+    { "title": "Rewrite in your voice", "detail": "Compose can call MISLM create-content (discovered via integration-manager, executed via the express gateway); each rewrite is logged to `rewrite_text_ai_*`." },
+    { "title": "Token refresh", "detail": "OAuth 2 tokens refresh automatically; `X_OAUTH2_PERSIST_TOKENS_TO_ENV=true` writes new ones back to `.env`." }
+  ],
+  "components": [
+    {
+      "repoName": "twitterx-manager-web",
+      "name": "Web app",
+      "stack": "Next.js, Redux Toolkit, lucide-react",
+      "runsOn": "Your machine (port 3082)",
+      "owns": "Compose, post queue and posts screens. Server-side route handlers proxy to Express (`TWITTERX_EXPRESS_URL`) and add `x-local-api-secret`.",
+      "doesNotOwn": "X tokens or the integration key.",
+      "inHub": true
+    },
+    {
+      "repoName": "twitterx-manager-express-server",
+      "name": "API",
+      "stack": "Express + TypeScript, `pg`",
+      "runsOn": "Your machine (port 3081)",
+      "owns": "X API v2 posting and timeline sync with OAuth 2, the post-queue worker, local Postgres `twitterx_manager` (`migrations/`), and the MISLM integration client.",
+      "doesNotOwn": "The rewrite itself — that's Make It Sound Like Me.",
+      "inHub": true
+    }
+  ],
+  "dataFlow": [
+    "The browser calls the web's own `/api/x/*` routes; the web server forwards to Express with `LOCAL_X_POST_API_SECRET`.",
+    "Express posts to X API v2 using `CONSUMER_X_ACCESS_TOKEN`, refreshing with `CONSUMER_X_REFRESH_TOKEN` when needed, and stores the result in `x_posted_tweet`.",
+    "Queued posts sit in `post_queue`; the worker posts them at `scheduled_at`.",
+    "Rewrite: Express fetches the consumer catalog from integration-manager (`INTEGRATION_MANAGER_EXPRESS_URL`), then calls MISLM through the express gateway with `INTEGRATIONS_SERVICES_API_KEY` (and the gate secret when routed via the main gateway)."
+  ],
+  "trust": [
+    { "title": "Browser", "detail": "No secrets — not even the local post secret." },
+    { "title": "Web server", "detail": "`LOCAL_X_POST_API_SECRET` (server-only)." },
+    { "title": "API (your machine)", "detail": "X client id/secret and user tokens, `DATABASE_URL`, integration key, optional gate secret." },
+    { "title": "X / MISLM", "detail": "X receives your posts; MISLM receives drafts you choose to rewrite." }
+  ],
+  "commonTasks": [
+    {
+      "title": "First-time setup",
+      "when": "Fresh clone.",
+      "steps": [
+        "Run **Setup** in Hub; create `twitterx_manager` and apply `migrations/` (or **Set up local database** if offered).",
+        "In the X Developer Console, create an app with OAuth 2 and generate user access + refresh tokens (scopes incl. `tweet.write`, `tweet.read`, `users.read`, `offline.access`).",
+        "Set `CONSUMER_X_APP_CLIENT_ID`, `CONSUMER_X_APP_CLIENT_SECRET`, `CONSUMER_X_ACCESS_TOKEN`, `CONSUMER_X_REFRESH_TOKEN`, `DATABASE_URL` and `LOCAL_X_POST_API_SECRET` on the API.",
+        "Set `TWITTERX_EXPRESS_URL` and the same `LOCAL_X_POST_API_SECRET` on the web, then **Run**."
+      ]
+    },
+    {
+      "title": "Schedule a week of posts",
+      "when": "Planning content.",
+      "steps": [
+        "Open `/post-queue`, add each tweet with its time.",
+        "Keep the API running — the worker only posts while it's up."
+      ]
+    },
+    {
+      "title": "Enable voice rewrites",
+      "when": "You use Make It Sound Like Me.",
+      "steps": [
+        "Run integration-manager and enable create-content for the `twitterx-manager` consumer.",
+        "Set `INTEGRATION_MANAGER_EXPRESS_URL` and `INTEGRATIONS_SERVICES_API_KEY` (same as MISLM's), plus `ON_DEVICE_DISPATCHER_GATE_SECRET` if routed via the main gateway."
+      ]
+    },
+    {
+      "title": "Import past tweets",
+      "when": "You want full history in Posts.",
+      "steps": [
+        "Run a sync for a date range (≤31 days per call); repeat for older ranges."
+      ]
+    }
+  ],
+  "troubleshooting": [
+    { "symptom": "Posting returns 401 from Express", "fix": "`LOCAL_X_POST_API_SECRET` differs between web and API." },
+    { "symptom": "X rejects the post with 401/403", "fix": "The access token expired and refresh failed, or the app lacks `tweet.write`. Regenerate tokens; consider `X_OAUTH2_PERSIST_TOKENS_TO_ENV=true`." },
+    { "symptom": "Queued posts never go out", "fix": "The API wasn't running at the scheduled time, or the post failed — check its status and error on `/post-queue`." },
+    { "symptom": "Rewrite button errors", "fix": "integration-manager isn't running on `INTEGRATION_MANAGER_EXPRESS_URL`, the consumer isn't enabled, or the integrations key doesn't match MISLM's." },
+    { "symptom": "Posts page is empty", "fix": "`DATABASE_URL` missing or migrations not applied." }
+  ],
+  "glossary": [
+    { "term": "Post queue", "definition": "Scheduled tweets posted by the API's worker." },
+    { "term": "integration-manager", "definition": "Catalog service that tells consumers which integration routes are enabled." },
+    { "term": "Create-content", "definition": "MISLM's integration endpoint that rewrites text in your voice." },
+    { "term": "LOCAL_USER_KEY", "definition": "Scope for history rows until real auth exists (default `default`)." }
+  ],
+  "hubNotes": [
+    "Port clashes: this API's 3081 is also the default storage port in estimate-and-proposals' and finances-manager's `.env.example`, and the web's 3082 is estimate-and-proposals' API default.",
+    "The registry has no `localDatabase` entry, so create `twitterx_manager` and apply `migrations/` by hand.",
+    "Voice rewrites depend on `~/github/integration-manager` (port 3099) and make-it-sound-like-me, neither started by this project.",
+    "API README is still the template; the web README and ADRs are current."
+  ],
+  "links": [
+    { "label": "X OAuth 2 local posting", "path": "twitterx-manager-express-server/.cursor/architecture/011-x-api-oauth2-local-posting.md" },
+    { "label": "MISLM create-content integration", "path": "twitterx-manager-express-server/.cursor/architecture/012-integrations-mislm-create-content.md" },
+    { "label": "Compose post UI", "path": "twitterx-manager-web/.cursor/architecture/018-compose-post-ui.md" },
+    { "label": "Sync posts from timeline", "path": "twitterx-manager-web/.cursor/architecture/020-sync-posts-from-x-timeline.md" }
+  ]
+}

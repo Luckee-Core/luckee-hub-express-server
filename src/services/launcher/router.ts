@@ -5,6 +5,7 @@ import { closeStorageExpressHandler } from './routes/close-storage-express-handl
 import { getJobHandler } from './routes/get-job-handler';
 import { openChromeHandler } from './routes/open-chrome-handler';
 import { openCursorHandler } from './routes/open-cursor-handler';
+import { openRepoFolderHandler } from './routes/open-repo-folder-handler';
 import { runProjectHandler } from './routes/run-project-handler';
 import { runStorageExpressHandler } from './routes/run-storage-express-handler';
 import { setupProjectHandler } from './routes/setup-project-handler';
@@ -21,6 +22,7 @@ export const createLauncherRouter = (): Router => {
   router.post('/projects/:id/close-storage-express', closeStorageExpressHandler);
   router.post('/projects/:id/open-cursor', openCursorHandler);
   router.post('/projects/:id/open-chrome', openChromeHandler);
+  router.post('/projects/:id/open-folder', openRepoFolderHandler);
   router.get('/jobs/:jobId', getJobHandler);
   return router;
 };

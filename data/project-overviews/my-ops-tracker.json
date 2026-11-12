@@ -1,0 +1,139 @@
+{
+  "projectId": "my-ops-tracker",
+  "updatedAt": "2026-11-12",
+  "tagline": "The studio's operating system: customers, projects, tickets and time — with tickets that a Cursor agent can turn into GitHub pull requests.",
+  "summary": [
+    "My Ops Tracker is the CRM and delivery tracker the other studio apps lean on. It holds **customers** and their contacts, customer **projects** (with linked repos, Google Docs/Sheets and payments), **internal projects** imported from Code Commit Summaries, **tickets** and **time entries**, and a dashboard that surfaces delivery risk. Estimate & Proposals, Finances Manager and Code Control all read customers from here through the studio gateway.",
+    "Tickets can be created by hand, imported from the first tab of a linked Google Sheet, or pulled out of free-form notes on the **Brain Dump** page (Claude extracts and reconciles tickets; you approve before anything is created). Assign a ticket to one of the project's repos and a Cursor Cloud Agent can implement it and open a PR; the ticket moves to **in review** with the PR link. Data lives in Postgres behind a storage server, normally reached through the main on-device gateway."
+  ],
+  "audience": [
+    "You run a small studio or agency with customer projects and an internal product portfolio.",
+    "You track work as tickets and time entries and want them tied to GitHub repos.",
+    "You run the studio stack (on-device dispatcher) and the sibling apps that read the CRM."
+  ],
+  "notFor": [
+    "Estimates and finance — those moved out to Estimate & Proposals and Finances Manager (web ADRs 041–042).",
+    "A large team's project tool — built for a single operator / small studio.",
+    "Hands-off coding — agent PRs still need your review."
+  ],
+  "capabilities": [
+    { "title": "Operating dashboard", "detail": "`/dashboard` shows delivery risk and shortcuts without duplicating list pages." },
+    { "title": "Customers", "detail": "`/customers` and `/customer-detail-page` with contacts." },
+    { "title": "Projects", "detail": "`/projects` and `/project-detail-page`: tabs for tickets, repos (`project_repos`), Google Docs/Sheets, payments and retainers." },
+    { "title": "Internal projects", "detail": "`/internal-projects` and `/internal-project-detail-page`, imported from Code Commit Summaries' public API and optionally tied to a tracking project." },
+    { "title": "Tickets", "detail": "`/tickets` and `/project-ticket-detail-page` with filters, entity navigation and statuses including `in_review`." },
+    { "title": "Cursor agent PRs", "detail": "Run a Cursor Cloud Agent on a ticket's repo; it opens a GitHub PR, the URL is saved on the ticket and run logs load on demand (`/api/ticket-agent-runs`)." },
+    { "title": "Brain Dump", "detail": "`/brain-dump-page`: paste notes, Claude extracts and reconciles tickets (audited), you approve which to create." },
+    { "title": "Google Sheet import", "detail": "Download a linked sheet (`/api/google-sheet-snapshots`) and import its first tab as tickets with stable ids." },
+    { "title": "Time tracking", "detail": "`/time-tracking`, `/time-tracking-calendar-page`, `/time-tracking-table-page`." },
+    { "title": "Team and API docs", "detail": "`/team` and `/docs/api` (from `GET /api-docs.json`)." }
+  ],
+  "components": [
+    {
+      "repoName": "my-ops-tracker-web",
+      "name": "Web app",
+      "stack": "Next.js, Redux Toolkit, TipTap, dnd-kit, Supabase JS (optional auth)",
+      "runsOn": "Your machine (port 3037)",
+      "owns": "Dashboard and every CRM/ops screen. Calls the API at `NEXT_PUBLIC_SERVER_URL`; uses `NEXT_PUBLIC_DEV_USER_ID` when Supabase auth is off.",
+      "doesNotOwn": "Data or integration keys.",
+      "inHub": true
+    },
+    {
+      "repoName": "my-ops-tracker-express-server",
+      "name": "API",
+      "stack": "Express + TypeScript, Anthropic SDK, `@cursor/sdk`, `googleapis`, `firebase-admin`",
+      "runsOn": "Your machine (port 3036)",
+      "owns": "`/api/data/*` CRM and ops routes, ticket agent runs, Brain Dump, Google Sheets snapshots/import, Facebook post scraper, Code Commits import, proxies for estimates and finances. Persists through canonical data invoke.",
+      "doesNotOwn": "SQL — storage owns it.",
+      "inHub": true
+    },
+    {
+      "repoName": "my-ops-tracker-storage-express-server",
+      "name": "Storage server",
+      "stack": "Express + TypeScript, `pg`",
+      "runsOn": "Studio (port 3091), spawned via the project dispatcher",
+      "owns": "`my_ops_tracker` Postgres: customers, contacts, projects, internal projects, repos, tickets, time entries, payments, Google documents, agent runs, users, Brain Dump AI audit, `dispatcher_exposed_endpoints`.",
+      "doesNotOwn": "Business rules or integrations.",
+      "inHub": true
+    }
+  ],
+  "dataFlow": [
+    "The web app calls the API (`NEXT_PUBLIC_SERVER_URL`).",
+    "In **gateway** mode (default), the API calls the main gateway `http://127.0.0.1:3010/my-ops-tracker/...` with `DISPATCHER_GATE_SECRET`; the gateway starts the ops project dispatcher (3095), which invokes storage (3091). **Direct** mode skips both for debugging.",
+    "Sibling apps (Code Control, Estimate & Proposals, Finances Manager) read customers via the same gateway.",
+    "Agent runs send the ticket and repo to Cursor Cloud Agents, which push a branch and open a PR on GitHub.",
+    "Brain Dump sends your notes plus existing tickets to Anthropic; Sheets import reads Google Sheets with a service account."
+  ],
+  "trust": [
+    { "title": "Browser", "detail": "API URL, optional Supabase anon key, dev user id." },
+    { "title": "API", "detail": "Gateway secret, Anthropic, Cursor, Google service account, Apify and Firebase credentials." },
+    { "title": "Storage host", "detail": "Only place with `DATABASE_URL`; reachable through the dispatcher's exposed-endpoint list." },
+    { "title": "Third parties", "detail": "Cursor gets ticket text and repo access; Anthropic gets Brain Dump notes; Google Sheets are read via service account." }
+  ],
+  "commonTasks": [
+    {
+      "title": "Run on the studio",
+      "when": "First setup.",
+      "steps": [
+        "Run **Setup** in Hub (add the storage repo path to hub.local.json first — see Hub notes).",
+        "On the **Storage Express** repo, **Set up local database** to create `my_ops_tracker` and apply `migrations/`.",
+        "Make sure the on-device dispatcher is running and knows the `my-ops-tracker` project.",
+        "Set `MAIN_GATEWAY_URL`, `MAIN_GATEWAY_PROJECT_ID=my-ops-tracker` and `DISPATCHER_GATE_SECRET` on the API.",
+        "Set `NEXT_PUBLIC_SERVER_URL=http://localhost:3036` and `NEXT_PUBLIC_DEV_USER_ID` on the web, then **Run**."
+      ]
+    },
+    {
+      "title": "Turn notes into tickets",
+      "when": "After a call or planning session.",
+      "steps": [
+        "Open `/brain-dump-page`, pick the project and paste your notes.",
+        "Analyze, review the proposed and reconciled tickets, and apply the ones you want."
+      ]
+    },
+    {
+      "title": "Have an agent open a PR",
+      "when": "A ticket is well-specified.",
+      "steps": [
+        "Add the GitHub repo on the project's **Repos** tab.",
+        "Assign that repo on the ticket and start an agent run.",
+        "When it finishes, the ticket moves to **in review** with the PR link; review and merge on GitHub."
+      ]
+    },
+    {
+      "title": "Import a tracker sheet",
+      "when": "A customer keeps tasks in Google Sheets.",
+      "steps": [
+        "Link the sheet on the project's Google Documents tab.",
+        "Download the snapshot and import; the first tab becomes tickets."
+      ]
+    }
+  ],
+  "troubleshooting": [
+    { "symptom": "Every data call fails in gateway mode", "fix": "Main gateway (3010) or the ops dispatcher isn't running, or `DISPATCHER_GATE_SECRET` doesn't match. Try `CANONICAL_DATA_ACCESS_MODE=direct` with the storage URL to isolate." },
+    { "symptom": "Writes fail with an unknown user", "fix": "`NEXT_PUBLIC_DEV_USER_ID` must exist in the storage `users` table." },
+    { "symptom": "Agent run fails to start", "fix": "Check the Cursor API key, that the ticket has a repo, and that the Cursor GitHub App is installed on it." },
+    { "symptom": "Sheet download fails", "fix": "Share the sheet with the Google service account email and check the `GOOGLE_SHEETS_*` env vars." },
+    { "symptom": "Sibling apps can't load customers", "fix": "Storage must expose customers in `dispatcher_exposed_endpoints` (migration 004) and the gateway must be up." }
+  ],
+  "glossary": [
+    { "term": "Internal project", "definition": "A product from Code Commit Summaries' catalog, optionally linked to a tracking project for tickets and time." },
+    { "term": "Project repo", "definition": "A GitHub repo linked to a project; tickets pick one for agent PRs." },
+    { "term": "Agent run", "definition": "One Cursor Cloud Agent attempt on a ticket, with its log and PR." },
+    { "term": "Brain Dump", "definition": "AI extraction of tickets from free-form notes, applied only after approval." },
+    { "term": "Canonical data", "definition": "Storage-owned tables reached via `invoke`, directly or through the gateway." }
+  ],
+  "hubNotes": [
+    "hub.local.json has no `storageExpressDir`, though `my-ops-tracker-storage-express-server` is cloned at `~/github/my-ops-tracker/`.",
+    "Port clashes: the registry gives this storage 3091 — the same as finances-manager's storage — and the ops dispatcher uses 3095, which the registry assigns to estimate-and-proposals' API.",
+    "The API README still says Supabase-backed with `docs/sql/000_full_schema.sql`; ADR 037 (canonical data gateway) reflects the current design.",
+    "Several apps depend on this one being up: code-control, estimate-and-proposals, finances-manager."
+  ],
+  "links": [
+    { "label": "OSS quickstart", "path": "my-ops-tracker-express-server/docs/oss/oss-quickstart.md" },
+    { "label": "Wire contract", "path": "my-ops-tracker-express-server/docs/oss/wire-contract.md" },
+    { "label": "Canonical data gateway", "path": "my-ops-tracker-express-server/.cursor/architecture/037-canonical-data-gateway.md" },
+    { "label": "Ticket Cursor agent PR", "path": "my-ops-tracker-express-server/.cursor/architecture/027-ticket-cursor-agent-pr.md" },
+    { "label": "Brain Dump", "path": "my-ops-tracker-express-server/.cursor/architecture/038-brain-dump-ticket-analysis.md" },
+    { "label": "Internal projects", "path": "my-ops-tracker-express-server/.cursor/architecture/033-internal-projects-and-code-commit-import.md" }
+  ]
+}

@@ -10,18 +10,3 @@ export const extractSupabaseProjectRef = (supabaseUrl: string): string | null =>
     return null;
   }
 };
-
-/**
- * Build Postgres DATABASE_URL for a Supabase project (direct connection).
- */
-export const buildSupabaseDatabaseUrl = (
-  supabaseUrl: string,
-  databasePassword: string,
-): string | null => {
-  const ref = extractSupabaseProjectRef(supabaseUrl);
-  if (!ref || !databasePassword.trim()) {
-    return null;
-  }
-  const encoded = encodeURIComponent(databasePassword.trim());
-  return `postgresql://postgres:${encoded}@db.${ref}.supabase.co:5432/postgres?sslmode=require`;
-};

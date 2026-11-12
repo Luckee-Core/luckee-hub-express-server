@@ -1,0 +1,111 @@
+{
+  "projectId": "mac-manager",
+  "updatedAt": "2026-11-12",
+  "tagline": "See what's filling your Mac's disk and clear caches, Xcode leftovers and the npm cache with explained, confirm-first cleanups.",
+  "summary": [
+    "Mac Manager is a local disk dashboard. It sizes the folders developers usually blame — Applications, Library, `~/github`, `~/.android`, `~/.npm` — breaks Library down by child folder, and lets you drill into any allowlisted folder to find what's big.",
+    "Cleanups are fixed presets, not free-form deletes: clear `~/Library/Caches`, Xcode DerivedData, Xcode Archives, or the npm cache. Each preset explains what it removes and its risk, and asks you to confirm before running. The API binds to 127.0.0.1 only and has no database — your own tracked folders are kept in `~/.mac-manager/tracked-folders.json`."
+  ],
+  "audience": [
+    "Developers on macOS who keep running low on disk.",
+    "You want to know what's safe to delete before deleting it.",
+    "You're comfortable granting Full Disk Access to Terminal/Node for a local tool."
+  ],
+  "notFor": [
+    "A general-purpose file manager or uninstaller — only allowlisted roots can be scanned and only presets can be deleted.",
+    "Windows or Linux.",
+    "Remote management — loopback only, no auth."
+  ],
+  "capabilities": [
+    { "title": "Disk dashboard", "detail": "`/dashboard` shows sizes for Applications, Library, github, .android and .npm plus the Library breakdown." },
+    { "title": "Folder pages", "detail": "`/applications`, `/library`, `/github`, `/android`, `/npm` and `/browse-folder-page` list children with sizes (`GET /api/disk/scan?path=`)." },
+    { "title": "Caches", "detail": "`/caches` lists `~/Library/Caches` entries; **Clear system caches** confirms and runs in place." },
+    { "title": "Developer cleanup", "detail": "`/developer` clears Xcode DerivedData (low risk) or Archives (medium risk)." },
+    { "title": "npm cleanup", "detail": "`/npm` runs `npm cache clean --force` (or removes `~/.npm/_cacache`)." },
+    { "title": "Tracked folders", "detail": "Pick extra folders to watch (`POST /api/disk/tracked-folders/pick`); saved to `~/.mac-manager/tracked-folders.json`." },
+    { "title": "Docs", "detail": "`/learn` explains the system; landing page at `/`." }
+  ],
+  "components": [
+    {
+      "repoName": "mac-manager-web",
+      "name": "Web app",
+      "stack": "Next.js, Redux Toolkit, lucide-react (optional Supabase sign-in on the landing)",
+      "runsOn": "Your machine (port 3055)",
+      "owns": "Landing, `/learn`, dashboard, folder tables and cleanup confirm flows. Calls `NEXT_PUBLIC_API_URL`.",
+      "doesNotOwn": "Filesystem access.",
+      "inHub": true
+    },
+    {
+      "repoName": "mac-manager-express-server",
+      "name": "Local API",
+      "stack": "Express + TypeScript (no database)",
+      "runsOn": "Your machine, `127.0.0.1:3054` only",
+      "owns": "Disk sizing, allowlisted scans, preset metadata and cleanup execution, tracked folders file.",
+      "doesNotOwn": "Arbitrary paths — scan roots are allowlisted and cleanup accepts preset ids only.",
+      "inHub": true
+    }
+  ],
+  "dataFlow": [
+    "The web app calls the local API at `http://127.0.0.1:3054`.",
+    "`GET /api/disk/status` and `/scan` measure folder sizes on disk (only allowlisted roots).",
+    "`GET /api/disk/presets` returns each cleanup's label, explanation, risk, paths and steps.",
+    "After you confirm, `POST /api/disk/cleanup { preset }` deletes that preset's contents or runs the npm command.",
+    "Nothing leaves your machine."
+  ],
+  "trust": [
+    { "title": "Browser", "detail": "Only the API URL; optional Supabase anon key for the landing sign-in." },
+    { "title": "Local API", "detail": "Runs as your user with whatever Full Disk Access you grant. Loopback-only bind is the main safeguard." },
+    { "title": "Guardrails", "detail": "Allowlisted scan roots and preset-only cleanup — the API can't be told to delete an arbitrary path." }
+  ],
+  "commonTasks": [
+    {
+      "title": "First-time setup",
+      "when": "Fresh clone.",
+      "steps": [
+        "Run **Setup** in Hub (no database needed).",
+        "Grant Full Disk Access: System Settings → Privacy & Security → Full Disk Access → enable Terminal (or the Node binary).",
+        "Press **Run** and open `/dashboard`."
+      ]
+    },
+    {
+      "title": "Free up space quickly",
+      "when": "Disk is nearly full.",
+      "steps": [
+        "Check `/dashboard` for the biggest areas.",
+        "Clear caches on `/caches`, DerivedData on `/developer`, and the npm cache on `/npm`.",
+        "Leave Archives unless you no longer need old builds (medium risk)."
+      ]
+    },
+    {
+      "title": "Find a large folder",
+      "when": "Something unknown is using space.",
+      "steps": [
+        "Open `/library` or `/github` and sort by size.",
+        "Drill in with `/browse-folder-page`, or add the folder as a tracked folder."
+      ]
+    }
+  ],
+  "troubleshooting": [
+    { "symptom": "`Operation not permitted` when scanning Library or Caches", "fix": "Grant Full Disk Access to Terminal/Node, then restart the API." },
+    { "symptom": "Scan of a path returns 400", "fix": "It's outside the allowlisted roots (`/Applications`, `~/Applications`, `~/Library`, `~/github`, `~/.android`, `~/.npm`)." },
+    { "symptom": "Web can't reach the API", "fix": "The API only listens on 127.0.0.1:3054 — open the web at 127.0.0.1 too, and check `NEXT_PUBLIC_API_URL`." },
+    { "symptom": "Scans are slow", "fix": "Sizing large trees (Library, github) walks every file; wait or scan a narrower folder." }
+  ],
+  "glossary": [
+    { "term": "Preset", "definition": "A fixed cleanup (`caches`, `developer-derived-data`, `developer-archives`, `npm`) with risk and steps." },
+    { "term": "Allowlisted root", "definition": "A folder the API is permitted to scan." },
+    { "term": "Tracked folder", "definition": "An extra folder you chose to watch, stored in `~/.mac-manager/tracked-folders.json`." }
+  ],
+  "hubNotes": [
+    "No database and no env beyond `PORT` / `NEXT_PUBLIC_API_URL`; Hub's database setup doesn't apply.",
+    "Full Disk Access is granted to the process that runs Node — if Hub launches the API, grant it to the app/terminal Hub uses.",
+    "The `~/github` root is hard-coded; repos cloned elsewhere won't appear on the dashboard."
+  ],
+  "links": [
+    { "label": "Quickstart", "path": "mac-manager-express-server/docs/oss-quickstart.md" },
+    { "label": "Wire contract", "path": "mac-manager-express-server/docs/oss/wire-contract.md" },
+    { "label": "Disk filesystem I/O", "path": "mac-manager-express-server/.cursor/architecture/009-disk-filesystem-io.md" },
+    { "label": "Security", "path": "mac-manager-express-server/SECURITY.md" },
+    { "label": "System overview", "path": "/learn in mac-manager-web" }
+  ]
+}

@@ -2,7 +2,8 @@ import { Router } from 'express';
 
 import { createLocalDatabaseRouter } from '../local-database';
 import { createSupabaseConfigRouter } from '../supabase-config';
-import { createExpressEnvRouter } from '../express-env';
+import { createProjectEnvRouter } from '../project-env';
+import { createProjectOverviewRouter } from '../project-overview';
 import { getHubConfigHandler } from './routes/get-hub-config-handler';
 import { listProjectsHandler } from './routes/list-projects-handler';
 import { pickHubConfigFolderHandler } from './routes/pick-hub-config-folder-handler';
@@ -19,6 +20,7 @@ export const createProjectsRouter = (): Router => {
   router.post('/hub-config/pick-folder', pickHubConfigFolderHandler);
   router.use('/:id/local-database', createLocalDatabaseRouter());
   router.use('/:id/supabase', createSupabaseConfigRouter());
-  router.use('/:id/express-env', createExpressEnvRouter());
+  router.use('/:id/overview', createProjectOverviewRouter());
+  router.use('/:id', createProjectEnvRouter());
   return router;
 };

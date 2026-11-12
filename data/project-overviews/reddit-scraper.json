@@ -1,0 +1,119 @@
+{
+  "projectId": "reddit-scraper",
+  "updatedAt": "2026-11-12",
+  "tagline": "Paste a public Reddit thread URL and read the post and every comment in a clean viewer — scraped through your own Apify-backed API, with history kept in your browser.",
+  "summary": [
+    "Free Reddit Scraper is an open-source viewer for public Reddit threads. You run a small Express API that calls Apify's Reddit Scraper Lite with your own token, and a Next.js app where you paste a thread URL, wait about a minute, and browse the post and comments. Past scrapes are saved in the browser (Redux + `localStorage`) under **Threads**.",
+    "There's no sign-in and no account: the web app's `/dashboard` shows setup steps until its health check reaches your scraper API, then unlocks the scrape form. The API key that protects the scraper never reaches the browser — the web server adds it when it forwards `POST /api/scrape`. An older hosted CMS (credits, Stripe, communities, AI analysis) still exists but this web app no longer uses it."
+  ],
+  "audience": [
+    "Researchers, marketers and founders who read Reddit threads for customer language and ideas.",
+    "Developers who want a self-hosted Reddit → JSON endpoint for their own backends.",
+    "You have (or can create) an Apify account."
+  ],
+  "notFor": [
+    "Private subreddits or anything behind a Reddit login — public threads only.",
+    "Bulk crawling or monitoring — one thread per request, roughly a minute each.",
+    "Shared or synced history — scrapes live in one browser."
+  ],
+  "capabilities": [
+    { "title": "Landing with setup", "detail": "`/` explains the stack with public GitHub repo links and clone commands (never gated)." },
+    { "title": "Stack gate", "detail": "`/dashboard` shows a setup stepper until the scraper API health check passes, then the scrape form." },
+    { "title": "Scrape a thread", "detail": "Paste a public thread URL; the web's `POST /api/scrape` forwards to the API with the server-side key." },
+    { "title": "Thread viewer", "detail": "`/thread-detail-page` shows the post and comments for the current scrape." },
+    { "title": "Browser history", "detail": "`/threads` lists past scrapes stored in this browser; a first-visit hint explains it." },
+    { "title": "Integrator API", "detail": "`POST /api/services/get-reddit-thread-data` with `x-scraper-api-key`; docs at `/docs` and `/api-docs.json`." },
+    { "title": "Learn page", "detail": "`/learn` is a system overview." }
+  ],
+  "components": [
+    {
+      "repoName": "free-reddit-scraper-web",
+      "name": "Web viewer",
+      "stack": "Next.js, Redux Toolkit, Tailwind, lucide-react",
+      "runsOn": "Your machine (Hub port 3063)",
+      "owns": "Landing, stack gate, scrape form, thread viewer, browser history. `POST /api/scrape` proxies to `REDDIT_SCRAPER_EXPRESS_URL` with `SCRAPER_API_KEY` (server-only).",
+      "doesNotOwn": "Apify token; any server-side storage.",
+      "inHub": true
+    },
+    {
+      "repoName": "reddit-scraper-express-server",
+      "name": "Scraper API",
+      "stack": "Express + TypeScript",
+      "runsOn": "Your machine (port 3037)",
+      "owns": "Calling Apify `trudax/reddit-scraper-lite` with `APIFY_API_TOKEN`, guarded by `x-scraper-api-key`; API docs.",
+      "doesNotOwn": "History or accounts.",
+      "inHub": false
+    },
+    {
+      "repoName": "reddit-scraper-express-server-cms",
+      "name": "Legacy CMS",
+      "stack": "Express + TypeScript, Supabase JS, Stripe, Anthropic SDK",
+      "runsOn": "Port 3062",
+      "owns": "The old hosted product: accounts, free daily scrape + Stripe credit packs, communities, AI scrape analysis, activity. Not used by the current web app (web ADR 019).",
+      "doesNotOwn": "—",
+      "inHub": true
+    }
+  ],
+  "dataFlow": [
+    "You paste a public Reddit thread URL in the web app.",
+    "The browser calls the web server's `POST /api/scrape`; it forwards to the scraper API with `x-scraper-api-key`.",
+    "The scraper API runs Apify Reddit Scraper Lite with your `APIFY_API_TOKEN` (≈1 minute) and returns posts and comments.",
+    "The web app stores the result in Redux and `localStorage` and shows it in the viewer."
+  ],
+  "trust": [
+    { "title": "Browser", "detail": "No secrets. History stays in this browser only." },
+    { "title": "Web server", "detail": "Holds `SCRAPER_API_KEY` and the API URL (server-only env)." },
+    { "title": "Scraper API", "detail": "Holds `APIFY_API_TOKEN`; rejects calls without the scraper key. Not meant for direct browser use." },
+    { "title": "Apify / Reddit", "detail": "Apify fetches the public thread and bills your Apify account." }
+  ],
+  "commonTasks": [
+    {
+      "title": "First-time setup",
+      "when": "Fresh clone.",
+      "steps": [
+        "Clone `reddit-scraper-express-server` next to the web repo (Hub's registry points at the legacy CMS instead — see Hub notes).",
+        "In the API `.env` set `APIFY_API_TOKEN` and a `SCRAPER_API_KEY`; start it on port 3037.",
+        "In the web `.env.local` set `REDDIT_SCRAPER_EXPRESS_URL=http://localhost:3037` and the same `SCRAPER_API_KEY`.",
+        "Run the web, open `/dashboard` and run the health check."
+      ]
+    },
+    {
+      "title": "Read a thread",
+      "when": "You found a discussion worth studying.",
+      "steps": [
+        "Paste the thread URL on `/dashboard` and wait about a minute.",
+        "Read it in the viewer; find it later under `/threads`."
+      ]
+    },
+    {
+      "title": "Call the API from your backend",
+      "when": "Integrating Reddit data elsewhere.",
+      "steps": [
+        "`POST /api/services/get-reddit-thread-data` with `x-scraper-api-key` and the thread URL.",
+        "See `/docs` on the API for the request and response shape."
+      ]
+    }
+  ],
+  "troubleshooting": [
+    { "symptom": "Dashboard stays on setup steps", "fix": "The web can't reach the scraper API: check it's running on 3037 and `REDDIT_SCRAPER_EXPRESS_URL`." },
+    { "symptom": "Scrape returns 401", "fix": "`SCRAPER_API_KEY` differs between the web and the API." },
+    { "symptom": "Scrape fails or returns nothing", "fix": "Check `APIFY_API_TOKEN` and Apify credit; make sure the thread is public." },
+    { "symptom": "History disappeared", "fix": "It's stored per browser; clearing site data or switching browsers loses it." }
+  ],
+  "glossary": [
+    { "term": "Scraper API", "definition": "reddit-scraper-express-server — the Apify proxy on port 3037." },
+    { "term": "Stack gate", "definition": "The dashboard's setup view shown until the API health check passes." },
+    { "term": "Legacy CMS", "definition": "The earlier hosted product with credits and Stripe, no longer used by this web app." }
+  ],
+  "hubNotes": [
+    "The registry and hub.local.json still pair the web with `reddit-scraper-express-server-cms` (port 3062). The current web app talks to `reddit-scraper-express-server` (port 3037), which isn't registered — Hub's **Run** starts the wrong API.",
+    "`~/github/reddit-studio/` also contains separate `reddit-studio` and `reddit-studio-express-server` repos (a different product).",
+    "Landing and auth conventions here are the reference for other Luckee viewer apps: no sign-in gate, public repo links."
+  ],
+  "links": [
+    { "label": "Viewer-only decision", "path": "free-reddit-scraper-web/.cursor/architecture/019-viewer-only-reddit-scraper-web.md" },
+    { "label": "Landing and app chrome", "path": "free-reddit-scraper-web/.cursor/architecture/020-viewer-landing-and-app-chrome.md" },
+    { "label": "Learn page", "path": "free-reddit-scraper-web/.cursor/architecture/021-learn-system-overview-page.md" },
+    { "label": "Scraper API README", "path": "reddit-scraper-express-server/README.md" }
+  ]
+}

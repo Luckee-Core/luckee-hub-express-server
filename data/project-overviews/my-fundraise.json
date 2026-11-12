@@ -1,0 +1,126 @@
+{
+  "projectId": "my-fundraise",
+  "updatedAt": "2026-11-12",
+  "tagline": "A fundraising workspace: an investor CRM with AI profile extraction, a TSX graphics studio, and pitch decks you build slide by slide with an AI coach.",
+  "summary": [
+    "My Fundraise keeps a founder's raise in one place. **Investors** holds firms and their contacts; paste a firm's website text or a contact sheet and Claude extracts the profile and people for you. **Pitch decks** are ordered slides, each with a studio where an AI coach — grounded in your **business context** (sections and facts about the company) — helps you write and tighten the slide, and you can track which investors each deck was sent to.",
+    "Slides and other visuals are authored as TSX in the **graphics studio** with live preview and PNG export, optionally drafted by a Cursor agent. A seeded demo deck (\"Deck E\") shows the full flow, including a live review page. Data now lives in local Postgres behind a storage server; the API reaches it directly or through the studio gateway."
+  ],
+  "audience": [
+    "Founders running a seed or pre-seed raise who track investors in spreadsheets today.",
+    "You want help writing deck slides that stay consistent with the facts about your company.",
+    "You're comfortable designing slides as React/Tailwind TSX."
+  ],
+  "notFor": [
+    "Investor discovery databases — you bring the investors; it organizes and enriches them.",
+    "Sending emails or tracking opens — deck sends are logged manually.",
+    "Teams — no sign-in; a single dev user id is used for AI ledgers."
+  ],
+  "capabilities": [
+    { "title": "Investors CRM", "detail": "`/investors` and `/investor-detail-page`: firms, contacts and deck sends." },
+    { "title": "AI investor extraction", "detail": "Extract a firm profile or a contact sheet from pasted text via Claude (`/api/investor-extract/*`), each with its own request/response/exchange ledger." },
+    { "title": "Business context", "detail": "`/business-context-page` stores sections and facts about your company that ground every AI answer." },
+    { "title": "Pitch decks", "detail": "`/pitch-decks` and `/pitch-deck-detail-page`: ordered slides (reorder, versions), intro-slide graphics and send log." },
+    { "title": "Slide studio coach", "detail": "Per-slide AI guidance with a ledger per deck and slide (`/api/pitch-deck-slide-studio/*`)." },
+    { "title": "Graphics studio", "detail": "`/graphics` and `/graphics-studio`: TSX editor with in-browser compile, live preview and PNG export; optional Cursor-agent TSX generation." },
+    { "title": "Deck E live review", "detail": "`/deck-e-live-review-page` walks through the seeded demo deck." },
+    { "title": "API docs", "detail": "`/docs/api` renders the API's `GET /api-docs.json` catalog." }
+  ],
+  "components": [
+    {
+      "repoName": "my-fundraise-web",
+      "name": "Web app",
+      "stack": "Next.js, Redux Toolkit, `@babel/standalone`, `html2canvas`, Sonner",
+      "runsOn": "Your machine (Hub port 3031)",
+      "owns": "Landing, investors, decks, slide studio, graphics studio, business context, API docs. Calls the API at `NEXT_PUBLIC_SERVER_URL`.",
+      "doesNotOwn": "Data or AI keys.",
+      "inHub": true
+    },
+    {
+      "repoName": "my-fundraise-express-server",
+      "name": "API",
+      "stack": "Express + TypeScript, Anthropic SDK",
+      "runsOn": "Your machine (env default 3009; registry 3030)",
+      "owns": "`/api/data/*` entity routes, investor extract, slide studio, business context, Cursor TSX generation, API docs catalog.",
+      "doesNotOwn": "SQL — it invokes the storage server (direct or gateway).",
+      "inHub": true
+    },
+    {
+      "repoName": "my-fundraise-storage-express-server",
+      "name": "Storage server",
+      "stack": "Express + TypeScript, `pg`",
+      "runsOn": "Your machine or studio (port 3097)",
+      "owns": "`my_fundraise` Postgres: investors, contacts, decks, slides, sends, graphics, business context, AI ledgers, `dispatcher_exposed_endpoints`.",
+      "doesNotOwn": "AI or HTTP for browsers.",
+      "inHub": true
+    }
+  ],
+  "dataFlow": [
+    "The web app calls the API (`NEXT_PUBLIC_SERVER_URL`) and sends `NEXT_PUBLIC_DEV_USER_ID` for AI features.",
+    "The API invokes storage: **direct** (`MY_FUNDRAISE_STORAGE_URL` + secret) or **gateway** (`CANONICAL_DATA_ACCESS_MODE=gateway`, `MY_FUNDRAISE_GATEWAY_*`).",
+    "Investor extraction and slide coaching send your text plus business context to Anthropic and store each exchange.",
+    "Graphics TSX is compiled and previewed in the browser; Cursor generation (if configured) writes TSX via `CURSOR_TARGET_REPO`."
+  ],
+  "trust": [
+    { "title": "Browser", "detail": "API URL and a dev user id only. TSX you paste runs in the browser preview — treat it as trusted." },
+    { "title": "API", "detail": "Holds `ANTHROPIC_API_KEY`, `CURSOR_API_KEY` and the storage/gateway secret. No user auth." },
+    { "title": "Storage host", "detail": "Only place with `DATABASE_URL`." },
+    { "title": "Anthropic / Cursor", "detail": "Receive investor text, business facts and slide content when you use AI." }
+  ],
+  "commonTasks": [
+    {
+      "title": "First-time setup",
+      "when": "Fresh clone.",
+      "steps": [
+        "Run **Setup** in Hub (add the storage repo path to hub.local.json first — see Hub notes).",
+        "On the **Storage Express** repo, **Set up local database** to create `my_fundraise` and apply `migrations/` (`010_seed_deck_e_on_prem_graphics.sql` is optional demo data).",
+        "On the API set `MY_FUNDRAISE_STORAGE_URL=http://127.0.0.1:3097`, `MY_FUNDRAISE_STORAGE_SECRET` (= storage `STORAGE_DISPATCHER_SECRET`) and `ANTHROPIC_API_KEY`.",
+        "On the web set `NEXT_PUBLIC_SERVER_URL` to the API's port and `NEXT_PUBLIC_DEV_USER_ID`.",
+        "Press **Run** and open `/investors`."
+      ]
+    },
+    {
+      "title": "Add an investor from their website",
+      "when": "You found a firm to pitch.",
+      "steps": [
+        "Create the investor on `/investors` and open it.",
+        "Paste the firm's profile text and run extract; paste a team page or contact sheet to extract contacts.",
+        "Review and save."
+      ]
+    },
+    {
+      "title": "Build a deck",
+      "when": "Preparing for meetings.",
+      "steps": [
+        "Fill in `/business-context-page` with your company's facts.",
+        "Create a deck on `/pitch-decks`, add and order slides.",
+        "Use the slide studio coach on each slide; design visuals in `/graphics-studio` and export PNGs.",
+        "Log each send on the investor or deck."
+      ]
+    }
+  ],
+  "troubleshooting": [
+    { "symptom": "Data routes return 500", "fix": "Storage unreachable or secret mismatch: `curl http://127.0.0.1:3097/api/storage/health` and compare secrets." },
+    { "symptom": "Extract or coach errors", "fix": "`ANTHROPIC_API_KEY` missing, or `NEXT_PUBLIC_DEV_USER_ID` not set on the web." },
+    { "symptom": "Web can't reach the API", "fix": "`NEXT_PUBLIC_SERVER_URL` defaults to port 3009; Hub may run the API on 3030." },
+    { "symptom": "Generate TSX fails", "fix": "Set `CURSOR_API_KEY` and `CURSOR_TARGET_REPO`, with the Cursor GitHub App installed on that repo." }
+  ],
+  "glossary": [
+    { "term": "Business context", "definition": "Sections and facts about your company used to ground AI output." },
+    { "term": "Slide studio", "definition": "Per-slide AI coach with its own ledger." },
+    { "term": "Deck send", "definition": "A record that a deck went to an investor." },
+    { "term": "Deck E", "definition": "The seeded demo pitch deck and graphics." }
+  ],
+  "hubNotes": [
+    "hub.local.json has no `storageExpressDir`, though `my-fundraise-storage-express-server` is cloned at `~/github/my-fundraise/`. That folder isn't a git repo yet, and its `.cursor/architecture` includes finance ADRs copied from finances-manager.",
+    "The storage cutover isn't committed: the API has ~146 and the web ~76 uncommitted changes; the READMEs still describe Supabase (`docs/sql/001…011`).",
+    "The API's `.env.example` uses port 3009 (clashes with several other projects); the registry says 3030."
+  ],
+  "links": [
+    { "label": "API README", "path": "my-fundraise-express-server/README.md" },
+    { "label": "Storage / API split", "path": "my-fundraise-express-server/.cursor/architecture/009-storage-api-split.md" },
+    { "label": "Entity routers", "path": "my-fundraise-express-server/.cursor/architecture/011-api-data-entity-routers.md" },
+    { "label": "Graphics TSX preview", "path": "my-fundraise-web/.cursor/architecture/020-graphics-tsx-preview.md" },
+    { "label": "Express companion API (web)", "path": "my-fundraise-web/.cursor/architecture/022-express-companion-api.md" }
+  ]
+}

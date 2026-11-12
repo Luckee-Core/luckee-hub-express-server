@@ -1,0 +1,338 @@
+{
+  "projectId": "my-vercel-analytics",
+  "updatedAt": "2026-11-12",
+  "tagline": "One dashboard for Vercel Web Analytics across all your domains — local-first, so your Vercel token never leaves your machine.",
+  "summary": [
+    "My Many Domains (mymanydomains.com) is open-source software for developers who ship many sites on Vercel. Instead of clicking through each Vercel project's Analytics tab, you get pageviews and visitors for every site in one chart, plus a per-site drill-down.",
+    "It is deliberately split in two. The hosted website on Vercel only does marketing, onboarding and optional Luckee sign-in. The real dashboard runs on your machine: a small Express \"companion\" holds your `VERCEL_ACCESS_TOKEN`, stores your website list in local Postgres, calls the Vercel Web Analytics API and caches the results. No hosted backend ever sees your token or your analytics rows."
+  ],
+  "audience": [
+    "You deploy more than one site on Vercel and are tired of switching between project dashboards.",
+    "Web Analytics is already enabled on those Vercel projects.",
+    "You're comfortable running Node and Postgres locally (or through Luckee Hub)."
+  ],
+  "notFor": [
+    "A hosted multi-tenant analytics SaaS — the full dashboard is local-only in v1.",
+    "Google Analytics, Plausible or any non-Vercel source — Vercel Web Analytics only.",
+    "Storing a Vercel token in the cloud, Supabase or Railway — by design there is no UI to paste one."
+  ],
+  "capabilities": [
+    {
+      "title": "Multi-site overview chart",
+      "detail": "Pageviews and visitors for every tracked site on `/dashboard`, with time frames (yesterday → last year) and day / week / month grouping."
+    },
+    {
+      "title": "Per-site analytics",
+      "detail": "`/website-detail-page` charts one site's daily series from Vercel."
+    },
+    {
+      "title": "Tracked websites list",
+      "detail": "`/projects` lists sites with cached last-7 and last-30-day pageview totals."
+    },
+    {
+      "title": "Import from Vercel",
+      "detail": "Discover lists the Vercel projects your token can see (with their primary domain) so you can add them without typing project ids."
+    },
+    {
+      "title": "Snapshot + series cache",
+      "detail": "L7/L30 totals refresh at most once per UTC day; chart series are cached per site and time frame in Postgres to stay under Vercel rate limits."
+    },
+    {
+      "title": "Cloud onboarding",
+      "detail": "On the hosted site, `/app` probes `http://127.0.0.1:3009/api/health` to tell you whether your companion is running. No sign-in required."
+    },
+    {
+      "title": "Built-in docs",
+      "detail": "`/learn` explains the architecture and trust model; `/docs/api` renders the companion's `GET /api-docs.json` catalog."
+    },
+    {
+      "title": "Optional Luckee account",
+      "detail": "No route requires sign-in — data is local. Signing in connects you to the Luckee ecosystem and syncs a profile to the cloud API so we can see who uses the app."
+    }
+  ],
+  "components": [
+    {
+      "repoName": "my-vercel-analytics-web",
+      "name": "Web app",
+      "stack": "Next.js 16, Redux Toolkit, Tailwind, Recharts, Supabase JS",
+      "runsOn": "Vercel (cloud surface) and your machine (local surface)",
+      "owns": "All UI. `NEXT_PUBLIC_APP_SURFACE` switches between `cloud` (landing, login/signup, `/app` onboarding) and `local` (full dashboard). Browser-side Supabase auth and API clients.",
+      "doesNotOwn": "Postgres, the Vercel token, website rows.",
+      "inHub": true,
+      "api": [
+        {
+          "method": "PAGE",
+          "path": "/",
+          "purpose": "Marketing landing (cloud) or local home"
+        },
+        {
+          "method": "PAGE",
+          "path": "/login, /signup, /confirm-email, /auth/callback",
+          "purpose": "Luckee Supabase sign-in and email confirmation"
+        },
+        {
+          "method": "PAGE",
+          "path": "/app",
+          "purpose": "Cloud onboarding — probes the companion's `/api/health` on localhost"
+        },
+        {
+          "method": "PAGE",
+          "path": "/dashboard",
+          "purpose": "Multi-site overview chart + add-website form (local surface only)"
+        },
+        {
+          "method": "PAGE",
+          "path": "/projects",
+          "purpose": "Tracked websites list with L7/L30 totals (local only)"
+        },
+        {
+          "method": "PAGE",
+          "path": "/website-detail-page",
+          "purpose": "One site's analytics chart (local only)"
+        },
+        {
+          "method": "PAGE",
+          "path": "/docs/api",
+          "purpose": "Renders the companion's `GET /api-docs.json` catalog"
+        },
+        {
+          "method": "PAGE",
+          "path": "/learn",
+          "purpose": "Architecture and trust model docs"
+        }
+      ]
+    },
+    {
+      "repoName": "my-vercel-analytics-express-server",
+      "name": "Local companion API",
+      "stack": "Express + TypeScript, `pg`",
+      "runsOn": "Your machine only — default port 3009. Refuses to start on Railway unless `ALLOW_COMPANION_IN_CLOUD=true`.",
+      "owns": "Local Postgres schema (`websites`, `website_analytics_series_cache`), websites CRUD, every call to the Vercel API (projects, domains, Web Analytics visits count/aggregate), caching and retry on rate limits.",
+      "doesNotOwn": "Auth — `/api/websites/*` has no auth in v1 and is trusted as localhost-only (CORS via `WEB_ORIGIN`).",
+      "inHub": true,
+      "api": [
+        {
+          "method": "GET",
+          "path": "/api/health",
+          "purpose": "Liveness — also served at `/`"
+        },
+        {
+          "method": "GET",
+          "path": "/api-docs.json",
+          "purpose": "Endpoint catalog used by the web app's `/docs/api`"
+        },
+        {
+          "method": "GET",
+          "path": "/api/websites",
+          "purpose": "List tracked websites (with cached L7/L30 pageviews)"
+        },
+        {
+          "method": "POST",
+          "path": "/api/websites",
+          "purpose": "Add a website — body `hostname`, `vercelProjectId`, optional `displayName`, `vercelTeamId`"
+        },
+        {
+          "method": "GET",
+          "path": "/api/websites/discover",
+          "purpose": "Vercel projects the token can see, with primary domain, for import"
+        },
+        {
+          "method": "GET",
+          "path": "/api/websites/analytics/overview",
+          "purpose": "Dashboard chart for all sites — `?timeFrame=&groupBy=`"
+        },
+        {
+          "method": "GET",
+          "path": "/api/websites/:websiteId/analytics",
+          "purpose": "One site's series — `?timeFrame=` or `?since=&until=`, plus `groupBy`"
+        }
+      ]
+    },
+    {
+      "repoName": "my-vercel-analytics-cloud-api",
+      "name": "Cloud account API",
+      "stack": "Express + TypeScript, Supabase service role, `express-rate-limit`",
+      "runsOn": "Railway (port 3010 locally)",
+      "owns": "Luckee account endpoints only: `GET /api/account` and `POST /api/account/sync` (upserts `public.users` from the Supabase JWT). IP rate limits.",
+      "doesNotOwn": "Vercel tokens or analytics. Auth emails are sent by luckee-central-express-server, not here.",
+      "inHub": false,
+      "api": [
+        {
+          "method": "GET",
+          "path": "/api/health",
+          "purpose": "Liveness — also served at `/`; rate-limited"
+        },
+        {
+          "method": "GET",
+          "path": "/api/account",
+          "purpose": "Current Luckee user — `Authorization: Bearer <Supabase JWT>`"
+        },
+        {
+          "method": "POST",
+          "path": "/api/account/sync",
+          "purpose": "Upsert the signed-in user into `public.users` (service role); rate-limited per IP and per user"
+        }
+      ]
+    },
+    {
+      "repoName": "my-vercel-analytics-console",
+      "name": "Console",
+      "stack": "Next.js + Redux template",
+      "runsOn": "Not deployed",
+      "owns": "Nothing yet — still the bare template from its initial commit (no pages, no API client).",
+      "doesNotOwn": "—",
+      "inHub": true,
+      "api": []
+    }
+  ],
+  "dataFlow": [
+    "Create a Vercel access token that can read analytics and put it in the companion's `.env` as `VERCEL_ACCESS_TOKEN` (plus `VERCEL_TEAM_ID` for team projects).",
+    "Start Postgres and the companion. On connect it ensures the schema from `sql/` exists.",
+    "In the web app (local surface), add a website by hand or via Discover — the companion calls Vercel for your projects and domains and saves a row in `websites`.",
+    "The dashboard calls `GET /api/websites/analytics/overview`; the companion serves cached series or fetches fresh data from Vercel Web Analytics and stores it.",
+    "The web app renders the JSON with Recharts. Separately, sign-in goes browser → Luckee Supabase, and profile sync goes browser → cloud API (`NEXT_PUBLIC_CMS_URL`)."
+  ],
+  "trust": [
+    {
+      "title": "Browser",
+      "detail": "Sees only `NEXT_PUBLIC_*` values and a Supabase anon JWT. On the local surface it calls the companion directly."
+    },
+    {
+      "title": "Your machine (companion)",
+      "detail": "The only place `VERCEL_ACCESS_TOKEN` and `DATABASE_URL` live. Website rows stay in local Postgres."
+    },
+    {
+      "title": "Cloud (Vercel, Railway, Supabase)",
+      "detail": "Marketing site, Luckee auth and account sync. Never stores Vercel tokens or analytics rows. The Supabase service role key lives only in the cloud API."
+    }
+  ],
+  "commonTasks": [
+    {
+      "title": "Run the full dashboard locally",
+      "when": "First time on a machine, or after a fresh clone.",
+      "steps": [
+        "Run **Setup** in Hub to clone the repos and install dependencies.",
+        "Open the **API Express** repo → **Set up local database** to install/start Postgres, create `my_vercel_analytics` and apply `sql/websites.sql`.",
+        "In the same workstation's **Environment** step, set `VERCEL_ACCESS_TOKEN` (and `VERCEL_TEAM_ID` if your projects live in a team).",
+        "On the **Web** repo, make sure `NEXT_PUBLIC_APP_SURFACE=local` and `NEXT_PUBLIC_LOCAL_API_URL` points at the companion's `PORT` (3009).",
+        "Press **Run**, then open the web URL and go to `/dashboard`."
+      ]
+    },
+    {
+      "title": "Add or import websites",
+      "when": "You launched a new site on Vercel.",
+      "steps": [
+        "Open `/dashboard` and use the add-website form.",
+        "Pick the project from the Vercel import list (Discover), or enter hostname, Vercel project id and optional team id by hand.",
+        "The site shows up in the overview chart; its L7/L30 totals fill in on the next daily refresh."
+      ]
+    },
+    {
+      "title": "Check analytics for one site",
+      "when": "You want a closer look at a single domain.",
+      "steps": [
+        "Open `/projects` and click the site to open `/website-detail-page`.",
+        "Change the time frame or grouping; cached series load instantly, uncached ones are fetched from Vercel."
+      ]
+    },
+    {
+      "title": "Rotate the Vercel token",
+      "when": "The token was revoked, expired, or analytics calls start failing with auth errors.",
+      "steps": [
+        "Create a new token in Vercel → Account Settings → Tokens.",
+        "Replace `VERCEL_ACCESS_TOKEN` in the companion's Environment step and save.",
+        "Restart the project so the companion reloads its `.env`."
+      ]
+    },
+    {
+      "title": "Deploy the marketing site",
+      "when": "Shipping changes to mymanydomains.com.",
+      "steps": [
+        "Push the web repo; Vercel builds it with `NEXT_PUBLIC_APP_SURFACE=cloud` and the Supabase, `NEXT_PUBLIC_SITE_URL` and `NEXT_PUBLIC_CMS_URL` values set in the Vercel project.",
+        "Make sure `<site>/auth/callback` is in Supabase's redirect URLs.",
+        "The hosted site never shows the dashboard — `/app` tells visitors to run it locally. GitHub repo links on the landing are public."
+      ]
+    },
+    {
+      "title": "Deploy or tune the cloud API",
+      "when": "Account sync changes, or users hit 429s.",
+      "steps": [
+        "Deploy my-vercel-analytics-cloud-api to Railway with `SUPABASE_URL`, `SUPABASE_SERVICE_ROLE_KEY` and `WEB_ORIGIN`.",
+        "Set `TRUST_PROXY=true` on Railway so rate limits use the real client IP.",
+        "Tune `RATE_LIMIT_*` values; watch logs for `⚠️ [rateLimit]`. Locally, `RATE_LIMIT_DISABLED=true` avoids 429s."
+      ]
+    }
+  ],
+  "troubleshooting": [
+    {
+      "symptom": "Dashboard requests fail / `/app` says the companion is unavailable",
+      "fix": "The companion isn't running or is on a different port. Start the project and check `curl http://127.0.0.1:3009/api/health`; `NEXT_PUBLIC_LOCAL_API_URL` must match its `PORT`."
+    },
+    {
+      "symptom": "Browser shows CORS errors calling the companion",
+      "fix": "Add the web app's origin (including the Hub port) to the companion's `WEB_ORIGIN`."
+    },
+    {
+      "symptom": "Analytics errors or empty charts for a site",
+      "fix": "Check the token is valid and has access to that team (`VERCEL_TEAM_ID`), and that Web Analytics is enabled on the Vercel project."
+    },
+    {
+      "symptom": "Some sites load, others error with rate limits",
+      "fix": "Vercel rate-limited the companion. It retries automatically; wait and reload — cached series are reused."
+    },
+    {
+      "symptom": "Login works but profile sync returns 401 / 429",
+      "fix": "401: no Supabase session reached the cloud API. 429: rate limit — raise `RATE_LIMIT_SYNC_MAX` or set `RATE_LIMIT_DISABLED=true` locally."
+    }
+  ],
+  "glossary": [
+    {
+      "term": "Surface",
+      "definition": "`NEXT_PUBLIC_APP_SURFACE`: `cloud` = hosted marketing/auth build, `local` = full dashboard on your machine."
+    },
+    {
+      "term": "Companion",
+      "definition": "my-vercel-analytics-express-server — the local API that holds the Vercel token and Postgres."
+    },
+    {
+      "term": "CMS URL",
+      "definition": "`NEXT_PUBLIC_CMS_URL` — base URL of the cloud account API (Railway)."
+    },
+    {
+      "term": "L7 / L30",
+      "definition": "Cached pageview totals for the last 7 and 30 days on each website row."
+    }
+  ],
+  "hubNotes": [
+    "my-vercel-analytics-cloud-api isn't registered in Hub — it runs on Railway. Add it to the registry if you want to run or configure it from here.",
+    "The Console repo is still the empty template; Run starts it but there's nothing to see yet.",
+    "hub.local.json gives this project `webPortStart: 3074`, the same as on-device-dispatcher — running both at once will clash.",
+    "The registry's `defaultApiPort: 3076` is overridden by `PORT=3009` in the companion's `.env`, which is what the web app expects."
+  ],
+  "links": [
+    {
+      "label": "Architecture overview (web app)",
+      "path": "/learn in my-vercel-analytics-web"
+    },
+    {
+      "label": "Agent rules",
+      "path": "my-vercel-analytics-web/.cursor/rules/AGENTS.md"
+    },
+    {
+      "label": "Local-first decision",
+      "path": "my-vercel-analytics-web/.cursor/architecture/022-local-first-cloud-surface.md"
+    },
+    {
+      "label": "Wire contract",
+      "path": "my-vercel-analytics-express-server/docs/oss/wire-contract.md"
+    },
+    {
+      "label": "Companion security",
+      "path": "my-vercel-analytics-express-server/SECURITY.md"
+    },
+    {
+      "label": "Cloud API rate limits",
+      "path": "my-vercel-analytics-cloud-api/.cursor/architecture/002-rate-limiting.md"
+    }
+  ]
+}

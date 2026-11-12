@@ -23,7 +23,7 @@ ADRs for **luckee-hub-express-server** (forked from express-server-template).
 11. [011 – Local database service](./011-local-database-service.md) — Postgres probe/setup for hooked-up projects.
 12. [012 – Project setup into luckee/](./012-project-setup-into-luckee.md) — Clone + npm install, `luckeeParent`, Setup job.
 13. [013 – Supabase config service](./013-supabase-config-service.md) — Upsert Supabase keys into express `.env` from Hub.
-14. [014 – Express env groups](./014-express-env-groups.md) — AI / Maps / Email env tabs upserting express `.env`.
+14. [014 – Express env groups](./014-express-env-groups.md) — **Superseded** by per-repo `project-env` service (`GET/POST /api/projects/:id/env`, no secret values in responses).
 15. [015 – API runtime detection](./015-api-runtime-detection.md) — Node vs Python API repos.
 16. [016 – System metrics service](./016-system-metrics-service.md) — CPU/GPU + top processes (Apple Silicon).
 21. [021 – Storage Express launcher](./021-storage-express-launcher.md) — `storage-express` repo, launcher routes, local DB `envRepo`.

@@ -1,0 +1,112 @@
+{
+  "projectId": "design-prompter",
+  "updatedAt": "2026-11-12",
+  "tagline": "Research a local business — notes, brand, and its Facebook, Instagram and TikTok posts — then generate a Lovable prompt for its new website.",
+  "summary": [
+    "Design Prompter is a small CRM for consulting on local-business websites. Each customer gets a workspace with an overview, notes from texts, emails and calls, a brand identity (logo, colors, fonts) and their social presence.",
+    "It finds a business's Facebook, Instagram and TikTok pages for you (a Google search through Apify, then Claude picks the right URL), scrapes their recent posts, and finally turns everything it knows — customer details, notes and brand — into a versioned prompt you paste into Lovable to build the site."
+  ],
+  "audience": [
+    "You design websites for local businesses and start each project by researching their online presence.",
+    "You build first drafts with Lovable (or a similar AI site builder) and want consistent, well-informed prompts.",
+    "You're fine running a single-user tool locally with Postgres."
+  ],
+  "notFor": [
+    "A general sales CRM — no deals, pipeline or email sending.",
+    "Building the website itself — it produces the prompt; Lovable builds the site.",
+    "Teams — single-user, protected only by a shared `SERVICES_API_KEY`."
+  ],
+  "capabilities": [
+    { "title": "Customer list", "detail": "`/customers` lists the local businesses you're tracking, with service industry." },
+    { "title": "Customer workspace", "detail": "`/customer-detail-page` has tabs for overview, notes, brand and prompts, plus online profiles." },
+    { "title": "Notes", "detail": "Log texts, emails and calls per customer (`customer_notes`)." },
+    { "title": "Brand identity", "detail": "Logo upload (stored on local disk, served from `/uploads/customer-assets/...`), colors and fonts (`customer_brand`)." },
+    { "title": "Social page discovery", "detail": "Find the business's Facebook, Instagram and TikTok pages: Google SERP via Apify, then Claude resolves the right URL. Each run is audited." },
+    { "title": "Post scraping", "detail": "Pull recent Facebook, Instagram (up to 100, hidden posts stay hidden) and TikTok posts via Apify actors." },
+    { "title": "Lovable prompt generation", "detail": "`POST /api/services/generate-lovable-prompt` combines customer, notes and brand into a prompt; every version is kept in `customer_prompts`." }
+  ],
+  "components": [
+    {
+      "repoName": "design-prompter-web",
+      "name": "Web app",
+      "stack": "Next.js, Redux Toolkit, Sonner",
+      "runsOn": "Your machine (port 3057 in Hub)",
+      "owns": "Customer list and workspace UI. Server-side BFF routes call Express with `SERVICES_API_KEY`.",
+      "doesNotOwn": "Database, AI or Apify keys.",
+      "inHub": true
+    },
+    {
+      "repoName": "design-prompter-express-server",
+      "name": "API",
+      "stack": "Express + TypeScript, `pg`, Anthropic SDK",
+      "runsOn": "Your machine (port 3056)",
+      "owns": "Local Postgres `design_prompter`, customer CRUD (`/api/data/*`), discovery/scrape/prompt services (`/api/services/*`), logo uploads to `UPLOADS_DIR`.",
+      "doesNotOwn": "Real auth — a single Bearer key.",
+      "inHub": true
+    }
+  ],
+  "dataFlow": [
+    "Create `design_prompter` and apply `migrations/setup.sql` plus the numbered Instagram/TikTok migrations.",
+    "The web app's server routes call Express at `EXPRESS_API_URL` with `Authorization: Bearer <SERVICES_API_KEY>`.",
+    "Discovery: Express runs a Google SERP scrape on Apify, sends the results to Claude to pick the page URL, and saves it on the customer.",
+    "Scraping: Express runs the Facebook/Instagram/TikTok Apify actors and stores posts.",
+    "Prompt generation: Express gathers customer + notes + brand, calls Claude and saves the prompt version."
+  ],
+  "trust": [
+    { "title": "Browser", "detail": "Never sees `SERVICES_API_KEY` — it's added by the Next.js server." },
+    { "title": "Express (your machine)", "detail": "Holds `DATABASE_URL`, `ANTHROPIC_API_KEY` and `APIFY_API_TOKEN`; logos are written to local disk." },
+    { "title": "Apify / Anthropic", "detail": "Receive business names, search results and your notes when you run discovery or generation." }
+  ],
+  "commonTasks": [
+    {
+      "title": "First-time setup",
+      "when": "Fresh clone.",
+      "steps": [
+        "Run **Setup** in Hub.",
+        "On the **API Express** repo, **Set up local database** to create `design_prompter` and apply migrations.",
+        "Set `ANTHROPIC_API_KEY`, `APIFY_API_TOKEN` and `SERVICES_API_KEY` on the API; set the same `SERVICES_API_KEY` and `EXPRESS_API_URL` on the web.",
+        "Press **Run**; `/` redirects to `/customers`."
+      ]
+    },
+    {
+      "title": "Research a new customer",
+      "when": "A new local business lead.",
+      "steps": [
+        "Create the customer on `/customers` and open it.",
+        "Run Facebook, Instagram and TikTok discovery from the online profiles section, then scrape posts.",
+        "Add notes from your conversations and fill in the brand tab (logo, colors, fonts)."
+      ]
+    },
+    {
+      "title": "Generate a Lovable prompt",
+      "when": "Research is done and you're ready to build.",
+      "steps": [
+        "Open the customer's **Prompt** tab and generate.",
+        "Copy the prompt into Lovable. Regenerate after adding notes — older versions stay in history."
+      ]
+    }
+  ],
+  "troubleshooting": [
+    { "symptom": "All requests return 401", "fix": "`SERVICES_API_KEY` differs between web `.env` and API `.env`." },
+    { "symptom": "Discovery finds nothing or the wrong page", "fix": "Check `APIFY_API_TOKEN`; make the customer name and city specific. You can always set the page URL by hand." },
+    { "symptom": "Prompt generation errors", "fix": "`ANTHROPIC_API_KEY` is missing or `ANTHROPIC_MODEL` is invalid." },
+    { "symptom": "Uploaded logo shows a broken image", "fix": "`PUBLIC_BASE_URL` must match the API's real URL/port so `/uploads/...` links resolve." },
+    { "symptom": "Errors about Instagram/TikTok columns", "fix": "Apply `003_customer_instagram.sql`, `004_customer_tiktok.sql` and `005_customer_instagram_post_hidden.sql` after `setup.sql`." }
+  ],
+  "glossary": [
+    { "term": "Discovery", "definition": "Finding a business's social page URL via Google SERP + Claude." },
+    { "term": "Lovable prompt", "definition": "A generated brief you paste into Lovable to build the customer's website." },
+    { "term": "Search audit", "definition": "`customer_*_searches` rows recording each discovery run." }
+  ],
+  "hubNotes": [
+    "The registry's `expectedTables` list only the Facebook tables; Instagram and TikTok tables (`customer_instagram_*`, `customer_tiktok_*`) also exist after migrations 003–005.",
+    "Logos live on local disk in the API's `UPLOADS_DIR` (default `./uploads`), not in a database or bucket — back it up with the repo folder.",
+    "Early-stage repos (2–3 commits); package names are still `nextjs-template` / `express-server-template`."
+  ],
+  "links": [
+    { "label": "API README", "path": "design-prompter-express-server/README.md" },
+    { "label": "Customer research domain", "path": "design-prompter-express-server/.cursor/architecture/011-customer-research-domain.md" },
+    { "label": "Local Postgres data layer", "path": "design-prompter-express-server/.cursor/architecture/012-local-postgres-data-layer.md" },
+    { "label": "Customer research UI", "path": "design-prompter-web/.cursor/architecture/011-customer-research-ui.md" }
+  ]
+}

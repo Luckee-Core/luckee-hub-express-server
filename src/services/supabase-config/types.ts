@@ -12,29 +12,23 @@ export type SupabaseProbe = {
   expectedTables?: string[];
   hasSupabaseUrl: boolean;
   hasServiceKey: boolean;
-  hasDatabaseUrl: boolean;
   configured: boolean;
-  /** True when expectedTables exist on DATABASE_URL (remote check). */
+  /** True when every expectedTable exists (checked via the Supabase REST API with the service key). */
   schemaReady: boolean;
+  /** Expected tables not found — present when the table check ran. */
+  missingTables?: string[];
+  /** Why the table check could not run (bad key, unreachable, …). */
+  schemaCheckError?: string;
   message?: string;
 };
 
 export type SupabaseConfigSaveInput = {
   supabaseUrl: string;
   serviceKey: string;
-  databasePassword: string;
 };
 
 export type SupabaseConfigSaveResult = {
   success: boolean;
   message: string;
   expressEnvPath: string;
-};
-
-export type SupabaseSchemaSeedResult = {
-  success: boolean;
-  schemaReady: boolean;
-  bootstrapSql: string;
-  expectedTables: string[];
-  message: string;
 };

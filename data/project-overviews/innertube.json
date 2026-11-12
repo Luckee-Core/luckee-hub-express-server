@@ -1,0 +1,108 @@
+{
+  "projectId": "innertube",
+  "updatedAt": "2026-11-12",
+  "tagline": "Save YouTube videos by URL, keep their transcripts in a local library, and generate structured AI summaries of them.",
+  "summary": [
+    "Innertube is a personal YouTube transcript library. Paste a video URL and the API fetches the transcript through YouTube's InnerTube endpoints (no YouTube API key) and saves the video and transcript in local Postgres. From a video's page you can refetch the transcript or click **Generate summary** to get a structured summary from Claude.",
+    "Every summary run is recorded as a request / exchange / response ledger with tokens and estimated cost, and the summary prompt is versioned in the database. The UI always shows the latest completed summary."
+  ],
+  "audience": [
+    "You learn from long YouTube videos (talks, podcasts, tutorials) and want searchable transcripts and summaries.",
+    "You want to keep the library on your own machine.",
+    "You have an Anthropic API key for summaries."
+  ],
+  "notFor": [
+    "Downloading video or audio — transcripts only.",
+    "Videos without captions — there's nothing for InnerTube to return.",
+    "Chatting with a transcript — the old transcript chat was removed (`drop_video_transcript_chat.sql`)."
+  ],
+  "capabilities": [
+    { "title": "Add by URL", "detail": "`POST /api/data/videos/from-url` fetches the transcript and saves the video." },
+    { "title": "Video library", "detail": "`/videos` lists saved videos; `/dashboard` is the app home." },
+    { "title": "Video detail", "detail": "`/video-detail-page` shows the transcript, **Refetch transcript** and **Generate summary**." },
+    { "title": "AI summaries", "detail": "Structured summaries from Claude (`claude-sonnet-4-6` by default); transcripts are trimmed to 120,000 characters." },
+    { "title": "Prompts and costs", "detail": "`/ai-prompts` shows the versioned summary prompts (read-only); `/ai-costs` lists exchanges with estimated USD." },
+    { "title": "Transcript-only endpoint", "detail": "`POST /api/transcript` returns a transcript without saving anything." },
+    { "title": "Landing and docs", "detail": "`/` marketing landing; `/learn` explains the architecture." }
+  ],
+  "components": [
+    {
+      "repoName": "innertube-web",
+      "name": "Web app",
+      "stack": "Next.js, Redux Toolkit, Tailwind, lucide-react",
+      "runsOn": "Your machine (Hub port 3049)",
+      "owns": "Landing, `/learn`, dashboard, videos, video detail, AI prompts and costs. Calls the API at `NEXT_PUBLIC_INNERTUBE_EXPRESS_URL`.",
+      "doesNotOwn": "Database or Anthropic key.",
+      "inHub": true
+    },
+    {
+      "repoName": "innertube-retriever-express-server",
+      "name": "API",
+      "stack": "Express + TypeScript, `pg`, Anthropic SDK",
+      "runsOn": "Your machine (port 3048)",
+      "owns": "InnerTube transcript fetching, the `innertube` Postgres schema (`videos`, summary ledger, prompts, `llm_models` cost rates), summary generation.",
+      "doesNotOwn": "Auth — none; local use only.",
+      "inHub": true
+    }
+  ],
+  "dataFlow": [
+    "You paste a YouTube URL in the web app.",
+    "The API calls YouTube's InnerTube endpoints to get caption tracks and the transcript.",
+    "The video and transcript are saved to `videos` in local Postgres.",
+    "**Generate summary** sends the (trimmed) transcript and the current prompt to Anthropic and stores the request, exchange and response rows."
+  ],
+  "trust": [
+    { "title": "Browser", "detail": "Only the API URL." },
+    { "title": "API (your machine)", "detail": "Holds `DATABASE_URL` and `ANTHROPIC_API_KEY`. No auth on routes." },
+    { "title": "YouTube / Anthropic", "detail": "YouTube sees transcript requests from your IP; Anthropic receives transcripts you summarize." }
+  ],
+  "commonTasks": [
+    {
+      "title": "First-time setup",
+      "when": "Fresh clone.",
+      "steps": [
+        "Run **Setup** in Hub.",
+        "On the **API Express** repo, **Set up local database** (or `createdb innertube && psql \"$DATABASE_URL\" -f migrations/setup.sql`).",
+        "Set `DATABASE_URL` and `ANTHROPIC_API_KEY` in the API's Environment step.",
+        "Press **Run** and open `/dashboard`."
+      ]
+    },
+    {
+      "title": "Save and summarize a video",
+      "when": "You want to keep a video's content.",
+      "steps": [
+        "Paste the URL on `/videos` (or the dashboard).",
+        "Open the video and click **Generate summary**.",
+        "Check the cost in `/ai-costs`."
+      ]
+    },
+    {
+      "title": "Upgrade an older database",
+      "when": "After pulling new code.",
+      "steps": [
+        "Run `migrations/004_ai_prompts_and_exchange_registry.sql` and `005_update_summary_prompt_brevity.sql`.",
+        "If the database had transcript chat tables, run `drop_video_transcript_chat.sql`, then `setup.sql`."
+      ]
+    }
+  ],
+  "troubleshooting": [
+    { "symptom": "Adding a video fails", "fix": "The video may have no captions, be private or age-restricted, or YouTube changed InnerTube. Try `POST /api/transcript` to see the raw error." },
+    { "symptom": "Generate summary errors", "fix": "`ANTHROPIC_API_KEY` missing, or the model name in `TRANSCRIPT_SUMMARY_MODEL` is invalid." },
+    { "symptom": "Data routes 500 at startup", "fix": "`DATABASE_URL` missing or `setup.sql` not applied." },
+    { "symptom": "Summary cut off on very long videos", "fix": "Raise `TRANSCRIPT_SUMMARY_MAX_TRANSCRIPT_CHARS` or `TRANSCRIPT_SUMMARY_MAX_TOKENS`." }
+  ],
+  "glossary": [
+    { "term": "InnerTube", "definition": "YouTube's internal API used by its own clients; used here to read caption tracks." },
+    { "term": "Exchange registry", "definition": "Table of AI exchange tables with cost rates, used for `/ai-costs`." },
+    { "term": "Summary flow prompt", "definition": "The versioned system prompt for transcript summaries (`summary_ai_flow_prompt`)." }
+  ],
+  "hubNotes": [
+    "The registry's `expectedTables` only lists `videos`; the full schema also has the summary ledger, prompt and registry tables.",
+    "Web README is partly still the template, but the API README is current and accurate."
+  ],
+  "links": [
+    { "label": "API README", "path": "innertube-retriever-express-server/README.md" },
+    { "label": "AI prompts and exchange registry", "path": "innertube-retriever-express-server/.cursor/architecture/011-ai-flow-prompts-and-exchange-registry.md" },
+    { "label": "Architecture overview", "path": "/learn in innertube-web" }
+  ]
+}

@@ -1,0 +1,110 @@
+{
+  "projectId": "speech-therapy-tracker",
+  "updatedAt": "2026-11-12",
+  "tagline": "Daily care tracking at home: peg-tube feeds from pump readings, speech and physical therapy homework, and ice-cube counts — all on your own machine.",
+  "summary": [
+    "Speech Therapy Tracker is a caregiver's daily log. **Tube feed** records each morning's pump snapshot (total infused, mL left in the bag, rate) against a formula catalog so daily calories come from what was actually delivered. **Speech therapy** holds the homework catalog — timed attempts or sets × reps — with a per-day log you can increment, skip or mark due from several screens; **consumption** counts things like ice cubes per day; **physical therapy** tracks exercises with sets, reps and weight.",
+    "Paper homework sheets can be photographed and imported: Claude vision reads the photo, you review the extracted exercises, then commit them. It was split out of My Health and shares the same local `my_health` Postgres database; the API binds to 127.0.0.1 only."
+  ],
+  "audience": [
+    "Caregivers managing tube feeding and therapy homework for a family member.",
+    "Patients doing speech or physical therapy who want a simple daily checklist.",
+    "People who already run My Health locally (same database)."
+  ],
+  "notFor": [
+    "Medical advice or dosing decisions — it records what you enter.",
+    "Sharing with clinicians or syncing to a portal.",
+    "Network access — loopback only, no auth."
+  ],
+  "capabilities": [
+    { "title": "Dashboard", "detail": "`/dashboard` shows today's tube feed and exercises at a glance." },
+    { "title": "Tube feed", "detail": "`/tube-feed`: formula catalog (brand, kcal per 1000 mL, container volumes) and one pump snapshot per day (`PUT /api/data/feed-logs`)." },
+    { "title": "Speech therapy homework", "detail": "`/speech-therapy` and `/speech-therapy-exercise-detail-page`: timed or sets/reps exercises with daily increment, skip and due." },
+    { "title": "Photo import", "detail": "Upload a homework photo; Claude vision extracts exercises (`/therapy-exercise-imports/preview`), you review and commit. Each call is logged with cost." },
+    { "title": "Consumption", "detail": "`/speech-therapy-consumption` counts items like ice cubes per day." },
+    { "title": "Physical therapy", "detail": "`/physical-therapy`: exercises with sets, reps and weight." },
+    { "title": "Docs", "detail": "`/docs` (getting started, security, open source, API reference)." }
+  ],
+  "components": [
+    {
+      "repoName": "speech-therapy-tracker-web",
+      "name": "Web app",
+      "stack": "Next.js, Redux Toolkit, lucide-react",
+      "runsOn": "Your machine (README 3010; Hub port 3059)",
+      "owns": "Landing, dashboard, tube feed, therapy, consumption and docs screens. Calls `NEXT_PUBLIC_API_URL`.",
+      "doesNotOwn": "Database or Anthropic key.",
+      "inHub": true
+    },
+    {
+      "repoName": "speech-therapy-tracker-express-server",
+      "name": "API",
+      "stack": "Express + TypeScript, `pg`, `multer`, `sharp`, Anthropic SDK",
+      "runsOn": "Your machine, `127.0.0.1` (README 3011; registry 3058)",
+      "owns": "Therapy, consumption, physical therapy and tube-feed tables in `my_health` (`migrations/setup.sql`, `IF NOT EXISTS`), photo import with vision, AI ledger.",
+      "doesNotOwn": "The rest of `my_health` — My Health owns those tables.",
+      "inHub": true
+    }
+  ],
+  "dataFlow": [
+    "Point `DATABASE_URL` at the local `my_health` database and run `migrations/setup.sql` (safe to re-run).",
+    "The web app calls `/api/data/*` for every list, increment and snapshot.",
+    "Photo import: the image is uploaded in memory, resized with `sharp`, sent to Anthropic vision, previewed, then committed as exercises.",
+    "Nothing else leaves your machine."
+  ],
+  "trust": [
+    { "title": "Browser", "detail": "Only the API URL." },
+    { "title": "API (your machine)", "detail": "Holds `DATABASE_URL` and optional `ANTHROPIC_API_KEY`; binds to 127.0.0.1." },
+    { "title": "Anthropic", "detail": "Receives homework photos only when you use photo import." }
+  ],
+  "commonTasks": [
+    {
+      "title": "First-time setup",
+      "when": "Fresh clone.",
+      "steps": [
+        "Run **Setup** in Hub.",
+        "On the **API Express** repo, **Set up local database** — it targets `my_health`, shared with My Health.",
+        "Set `DATABASE_URL` (and `ANTHROPIC_API_KEY` for photo import) in the API's Environment step.",
+        "Set `NEXT_PUBLIC_API_URL` on the web to the API's real port.",
+        "Press **Run** and open `/dashboard`."
+      ]
+    },
+    {
+      "title": "Log this morning's feed",
+      "when": "Daily, after reading the pump.",
+      "steps": [
+        "Open `/tube-feed` and enter total infused, mL left and rate for today.",
+        "Check the day's calories on the dashboard."
+      ]
+    },
+    {
+      "title": "Import new homework",
+      "when": "The therapist hands you a new sheet.",
+      "steps": [
+        "Photograph it and upload on `/speech-therapy`.",
+        "Review the extracted exercises, fix anything misread and commit."
+      ]
+    }
+  ],
+  "troubleshooting": [
+    { "symptom": "API won't start or clashes on port 3010/3011", "fix": "The README ports collide with the studio gateway (3010) and Gmail storage (3011). Use the registry ports (API 3058, web 3059) and update `NEXT_PUBLIC_API_URL`." },
+    { "symptom": "Photo import fails", "fix": "`ANTHROPIC_API_KEY` isn't set, or the image is unreadable. Manual exercise entry still works." },
+    { "symptom": "Tables missing", "fix": "Run `migrations/setup.sql` against `my_health`." },
+    { "symptom": "Increments seem to double", "fix": "Each click is an atomic increment; refresh before tapping again if the network was slow." }
+  ],
+  "glossary": [
+    { "term": "Pump snapshot", "definition": "One morning reading per day: total infused, mL left, rate." },
+    { "term": "Tracking kind", "definition": "Timed attempts (e.g. 10 × 5s) or sets × reps." },
+    { "term": "Consumption", "definition": "Daily count of consumed items such as ice cubes." }
+  ],
+  "hubNotes": [
+    "Shares the `my_health` database with My Health — Hub's database setup for either project touches the same database.",
+    "README defaults (web 3010, API 3011) clash with the on-device gateway (3010) and my-gmail-manager storage (3011); prefer the registry's 3058 / 3059.",
+    "Repos live under `~/github/my-health/`, next to the My Health repos. My Health is removing its own copies of these features (uncommitted)."
+  ],
+  "links": [
+    { "label": "Quickstart", "path": "speech-therapy-tracker-express-server/docs/oss-quickstart.md" },
+    { "label": "Wire contract", "path": "speech-therapy-tracker-express-server/docs/oss/wire-contract.md" },
+    { "label": "Security", "path": "speech-therapy-tracker-express-server/SECURITY.md" },
+    { "label": "Docs (in app)", "path": "/docs in speech-therapy-tracker-web" }
+  ]
+}

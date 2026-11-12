@@ -1,5 +1,4 @@
-import { processProbeSupabaseConfig } from './process-probe-supabase-config';
-import { getHubRoot, resolveProjectForSupabase } from '../../utils/supabase-config';
+import { readSupabaseKeyStatus } from './process-probe-supabase-config';
 
 type EnsureResult =
   | { success: true; message: string }
@@ -9,8 +8,8 @@ type EnsureResult =
  * Block Run when the project requires Supabase env and keys are missing.
  */
 export const processEnsureSupabaseConfigForRun = (projectId: string): EnsureResult => {
-  const resolved = resolveProjectForSupabase(projectId, getHubRoot());
-  if (!resolved) {
+  const status = readSupabaseKeyStatus(projectId);
+  if (!status) {
     return { success: true, message: 'No Supabase config required' };
   }
 
@@ -18,8 +17,7 @@ export const processEnsureSupabaseConfigForRun = (projectId: string): EnsureResu
     projectId,
   });
 
-  const probe = processProbeSupabaseConfig(projectId);
-  if (probe.configured) {
+  if (status.configured) {
     console.log('✅ [supabase-config.processEnsureSupabaseConfigForRun] Configured', {
       projectId,
     });
@@ -30,7 +28,7 @@ export const processEnsureSupabaseConfigForRun = (projectId: string): EnsureResu
     projectId,
   });
   return {
-    error: probe.message ?? 'Supabase env is incomplete',
+    error: `Missing ${status.missingKeys.join(', ')} in Express .env`,
     status: 400,
   };
 };

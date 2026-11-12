@@ -1,0 +1,140 @@
+{
+  "projectId": "app-store-manager",
+  "updatedAt": "2026-11-12",
+  "tagline": "A self-hosted CMS for App Store listings — copy per locale, TSX-authored screenshots, device frames, and optional push to App Store Connect.",
+  "summary": [
+    "App Store Manager keeps everything that goes on an App Store product page in one place: apps, listing versions, locales and the copy fields (title, subtitle, keywords, description, what's new) with Apple's character limits enforced as you type.",
+    "Screenshots are authored as TSX. The graphic editor compiles your TSX in the browser, previews it in an isolated iframe at exact App Store pixel sizes, and renders it to PNG. The frame composer then drops that PNG into an iPhone/iPad device frame for marketing images. When Anthropic and App Store Connect keys are set on the API, it can draft listing copy and push copy and screenshots straight to Apple."
+  ],
+  "audience": [
+    "You ship one or more iOS apps and maintain App Store copy and screenshots for several locales.",
+    "You'd rather design screenshots in code (React + Tailwind) than in Figma or a screenshot SaaS.",
+    "You have a Supabase project you're comfortable giving a service-role key to the local API."
+  ],
+  "notFor": [
+    "Google Play listings — App Store / iOS only in v1.",
+    "Importing existing listings from App Store Connect — sync is push-only; this app is the source of truth.",
+    "A multi-user hosted product — there is no sign-in; the console and API trust whoever can reach them."
+  ],
+  "capabilities": [
+    { "title": "Apps and listings", "detail": "`/` lists apps; `/app-detail-page` and `/listings` manage listing versions and locales." },
+    { "title": "Listing copy editor", "detail": "`/listing-detail-page` edits every copy field per locale with App Store character limits enforced." },
+    { "title": "Graphic editor (TSX → PNG)", "detail": "`/graphic-editor-page` compiles TSX with in-browser Babel, previews in a `srcDoc` iframe at canvas presets (e.g. 1320×2868 iPhone 6.9\"), and **Render** uploads a PNG to the `screenshot-graphics` bucket." },
+    { "title": "Frame composer", "detail": "`/frame-composer-page` places a rendered content PNG inside a device frame for marketing / social exports." },
+    { "title": "Device frames", "detail": "`/device-frames` is a built-in catalog (iPhone 6.9\") synced from `assets/device_frames/` by `npm run device-frame:sync` on every dev/build." },
+    { "title": "Screenshot slots", "detail": "Define slots per locale and assign a graphic to each — the set that gets pushed to Apple." },
+    { "title": "AI listing copy (optional)", "detail": "A **Generate** button per copy field calls `POST /api/app-store-listing-copy/generate` (Anthropic). The draft fills in; you still click **Save copy**." },
+    { "title": "App Store Connect push (optional)", "detail": "Link an app to its ASC id, create versions, and push copy and screenshots via `/api/app-store-connect/*` (JWT signed with your `.p8` key)." }
+  ],
+  "components": [
+    {
+      "repoName": "app-store-manager-console",
+      "name": "Console",
+      "stack": "Next.js, Redux Toolkit, Tailwind, `@babel/standalone`, `html2canvas`",
+      "runsOn": "Your machine",
+      "owns": "All UI: listings, copy editor, graphic editor (in-browser TSX compile + iframe preview + PNG capture), frame composer, built-in device-frame catalog.",
+      "doesNotOwn": "Database or storage credentials, Anthropic or App Store Connect keys — everything goes through the API.",
+      "inHub": true
+    },
+    {
+      "repoName": "app-store-manager-express-server",
+      "name": "API",
+      "stack": "Express 5 + TypeScript, Supabase JS, `multer`, `jose`, Anthropic SDK",
+      "runsOn": "Your machine (default `PORT=3009`)",
+      "owns": "CRUD under `/api/data/*` for apps, listing versions/locales/copy, screenshot graphics/slots/assignments and device frames; PNG uploads to Supabase Storage; listing-copy generation; App Store Connect push.",
+      "doesNotOwn": "Auth — there is none; CORS (`CORS_ORIGINS`) is the only restriction.",
+      "inHub": true
+    }
+  ],
+  "dataFlow": [
+    "Create a Supabase project, apply `docs/sql/001…011` in the SQL editor and create the public buckets `device-frames` and `screenshot-graphics`.",
+    "The API connects with `SUPABASE_URL` + `SUPABASE_SERVICE_ROLE_KEY` at boot; if they're missing, data routes return 500.",
+    "The console calls the API at `NEXT_PUBLIC_APP_STORE_MANAGER_EXPRESS_URL` for every read and write.",
+    "In the graphic editor the browser compiles TSX, html2canvas captures the iframe `#root`, and the PNG is uploaded to Storage; its URL is saved in `screenshot_graphics.metadata.studioDraft`.",
+    "Optionally the API calls Anthropic to draft copy, or App Store Connect to push copy and the assigned screenshot PNGs."
+  ],
+  "trust": [
+    { "title": "Browser (console)", "detail": "Only `NEXT_PUBLIC_*` values. Pasted TSX is treated as trusted admin input and runs inside an isolated iframe, never on the server." },
+    { "title": "Your machine (API)", "detail": "Holds the Supabase service-role key (bypasses RLS), `ANTHROPIC_API_KEY` and the App Store Connect `.p8` key. No auth on routes." },
+    { "title": "Supabase", "detail": "Postgres tables and public Storage buckets. Anything in the buckets is publicly readable by URL." },
+    { "title": "Apple / Anthropic", "detail": "Called only from the API and only when their keys are set." }
+  ],
+  "commonTasks": [
+    {
+      "title": "First-time setup",
+      "when": "New machine or fresh clone.",
+      "steps": [
+        "Run **Setup** in Hub to clone both repos and install dependencies.",
+        "In Supabase, run `docs/sql/001_apps.sql` through `011_app_store_connect_ids.sql` in order (skip the `*_seed_roads*` files unless you want sample data).",
+        "On the **API Express** repo's **Environment** step, set `SUPABASE_URL`, `SUPABASE_SERVICE_ROLE_KEY` and `CORS_ORIGINS` (include the console's Hub port).",
+        "On the **Console** repo, point `NEXT_PUBLIC_APP_STORE_MANAGER_EXPRESS_URL` at the API's `PORT`.",
+        "Press **Run** and open the console."
+      ]
+    },
+    {
+      "title": "Write copy for a new locale",
+      "when": "Localizing a listing or preparing a new version.",
+      "steps": [
+        "Open the app → listing version → add a locale.",
+        "Open `/listing-detail-page`, fill each field (or press **Generate** if Anthropic is configured).",
+        "Click **Save copy**."
+      ]
+    },
+    {
+      "title": "Design and export a screenshot",
+      "when": "New screenshots for a release.",
+      "steps": [
+        "Go to `/graphics`, create a library graphic with the right canvas preset.",
+        "Write TSX in the graphic editor and check the live preview.",
+        "Click **Render** to upload the PNG.",
+        "For a framed marketing image, open a slot graphic in the frame composer, pick the content PNG and a device frame."
+      ]
+    },
+    {
+      "title": "Push to App Store Connect",
+      "when": "Copy and screenshots are final.",
+      "steps": [
+        "Set `ASC_KEY_ID`, `ASC_ISSUER_ID` and `ASC_PRIVATE_KEY` (or `ASC_PRIVATE_KEY_PATH`) on the API and restart.",
+        "Link the app to its App Store Connect app id, create or pick the version.",
+        "Use push copy, then push screenshots. iPhone 6.9\" PNGs go to the `APP_IPHONE_67` set and iPad 13\" to `APP_IPAD_PRO_3GEN_129`."
+      ]
+    },
+    {
+      "title": "Adjust the built-in device frame",
+      "when": "The screen inset looks misaligned in previews.",
+      "steps": [
+        "Edit `assets/device_frames/iphone-6.9.meta.json` (`screenRect` x/y) in the console repo — never the copy in `public/`.",
+        "Run `npm run device-frame:sync` (or restart dev) and bump the `?v=` cache buster in `src/constants/built-in-device-frames.ts`."
+      ]
+    }
+  ],
+  "troubleshooting": [
+    { "symptom": "Every data request returns 500", "fix": "Supabase env is missing or wrong on the API. Check `SUPABASE_URL` / `SUPABASE_SERVICE_ROLE_KEY`, then `curl <api>/api/data/apps`." },
+    { "symptom": "Render or upload fails", "fix": "The `screenshot-graphics` or `device-frames` bucket doesn't exist. Run `010_storage_buckets.sql` or create them as public buckets." },
+    { "symptom": "Generate returns an error", "fix": "`ANTHROPIC_API_KEY` isn't set. Generation also reads `business_context_*` tables (built for the Roads apps); without them the prompt has no product context." },
+    { "symptom": "Push to App Store Connect fails with 401/403", "fix": "Check the ASC key id, issuer id and `.p8` key, and that the key's role can edit app metadata." },
+    { "symptom": "Exported PNG text looks wrong or blank", "fix": "Capture uses html2canvas with `foreignObjectRendering`. Avoid remote fonts/images that block CORS inside the TSX." },
+    { "symptom": "Console shows CORS errors", "fix": "Add the console origin (including the Hub port) to the API's `CORS_ORIGINS`." }
+  ],
+  "glossary": [
+    { "term": "Library graphic", "definition": "A TSX-authored graphic edited in the graphic editor and rendered to a content PNG." },
+    { "term": "Slot graphic", "definition": "A graphic edited in the frame composer: a content PNG plus an optional device frame." },
+    { "term": "Screenshot slot", "definition": "A position in a locale's screenshot set; an assignment links a graphic to it." },
+    { "term": "studioDraft", "definition": "`screenshot_graphics.metadata.studioDraft` — saved TSX, `contentPngUrl`, `framedPngUrl` and `frameAssetId`." },
+    { "term": "ASC", "definition": "App Store Connect — Apple's API for app metadata and screenshots." }
+  ],
+  "hubNotes": [
+    "Both `.env.example` files default to port 3009, but the registry gives the API `defaultApiPort: 3044` — the console's API URL must match whatever `PORT` the API really uses.",
+    "Port 3009 is also my-vercel-analytics' companion port; don't run both on 3009 at once.",
+    "There's no local Postgres option — the registry has no `localDatabase`, so **Set up local database** doesn't apply. Data lives in Supabase.",
+    "The `*_seed_roads*` SQL and the AI generator are tied to the ROADS buyer/seller apps (`ROADS_PLATFORM_CONTEXT_USER_ID`). They're optional for anyone else."
+  ],
+  "links": [
+    { "label": "Pair quickstart", "path": "app-store-manager-express-server/docs/oss-quickstart.md" },
+    { "label": "Wire contract", "path": "app-store-manager-express-server/docs/oss/wire-contract.md" },
+    { "label": "Screenshot studio pipeline", "path": "app-store-manager-console/.cursor/architecture/021-app-store-screenshot-studio.md" },
+    { "label": "Graphic editor vs frame composer", "path": "app-store-manager-console/.cursor/architecture/029-graphic-editor-and-frame-composer-split.md" },
+    { "label": "AI listing copy", "path": "app-store-manager-express-server/.cursor/architecture/009-app-store-listing-ai-generation.md" },
+    { "label": "App Store Connect push", "path": "app-store-manager-express-server/.cursor/architecture/010-app-store-connect-push.md" }
+  ]
+}

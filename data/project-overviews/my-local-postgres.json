@@ -1,0 +1,94 @@
+{
+  "projectId": "my-local-postgres",
+  "updatedAt": "2026-11-12",
+  "tagline": "See every database on your local Postgres — its size, its owner, and which tables take up the space.",
+  "summary": [
+    "My Local Postgres is a read-only inventory of the Homebrew Postgres cluster on your Mac. Every Luckee project creates its own database (`my_health`, `gmail_manager`, `code_control`, …); this app lists them all with size and owner so you can see what exists and what's growing.",
+    "Open a database to see its tables and other relations sorted by total size, including indexes and TOAST. The API connects to the maintenance database with one `DATABASE_URL` and reads only system catalogs — it never reads or changes your application data."
+  ],
+  "audience": [
+    "You run many local projects that each create a Postgres database.",
+    "You want to know which databases exist and which ones are taking disk space.",
+    "You use Homebrew Postgres (or any local cluster you can reach with one connection string)."
+  ],
+  "notFor": [
+    "A SQL client or admin tool — no queries, edits, drops or backups.",
+    "Remote or managed databases (Supabase, RDS) — it's built for the local cluster.",
+    "Viewing row data — only sizes and names."
+  ],
+  "capabilities": [
+    { "title": "Database list", "detail": "`/` lists every database on the cluster with size and owner (`GET /api/databases`)." },
+    { "title": "Database detail", "detail": "`/database-detail-page` lists relations by schema with total size (`GET /api/databases/:name/relations`)." },
+    { "title": "Safe catalog reads", "detail": "Reads `pg_database` and `pg_class` only; per-database connections are short-lived and identifiers are never interpolated." },
+    { "title": "Health without Postgres", "detail": "`/api/health` keeps working when Postgres is down so you can tell the API from the database apart." }
+  ],
+  "components": [
+    {
+      "repoName": "my-local-postgres-web",
+      "name": "Web app",
+      "stack": "Next.js, Redux Toolkit",
+      "runsOn": "Your machine (Hub port 3067)",
+      "owns": "Database list and detail tables. Calls `NEXT_PUBLIC_API_URL`.",
+      "doesNotOwn": "Database credentials.",
+      "inHub": true
+    },
+    {
+      "repoName": "my-local-postgres-express-server",
+      "name": "API",
+      "stack": "Express + TypeScript, `pg`",
+      "runsOn": "Your machine (`.env.example` 3009; registry 3066)",
+      "owns": "A managed pool to the maintenance database (`DATABASE_URL`, default `postgres`) and catalog queries in `src/data/pg-catalog/`.",
+      "doesNotOwn": "Any schema of its own — no migrations.",
+      "inHub": true
+    }
+  ],
+  "dataFlow": [
+    "The API connects to `DATABASE_URL` (e.g. `postgresql://localhost:5432/postgres`) at startup.",
+    "Listing databases queries `pg_database` for name, owner and size.",
+    "Opening a database confirms the name exists, opens a short-lived connection to it and lists relation sizes from `pg_class`.",
+    "The web app renders both as tables."
+  ],
+  "trust": [
+    { "title": "Browser", "detail": "Only the API URL." },
+    { "title": "API (your machine)", "detail": "Holds `DATABASE_URL`, which can usually see every database on the cluster. No auth — keep it on localhost." }
+  ],
+  "commonTasks": [
+    {
+      "title": "Run it",
+      "when": "First time.",
+      "steps": [
+        "Run **Setup** in Hub (no database to create).",
+        "Set `DATABASE_URL=postgresql://<you>@127.0.0.1:5432/postgres` in the API's Environment step.",
+        "Set `NEXT_PUBLIC_API_URL` on the web to the API's port.",
+        "Press **Run**."
+      ]
+    },
+    {
+      "title": "Find what's using space",
+      "when": "Disk is filling up or a project feels slow.",
+      "steps": [
+        "Sort the database list by size.",
+        "Open the biggest one and look at the largest relations (often AI ledger or message tables)."
+      ]
+    }
+  ],
+  "troubleshooting": [
+    { "symptom": "List returns 500 'Service unavailable'", "fix": "Postgres isn't running or `DATABASE_URL` is wrong: `brew services start postgresql@16` and check the user name." },
+    { "symptom": "A database's detail page errors", "fix": "Your role may lack `CONNECT` on that database; connect as the database owner or a superuser." },
+    { "symptom": "Web shows nothing", "fix": "`NEXT_PUBLIC_API_URL` defaults to 3009; Hub may run the API on 3066." }
+  ],
+  "glossary": [
+    { "term": "Maintenance database", "definition": "The default `postgres` database the API connects to first." },
+    { "term": "Relation", "definition": "A table, index, view or other object listed in `pg_class`." },
+    { "term": "Total size", "definition": "Table plus its indexes and TOAST storage." }
+  ],
+  "hubNotes": [
+    "Useful alongside Hub's **Set up local database** flows — it shows which project databases actually exist.",
+    "The API defaults to port 3009 (shared with several projects); the registry says 3066.",
+    "Early repos (2 commits); READMEs are still the template. The ADR below is the real doc."
+  ],
+  "links": [
+    { "label": "Local cluster inventory", "path": "my-local-postgres-express-server/.cursor/architecture/010-local-cluster-inventory.md" },
+    { "label": "Database inventory UI", "path": "my-local-postgres-web/.cursor/architecture/015-database-inventory.md" }
+  ]
+}

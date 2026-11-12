@@ -46,6 +46,7 @@ export const mergeProjectConfig = (
     webDir: local.webDir,
     expressDir: local.expressDir,
     storageExpressDir: local.storageExpressDir,
+    dispatcherDir: local.dispatcherDir,
     workspaceFile: resolveProjectWorkspaceFile(local),
     apiPort: envApiPort > 0 ? envApiPort : registryApiPort,
     webPortStart: local.webPortStart ?? nextjsRepo?.defaultWebPortStart ?? 3000,

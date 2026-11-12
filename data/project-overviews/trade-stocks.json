@@ -1,0 +1,115 @@
+{
+  "projectId": "trade-stocks",
+  "updatedAt": "2026-11-12",
+  "tagline": "Search any US-listed ticker, open the stock, and get its price chart, a plain-English business summary, recent news and an AI read on whether it fits your style of investing.",
+  "summary": [
+    "Trade Stocks Using AI starts with a search box backed by Nasdaq's full list of US exchange-listed securities. Open a stock to see its latest quote and a daily price chart (Yahoo), a two-to-three sentence summary of what the company does (found by reading its official homepage), and shared recent headlines refreshed on demand.",
+    "Signed-in users can keep a **My stocks** list and ask for **investment thoughts**: Claude weighs the summary, headlines and chart indicators and says whether the stock looks suited to buy-and-hold, a one-year view or day trading. An operator console lists users and KPIs and resyncs the Nasdaq symbol catalog. Auth and data live in Supabase."
+  ],
+  "audience": [
+    "Retail investors who want a quick, readable first look at a ticker.",
+    "People comparing a handful of stocks they're watching.",
+    "The operator running the product (console)."
+  ],
+  "notFor": [
+    "Trading or brokerage — no orders, no portfolio balances.",
+    "Financial advice — AI thoughts are an opinion grounded in public material.",
+    "Real-time or intraday data — latest quote and daily bars only."
+  ],
+  "capabilities": [
+    { "title": "Ticker search", "detail": "Landing search matches ticker or company name against the stored Nasdaq Trader catalog (`/api/stocks/search`)." },
+    { "title": "Stock detail", "detail": "`/stock-detail-page`: company name, latest price (`POST /api/stocks/:id/quote`) and daily chart with range picker (`GET /:id/chart`)." },
+    { "title": "Business summary", "detail": "Finds the official homepage, reads it and stores a short summary on the listing (`POST /:id/business-summary`)." },
+    { "title": "News", "detail": "Shared recent headlines per stock, refreshed on demand (research only if nothing new in 24h)." },
+    { "title": "Investment thoughts", "detail": "Claude's read on buy-and-hold vs one-year vs day trading, grounded in summary, news and chart (`POST /:id/investment-thoughts`)." },
+    { "title": "My stocks", "detail": "`/stocks` and `/dashboard`: a signed-in user's watch list (`/api/user-stocks`)." },
+    { "title": "Auth", "detail": "Supabase email/Google sign-in, password reset, `/auth/callback`; Express syncs a `public.users` row from the JWT." },
+    { "title": "Operator console", "detail": "Users list and KPIs, Nasdaq catalog sync, analytics stub (no JWT; operator only)." }
+  ],
+  "components": [
+    {
+      "repoName": "trade-stocks-using-ai-web",
+      "name": "Web app",
+      "stack": "Next.js, Redux Toolkit, Supabase JS, Vercel Analytics",
+      "runsOn": "Vercel / your machine (Hub port 3069)",
+      "owns": "Landing search, stock detail, dashboard, My stocks, auth. Calls the API at `NEXT_PUBLIC_EXPRESS_URL` with the Supabase JWT.",
+      "doesNotOwn": "Market data or AI calls.",
+      "inHub": true
+    },
+    {
+      "repoName": "trade-stocks-using-ai-express-server",
+      "name": "API",
+      "stack": "Express + TypeScript, Supabase JS, Anthropic SDK",
+      "runsOn": "Railway / your machine (registry 3068)",
+      "owns": "Symbol catalog, Yahoo quotes and charts, homepage research and news (Apify + Claude), investment thoughts, user stocks, account sync, operator APIs. Schema in `supabase/migrations/`.",
+      "doesNotOwn": "Login — Supabase does that in the browser.",
+      "inHub": true
+    },
+    {
+      "repoName": "trade-stocks-using-ai-console",
+      "name": "Operator console",
+      "stack": "Next.js, Redux Toolkit",
+      "runsOn": "Your machine (registry 3070)",
+      "owns": "Users list and KPIs, Nasdaq catalog sync, analytics stub.",
+      "doesNotOwn": "End-user features.",
+      "inHub": true
+    }
+  ],
+  "dataFlow": [
+    "The operator syncs the Nasdaq Trader symbol file into `stocks` from the console.",
+    "Users sign in with Supabase in the browser; the web sends the JWT to Express, which upserts `public.users`.",
+    "Opening a stock refreshes its quote and chart from Yahoo.",
+    "Business summary and news use Apify to find/read pages and Claude to summarize; results are stored on the listing and shared by everyone.",
+    "Investment thoughts send the summary, headlines and indicators to Claude and store one row per request."
+  ],
+  "trust": [
+    { "title": "Browser", "detail": "Supabase anon key and its JWT." },
+    { "title": "API", "detail": "Supabase service role, `ANTHROPIC_API_KEY`, `APIFY_API_TOKEN`. Operator routes take no JWT — keep the console private." },
+    { "title": "Third parties", "detail": "Yahoo for prices, Apify for web research, Anthropic for summaries and thoughts." }
+  ],
+  "commonTasks": [
+    {
+      "title": "Run locally",
+      "when": "Developing.",
+      "steps": [
+        "Run **Setup** in Hub (add the console path to hub.local.json if you need it).",
+        "Apply `supabase/migrations/001…010` to your Supabase project.",
+        "Set `SUPABASE_URL`, `SUPABASE_SERVICE_ROLE_KEY`, `ANTHROPIC_API_KEY` and `APIFY_API_TOKEN` on the API (there's no `.env.example`).",
+        "Set `NEXT_PUBLIC_EXPRESS_URL` and the Supabase public vars on the web, then **Run**.",
+        "Sync the Nasdaq catalog from the console so search returns results."
+      ]
+    },
+    {
+      "title": "Research a stock",
+      "when": "You want a quick read on a ticker.",
+      "steps": [
+        "Search on the landing page and open the stock.",
+        "Refresh news and the business summary if they're stale.",
+        "Sign in and request investment thoughts; add it to My stocks to watch it."
+      ]
+    }
+  ],
+  "troubleshooting": [
+    { "symptom": "Search returns nothing", "fix": "The symbol catalog is empty — run the Nasdaq catalog sync from the console." },
+    { "symptom": "Quote or chart fails", "fix": "Yahoo didn't recognize the symbol mapping or rate-limited; try again or check `to-yahoo-symbol`." },
+    { "symptom": "Summary or news errors", "fix": "Check `APIFY_API_TOKEN` and `ANTHROPIC_API_KEY`." },
+    { "symptom": "Signed-in calls return 401", "fix": "The web and API point at different Supabase projects, or no session reached Express." }
+  ],
+  "glossary": [
+    { "term": "Symbol catalog", "definition": "`stocks` rows loaded from Nasdaq Trader's listed-securities file." },
+    { "term": "Investment thoughts", "definition": "AI assessment of fit for buy-and-hold, one-year or day trading." },
+    { "term": "My stocks", "definition": "A user's watch list (`user_stocks`)." }
+  ],
+  "hubNotes": [
+    "`trade-stocks-using-ai-console` is in the registry and cloned at `~/github/tradestocksusingai/`, but hub.local.json has no path for it.",
+    "Neither web nor API has a `.env.example`; the variables above come from the code.",
+    "No local Postgres — data lives in Supabase. READMEs are still templates; the ADRs (web 015–023, express 010–019) are the real docs."
+  ],
+  "links": [
+    { "label": "Symbol catalog", "path": "trade-stocks-using-ai-express-server/.cursor/architecture/010-symbol-catalog.md" },
+    { "label": "Stock quote", "path": "trade-stocks-using-ai-express-server/.cursor/architecture/012-stock-quote.md" },
+    { "label": "Business research", "path": "trade-stocks-using-ai-express-server/.cursor/architecture/016-stock-business-research.md" },
+    { "label": "Investment thoughts", "path": "trade-stocks-using-ai-express-server/.cursor/architecture/019-stock-investment-thoughts.md" },
+    { "label": "Operator console APIs", "path": "trade-stocks-using-ai-express-server/.cursor/architecture/014-operator-console-apis.md" }
+  ]
+}

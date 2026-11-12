@@ -1,0 +1,133 @@
+{
+  "projectId": "finances-manager",
+  "updatedAt": "2026-11-12",
+  "tagline": "Internal finance in one place: customer retainers and their payments, your own subscriptions, and the software vendors you pay for.",
+  "summary": [
+    "Finances Manager tracks the money side of a small studio. **Retainers** are monthly billables per customer, with a due day and a payment log; **subscriptions** are the recurring spend you pay out, linked to an **external software** vendor catalog. A finances dashboard brings the three together.",
+    "It was split out of My Ops Tracker: finance tables moved from ops-tracker's Supabase into this project's own Postgres, while customers stay in the ops-tracker CRM. The API has no database of its own — it calls a storage server directly or through the studio gateway — and reads customer names through a CRM proxy. My Ops Tracker can, in turn, reach these finance routes via its `/api/finances-remote` proxy."
+  ],
+  "audience": [
+    "You run a studio or agency with monthly retainer customers and want to see who has paid.",
+    "You want a clear list of every SaaS subscription the business pays for and what it costs.",
+    "Your customers already live in My Ops Tracker."
+  ],
+  "notFor": [
+    "Accounting, invoicing or bank sync — it records retainers, payments and subscriptions; it doesn't send invoices or reconcile accounts.",
+    "Managing customers — they're read from My Ops Tracker.",
+    "Running without the storage server — the API can't reach Postgres itself."
+  ],
+  "capabilities": [
+    { "title": "Finances dashboard", "detail": "`/finances` summarizes retainers, subscriptions and software spend." },
+    { "title": "Customer retainers", "detail": "`/finances/retainers` and `/customer-retainer-detail-page`: monthly amount and due day per customer, plus a payment log (`retainer_payments`)." },
+    { "title": "Subscriptions", "detail": "`/finances/subscriptions`: recurring internal spend with schedule validation, linked to a vendor." },
+    { "title": "External software", "detail": "`/finances/software`: the vendor catalog subscriptions point to." },
+    { "title": "CRM-aware", "detail": "Customer names come from My Ops Tracker via `/api/crm/*`; the API can check a customer exists before saving a retainer." },
+    { "title": "Reachable from My Ops Tracker", "detail": "Ops-tracker's `/api/finances-remote/*` forwards to this API's `/api/data/*`." }
+  ],
+  "components": [
+    {
+      "repoName": "finances-manager-web",
+      "name": "Web app",
+      "stack": "Next.js, Redux Toolkit, Tailwind",
+      "runsOn": "Your machine (Hub port 3093)",
+      "owns": "Dashboard, retainers, subscriptions and software screens. Calls the API at `NEXT_PUBLIC_API_URL`.",
+      "doesNotOwn": "Data, CRM.",
+      "inHub": true
+    },
+    {
+      "repoName": "finances-manager-express-server",
+      "name": "API",
+      "stack": "Express + TypeScript (no `pg`)",
+      "runsOn": "Studio or laptop (port 3092)",
+      "owns": "`/api/data/*` for external software, subscriptions, customer retainers and retainer payments, business rules (schedules, due days, payment sources), and the `/api/crm/*` proxy.",
+      "doesNotOwn": "SQL — every CRUD call goes to storage `invoke`.",
+      "inHub": true
+    },
+    {
+      "repoName": "finances-manager-storage-express-server",
+      "name": "Storage server",
+      "stack": "Express + TypeScript, `pg`",
+      "runsOn": "The machine with the `finances_manager` database (port 3091)",
+      "owns": "`migrations/` (`external_software`, `subscriptions`, `customer_retainers`, `retainer_payments`, `dispatcher_exposed_endpoints`), all SQL behind `POST /api/storage/v1/invoke`, seed export/import.",
+      "doesNotOwn": "CRM foreign keys — customer ids are logical references only.",
+      "inHub": true
+    },
+    {
+      "repoName": "finances-manager-dispatcher-express-server",
+      "name": "Project dispatcher",
+      "stack": "Express (template + dispatcher config)",
+      "runsOn": "Studio",
+      "owns": "`dispatcher.services.json` / `dispatcher.projects.json` for the main gateway. The runtime still has to be copied from code-commit-summaries' dispatcher.",
+      "doesNotOwn": "—",
+      "inHub": false
+    }
+  ],
+  "dataFlow": [
+    "The web app calls the finances API at `NEXT_PUBLIC_API_URL`.",
+    "The API invokes storage: **direct** (`FINANCES_MANAGER_STORAGE_URL` + secret) or **gateway** (`CANONICAL_DATA_ACCESS_MODE=gateway` with `FINANCES_MANAGER_GATEWAY_*`).",
+    "Storage runs the SQL against local Postgres `finances_manager`.",
+    "Customer names: the API forwards `GET /api/crm/*` to ops-tracker's `/api/data/*` (`OPS_TRACKER_EXPRESS_URL`, optional service secret).",
+    "My Ops Tracker can read and write finance data through its `/api/finances-remote` proxy to this API."
+  ],
+  "trust": [
+    { "title": "Browser", "detail": "Only `NEXT_PUBLIC_API_URL`." },
+    { "title": "API", "detail": "Holds the storage secret and the ops-tracker service secret. No `DATABASE_URL`." },
+    { "title": "Storage host", "detail": "Only place with `DATABASE_URL`; accepts callers with `STORAGE_DISPATCHER_SECRET`." },
+    { "title": "My Ops Tracker", "detail": "Source of customers; can call this API with `x-finances-manager-service-secret`." }
+  ],
+  "commonTasks": [
+    {
+      "title": "Run on one machine",
+      "when": "First setup.",
+      "steps": [
+        "Run **Setup** in Hub.",
+        "On the **Storage Express** repo, **Set up local database** to create `finances_manager` and apply `migrations/001…006`.",
+        "Fix the storage `.env`: `PORT=3091` and `DATABASE_URL=…/finances_manager` (the example was copied from estimate-and-proposals).",
+        "Set `STORAGE_DISPATCHER_SECRET` on storage and the same value as `FINANCES_MANAGER_STORAGE_SECRET` on the API; set `OPS_TRACKER_EXPRESS_URL`.",
+        "Press **Run** and open `/finances`."
+      ]
+    },
+    {
+      "title": "Move finance data out of ops-tracker",
+      "when": "One-time cutover from Supabase.",
+      "steps": [
+        "Apply storage migrations on the target database.",
+        "Export from ops-tracker Supabase in order: `external_software`, `subscriptions`, `customer_retainers`, `retainer_payments`, keeping the UUIDs.",
+        "Import in the same order (see `docs/DATA_MIGRATION.md`)."
+      ]
+    },
+    {
+      "title": "Record a retainer payment",
+      "when": "A customer paid this month.",
+      "steps": [
+        "Open `/finances/retainers` and the customer's retainer.",
+        "Add a payment with amount, date and source."
+      ]
+    }
+  ],
+  "troubleshooting": [
+    { "symptom": "Storage starts on 3081 or connects to `estimate_and_proposals`", "fix": "The storage `.env.example` was copied from estimate-and-proposals. Set `PORT=3091` and `DATABASE_URL` to `finances_manager`." },
+    { "symptom": "Customer names missing on retainers", "fix": "The CRM proxy can't reach ops-tracker. Check `OPS_TRACKER_EXPRESS_URL` and `OPS_TRACKER_SERVICE_SECRET`. Finance CRUD still works." },
+    { "symptom": "Data routes return 500", "fix": "Storage unreachable or secret mismatch; `curl http://127.0.0.1:3091/api/storage/health`." },
+    { "symptom": "Saving a retainer fails with an unknown customer", "fix": "The customer id doesn't exist in My Ops Tracker." }
+  ],
+  "glossary": [
+    { "term": "Retainer", "definition": "A customer's recurring monthly billable, with a due day and payments." },
+    { "term": "Subscription", "definition": "Recurring spend the business pays to a vendor." },
+    { "term": "External software", "definition": "Vendor catalog entry that subscriptions reference." },
+    { "term": "finances-remote", "definition": "My Ops Tracker's proxy route into this API." }
+  ],
+  "hubNotes": [
+    "Most of the code isn't committed yet — each repo has a single \"Initial commit\" and a large set of uncommitted changes (web: 200+ source files on disk vs 9 tracked).",
+    "Port clashes in the registry: this project's web port 3093 is also estimate-and-proposals' dispatcher port, and the dispatcher README here uses 3095, which is estimate-and-proposals' API port.",
+    "`finances-manager-dispatcher-express-server` is in the registry but has no path in hub.local.json and no runtime yet.",
+    "The ops-tracker CRM URL defaults to `http://localhost:3009`, the same port several other projects use."
+  ],
+  "links": [
+    { "label": "Storage / API split", "path": "finances-manager-express-server/.cursor/architecture/009-storage-api-split.md" },
+    { "label": "Hybrid CRM", "path": "finances-manager-express-server/.cursor/architecture/010-hybrid-crm-ops-tracker.md" },
+    { "label": "Finance domains", "path": "finances-manager-express-server/.cursor/architecture/011-finance-domains.md" },
+    { "label": "Dispatcher exposure", "path": "finances-manager-express-server/.cursor/architecture/012-project-dispatcher-exposure.md" },
+    { "label": "Data migration from ops-tracker", "path": "finances-manager-storage-express-server/docs/DATA_MIGRATION.md" }
+  ]
+}

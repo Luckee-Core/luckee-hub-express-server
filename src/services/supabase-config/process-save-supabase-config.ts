@@ -1,7 +1,7 @@
 import path from 'path';
 
 import {
-  buildSupabaseDatabaseUrl,
+  extractSupabaseProjectRef,
   getHubRoot,
   resolveProjectForSupabase,
   upsertEnvKeys,
@@ -13,8 +13,10 @@ type SaveResult =
   | { error: string; status: 400 | 500 };
 
 /**
- * Upsert SUPABASE_URL, SUPABASE_SERVICE_KEY, SUPABASE_DATABASE_PASSWORD, and DATABASE_URL
- * into the project's express .env.
+ * Upsert SUPABASE_URL and the service role key into the project's express .env.
+ * The key is written under the name the registry expects (SUPABASE_SERVICE_ROLE_KEY by default,
+ * SUPABASE_SERVICE_KEY when that is what `supabase.envKeys` lists). DATABASE_URL is not touched —
+ * it belongs to local Postgres / storage.
  */
 export const processSaveSupabaseConfig = (
   projectId: string,
@@ -29,35 +31,33 @@ export const processSaveSupabaseConfig = (
 
   const supabaseUrl = input.supabaseUrl?.trim() ?? '';
   const serviceKey = input.serviceKey?.trim() ?? '';
-  const databasePassword = input.databasePassword?.trim() ?? '';
 
-  if (!supabaseUrl || !serviceKey || !databasePassword) {
+  if (!supabaseUrl || !serviceKey) {
+    return { error: 'supabaseUrl and serviceKey are required', status: 400 };
+  }
+
+  if (!extractSupabaseProjectRef(supabaseUrl)) {
     return {
-      error: 'supabaseUrl, serviceKey, and databasePassword are required',
+      error: 'Check the Supabase project URL format (https://{ref}.supabase.co)',
       status: 400,
     };
   }
 
-  const databaseUrl = buildSupabaseDatabaseUrl(supabaseUrl, databasePassword);
-  if (!databaseUrl) {
-    return {
-      error: 'Could not build DATABASE_URL — check the Supabase project URL format (https://{ref}.supabase.co)',
-      status: 400,
-    };
-  }
+  const serviceKeyName = resolved.supabase.envKeys.includes('SUPABASE_SERVICE_KEY')
+    ? 'SUPABASE_SERVICE_KEY'
+    : 'SUPABASE_SERVICE_ROLE_KEY';
 
   const expressDir = resolved.merged.expressDir!;
   const envPath = upsertEnvKeys(expressDir, {
     SUPABASE_URL: supabaseUrl,
-    SUPABASE_SERVICE_KEY: serviceKey,
-    SUPABASE_DATABASE_PASSWORD: databasePassword,
-    DATABASE_URL: databaseUrl,
+    [serviceKeyName]: serviceKey,
   });
 
   const relativePath = path.join(path.basename(expressDir), '.env');
   console.log('✅ [supabase-config.processSaveSupabaseConfig] Wrote .env', {
     projectId,
     envPath,
+    serviceKeyName,
   });
 
   return {

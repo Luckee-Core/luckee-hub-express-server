@@ -61,7 +61,7 @@ export const processListProjects = (
       paths: local ? { workspaceFile: resolveProjectWorkspaceFile(local) } : undefined,
       localDatabaseSupported: !!entry.localDatabase,
       supabaseSupported: !!entry.supabase,
-      expressEnvGroupIds: entry.expressEnv?.groups ? Object.keys(entry.expressEnv.groups) : [],
+      dataPlane: entry.dataPlane,
       postgresActiveConsumer: entry.localDatabase ? isPostgresConsumer(entry.id) : false,
       storageExpressSupported: projectHasStorageExpressRepo(entry),
       storagePort,

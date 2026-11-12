@@ -1,0 +1,113 @@
+{
+  "projectId": "my-health",
+  "updatedAt": "2026-11-12",
+  "tagline": "A private, self-hosted health record — care team, appointments, symptoms, medications and imported clinical summaries — kept in Postgres on your own machine.",
+  "summary": [
+    "My Health replaces the scatter of portal PDFs, notes and calendar invites with one dashboard. It tracks your **care team** (hospitals, specialties, doctors), **appointments**, a **journal** of focus areas and daily entries, and a **health record** of medical history events, symptom logs and research notes. A morning check-in logs symptom severity for last night, this morning and now.",
+    "It can import a hospital **Health Summary** (a C-CDA zip/XML export from patient portals): a wizard previews the file in memory and commits allergies, medications, conditions, vital signs, results, clinical notes, referrals and insurance into their own tables. Everything stays in local Postgres; the API binds to your machine and nothing is uploaded anywhere."
+  ],
+  "audience": [
+    "You (or someone you care for) have many doctors and visits and want one place to see them.",
+    "Your patient portal can export a Health Summary / C-CDA package.",
+    "You want health data on your own machine, not in another cloud app."
+  ],
+  "notFor": [
+    "Clinical use, diagnosis or sharing with providers — it's a personal record.",
+    "Syncing with Apple Health, wearables or portals automatically — imports are manual files.",
+    "Speech therapy and tube-feed tracking — those are moving to the separate speech-therapy-tracker project."
+  ],
+  "capabilities": [
+    { "title": "Care team", "detail": "`/hospitals`, `/specialties`, `/doctors` — doctors linked to facilities and specialties." },
+    { "title": "Appointments", "detail": "`/appointments` — visits with doctor, facility and date." },
+    { "title": "Journal", "detail": "`/focus-areas` and `/daily-entries` for what you're working on and daily notes." },
+    { "title": "Health record", "detail": "`/medical-history-events`, `/symptom-logs`, `/research-notes` (+ `/research-note-detail-page`)." },
+    { "title": "Morning check-in", "detail": "`/morning-check-in` logs symptom severity and notes for three time windows; only rated rows are saved." },
+    { "title": "Clinical import", "detail": "`/health-import` wizard (upload → preview → done) for C-CDA zip/XML up to 25 MB, parsed in memory; `/health-imports` lists past imports." },
+    { "title": "Imported clinical data", "detail": "`/allergies`, `/medications`, `/conditions`, `/vital-signs`, `/clinical-results`, `/clinical-notes`, `/referrals`, `/insurance-coverages`." },
+    { "title": "Docs and API reference", "detail": "`/docs/getting-started` and `/docs/api` (from `GET /api-docs.json`)." }
+  ],
+  "components": [
+    {
+      "repoName": "my-health-open-source",
+      "name": "Web app",
+      "stack": "Next.js, Redux Toolkit, lucide-react",
+      "runsOn": "Your machine (Hub port 3033)",
+      "owns": "Landing, dashboard, all record screens, import wizard and docs. Calls `NEXT_PUBLIC_API_URL`.",
+      "doesNotOwn": "Database credentials.",
+      "inHub": true
+    },
+    {
+      "repoName": "my-health-open-source-express-server",
+      "name": "API",
+      "stack": "Express 5 + TypeScript, `pg`, `multer`, `adm-zip`, `fast-xml-parser`",
+      "runsOn": "Your machine (`.env.example` 3009; registry 3032)",
+      "owns": "Local Postgres `my_health` (`migrations/`), CRUD under `/api/data/*`, C-CDA import preview/commit, API docs catalog.",
+      "doesNotOwn": "Auth — none; localhost only.",
+      "inHub": true
+    }
+  ],
+  "dataFlow": [
+    "Create `my_health` and apply `migrations/setup.sql` (or numbered files); the API connects with `DATABASE_URL` at boot.",
+    "The web app calls `/api/data/<entity>` for every list and form.",
+    "Import: the zip/XML is uploaded to `POST /api/data/health-imports/preview` (memory only), parsed, shown for review, then committed into the clinical tables.",
+    "Nothing leaves your machine."
+  ],
+  "trust": [
+    { "title": "Browser", "detail": "Only the API URL and landing links." },
+    { "title": "API (your machine)", "detail": "Holds `DATABASE_URL`. Uploaded health files are parsed in memory, never written to disk." },
+    { "title": "Postgres", "detail": "All health data (PHI) lives in your local `my_health` database — back it up and protect your machine." }
+  ],
+  "commonTasks": [
+    {
+      "title": "First-time setup",
+      "when": "Fresh clone.",
+      "steps": [
+        "Run **Setup** in Hub.",
+        "On the **API Express** repo, **Set up local database** to create `my_health` and apply migrations (`seed.sql` adds sample rows).",
+        "Set `DATABASE_URL` in the API's Environment step.",
+        "Set `NEXT_PUBLIC_API_URL` on the web to the API's real port.",
+        "Press **Run** and open `/dashboard`."
+      ]
+    },
+    {
+      "title": "Import a Health Summary",
+      "when": "After a hospital visit or when you get a portal export.",
+      "steps": [
+        "Download the Health Summary (C-CDA zip) from your patient portal.",
+        "Open `/health-import`, upload, review the preview and commit.",
+        "Check `/medications`, `/allergies` and the other clinical pages."
+      ]
+    },
+    {
+      "title": "Log a visit",
+      "when": "You booked or attended an appointment.",
+      "steps": [
+        "Make sure the doctor and hospital exist on `/doctors` and `/hospitals`.",
+        "Add the appointment on `/appointments`; record notes in `/daily-entries` or `/medical-history-events`."
+      ]
+    }
+  ],
+  "troubleshooting": [
+    { "symptom": "Web shows errors on every page", "fix": "The API isn't running or `NEXT_PUBLIC_API_URL` points at the wrong port (default 3009; Hub may use 3032)." },
+    { "symptom": "API starts but data routes 500", "fix": "`DATABASE_URL` missing or migrations not applied." },
+    { "symptom": "Import preview fails", "fix": "The file must be a C-CDA zip or XML under 25 MB; other portal formats aren't parsed." },
+    { "symptom": "Errors about therapy or feed tables", "fix": "Those features are being removed from this repo (uncommitted) and live in speech-therapy-tracker." }
+  ],
+  "glossary": [
+    { "term": "C-CDA", "definition": "Standard clinical document format used by patient portal Health Summary exports." },
+    { "term": "Focus area", "definition": "A health topic you're actively tracking in the journal." },
+    { "term": "Health import", "definition": "One uploaded summary file and what was committed from it." }
+  ],
+  "hubNotes": [
+    "Both repos have large uncommitted changes removing therapy exercises and tube-feed tracking (~140 deleted files in web, ~120 in API) — they've moved to speech-therapy-tracker. Migrations 005–014 still create those tables.",
+    "The API defaults to port 3009 (shared with several projects); the registry says 3032.",
+    "`~/github/my-health/` also contains speech-therapy-tracker repos and an unrelated `your-health-dashboard` (Vite/Bun) folder."
+  ],
+  "links": [
+    { "label": "Pair quickstart", "path": "my-health-open-source-express-server/docs/oss-quickstart.md" },
+    { "label": "Local Postgres on Mac", "path": "my-health-open-source-express-server/docs/how-to/local-postgres-mac.md" },
+    { "label": "Wire contract", "path": "my-health-open-source-express-server/docs/oss/wire-contract.md" },
+    { "label": "Health import", "path": "my-health-open-source-express-server/.cursor/architecture/011-multipart-health-import.md" },
+    { "label": "Local Postgres data layer", "path": "my-health-open-source-express-server/.cursor/architecture/009-local-postgres-data-layer.md" }
+  ]
+}

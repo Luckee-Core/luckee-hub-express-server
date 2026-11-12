@@ -1,0 +1,138 @@
+{
+  "projectId": "extract-text",
+  "updatedAt": "2026-11-12",
+  "tagline": "Upload a PDF, name the fields you want, and get typed values back — from the web app or a pay-per-extraction API.",
+  "summary": [
+    "Extract Text pulls structured data out of PDFs. You upload a document and list the fields you expect (or pick a saved **PDF type**); Claude reads the pages and returns typed values you can review, accept or deny field by field. Once an extraction looks right you can save its fields as a PDF type and reuse it for the next document of the same kind.",
+    "It's a credit-based product: one credit pays for one successful extraction, failed extractions refund it, and packs are sold through Stripe Checkout. Developers can create `etp_live_` API keys and call `POST /api/v1/extract` directly. The browser signs in with Supabase; Express verifies the JWT, stores the PDF and calls a private Python service that does the actual parsing."
+  ],
+  "audience": [
+    "You process recurring PDFs (invoices, forms, statements) and want the same fields out of each one.",
+    "You're a developer who needs a simple PDF → JSON API with predictable per-document pricing.",
+    "You operate the product and need to run the three services and the Supabase project behind it."
+  ],
+  "notFor": [
+    "OCR of scanned images at scale or handwriting — it reads PDF pages (PyMuPDF) and asks Claude.",
+    "Bulk batch pipelines — one PDF per request.",
+    "A local-only tool — it depends on Supabase auth/storage and Stripe."
+  ],
+  "capabilities": [
+    { "title": "Workspace upload", "detail": "`/workspace` uploads a PDF with expected fields or a PDF type and runs the extraction." },
+    { "title": "Review results", "detail": "`/extractions` lists runs; `/extraction-detail-page` shows each field to accept, deny, edit or retry." },
+    { "title": "PDF types", "detail": "`/pdf-types` saves a field set from a good extraction and reapplies it (`POST /api/pdf-types/assign`)." },
+    { "title": "Credits and checkout", "detail": "Credit balance in the sidebar; Stripe one-time pack (`extract-credits-20`: 20 credits for $3) with `/checkout-return`; webhooks grant credits only when Stripe reports paid." },
+    { "title": "Developer API", "detail": "`/developer` creates and revokes `etp_live_` keys (stored as SHA-256 hashes); `POST /api/v1/extract` runs the same pipeline." },
+    { "title": "Public docs", "detail": "`/docs/extract`, `/docs/authentication`, `/docs/credits`." },
+    { "title": "AI ledger", "detail": "Each parse writes `extraction_requests`, `extraction_exchanges` (tokens, cost, read mode) and `extraction_responses`." },
+    { "title": "Sign-in", "detail": "Email or Google via Supabase; `/auth/callback` and a waitlist endpoint." }
+  ],
+  "components": [
+    {
+      "repoName": "extract-text-from-pdf-web",
+      "name": "Web app",
+      "stack": "Next.js, Redux Toolkit, Supabase JS, Vercel Analytics",
+      "runsOn": "Vercel or your machine (Hub port 3065)",
+      "owns": "Landing, auth, workspace, extractions, PDF types, developer page, docs. Calls Express at `NEXT_PUBLIC_EXPRESS_URL` with the Supabase JWT.",
+      "doesNotOwn": "PDF storage paths, the Python URL/token, Stripe secrets.",
+      "inHub": true
+    },
+    {
+      "repoName": "extract-text-from-pdf-express-server",
+      "name": "API gateway",
+      "stack": "Express + TypeScript, Supabase JS, `multer`, Stripe",
+      "runsOn": "Railway or your machine (port 3064)",
+      "owns": "JWT/API-key auth, PDF upload to Supabase Storage, credits (consume/refund), Stripe checkout + webhook, PDF types, field reviews, the AI ledger, `supabase/migrations/`.",
+      "doesNotOwn": "Reading the PDF — it delegates to Python.",
+      "inHub": true
+    },
+    {
+      "repoName": "extract-text-from-pdf-python-server",
+      "name": "Extraction service",
+      "stack": "FastAPI, PyMuPDF, Anthropic",
+      "runsOn": "Private host reachable only from Express",
+      "owns": "Reading PDF pages and the Claude prompt/response that returns field values. Requires `PYTHON_INTERNAL_TOKEN`.",
+      "doesNotOwn": "Users, credits or storage.",
+      "inHub": false
+    }
+  ],
+  "dataFlow": [
+    "The user signs in with Supabase in the browser; the web app sends the JWT to Express (or an `etp_live_` key for the API).",
+    "Express consumes one credit (402 if the balance is zero), uploads the PDF to Supabase Storage and creates an `extractions` row.",
+    "Express calls the Python service at `PYTHON_SERVER_URL` with `PYTHON_INTERNAL_TOKEN`; Python reads pages with PyMuPDF and asks Claude for the fields.",
+    "Express stores the fields and the request/exchange/response ledger; on failure it refunds the credit.",
+    "Buying credits: Express creates a Stripe Checkout Session, the webhook (`STRIPE_WEBHOOK_SECRET`) marks the pack paid and adds credits."
+  ],
+  "trust": [
+    { "title": "Browser", "detail": "Supabase anon key and its own JWT only. Never sees storage paths, the Python URL or token." },
+    { "title": "Express", "detail": "Supabase service role key, Stripe secret and webhook secret, Python internal token. Verifies every JWT with `auth.getUser`." },
+    { "title": "Python service", "detail": "Anthropic key; trusts only requests with the internal token. Should not be publicly reachable." },
+    { "title": "Supabase / Stripe / Anthropic", "detail": "Users, PDFs and balances in Supabase; card data stays on Stripe; PDF contents go to Anthropic." }
+  ],
+  "commonTasks": [
+    {
+      "title": "Run the stack locally",
+      "when": "Developing or testing.",
+      "steps": [
+        "Run **Setup** in Hub for web and API; clone `extract-text-from-pdf-python-server` next to them yourself.",
+        "Apply `supabase/migrations/001…008` to your Supabase project and create the PDF storage bucket.",
+        "Set `SUPABASE_URL`, `SUPABASE_SERVICE_ROLE_KEY`, `PYTHON_SERVER_URL`, `PYTHON_INTERNAL_TOKEN`, `WEB_ORIGIN` (and Stripe vars if testing checkout) on the API.",
+        "Start Python (`python main.py`) with `ANTHROPIC_API_KEY` and the same `PYTHON_INTERNAL_TOKEN`.",
+        "Set `NEXT_PUBLIC_EXPRESS_URL=http://localhost:3064` and the Supabase public vars on the web, then **Run**."
+      ]
+    },
+    {
+      "title": "Extract a new kind of document",
+      "when": "First PDF of a new layout.",
+      "steps": [
+        "In `/workspace`, upload the PDF and list the fields you expect.",
+        "Review the result; deny wrong fields and retry if needed.",
+        "Save it as a PDF type so the next upload only needs the type."
+      ]
+    },
+    {
+      "title": "Call the API",
+      "when": "Integrating from another system.",
+      "steps": [
+        "Create a key on `/developer` (shown once).",
+        "`POST /api/v1/extract` with `Authorization: Bearer etp_live_…`, the PDF, and either `pdfTypeId` or inline `fields`.",
+        "Watch for 402 (out of credits) and 401 (bad key)."
+      ]
+    },
+    {
+      "title": "Test credit purchases",
+      "when": "Changing pricing or checkout.",
+      "steps": [
+        "Set `STRIPE_SECRET_KEY`, `STRIPE_WEBHOOK_SECRET` and `STRIPE_PRICE_EXTRACT_CREDITS_20` on the API.",
+        "Forward webhooks with `stripe listen --forward-to localhost:3064/...` and buy a pack from the app.",
+        "Credits appear after the webhook, not on the success redirect."
+      ]
+    }
+  ],
+  "troubleshooting": [
+    { "symptom": "Extraction returns 402", "fix": "No credits left. Buy a pack, or add balance in `extract_balance` for testing." },
+    { "symptom": "Every request returns 401", "fix": "No Supabase session reached Express, or the API key isn't an active `etp_live_` key." },
+    { "symptom": "Extractions fail with a server error", "fix": "Python service down or token mismatch. Check `PYTHON_SERVER_URL`, matching `PYTHON_INTERNAL_TOKEN`, and the Python `ANTHROPIC_API_KEY`. The credit is refunded." },
+    { "symptom": "Paid but no credits", "fix": "The Stripe webhook didn't arrive or `STRIPE_WEBHOOK_SECRET` is wrong." },
+    { "symptom": "Web can't reach the API", "fix": "`NEXT_PUBLIC_EXPRESS_URL` must point at port 3064 (older builds used 3009); add the web origin to `WEB_ORIGIN`." }
+  ],
+  "glossary": [
+    { "term": "PDF type", "definition": "A saved set of expected fields reused for documents with the same layout." },
+    { "term": "Credit", "definition": "One successful extraction; refunded on failure." },
+    { "term": "Read mode", "definition": "How the PDF was read for Claude (recorded on the exchange)." },
+    { "term": "etp_live_ key", "definition": "Developer API key prefix; only its hash and prefix are stored." }
+  ],
+  "hubNotes": [
+    "`extract-text-from-pdf-python-server` isn't in the registry, so Hub can't run it — extractions fail unless you start it yourself. Consider registering it as a third repo.",
+    "Neither the web nor the API repo has a `.env.example`; use the env vars listed here (taken from the code).",
+    "No local Postgres — data, auth and files live in Supabase (`supabase/migrations/`).",
+    "Repo READMEs are still the templates; the ADRs (web 013–017, express 009–012) are the real docs."
+  ],
+  "links": [
+    { "label": "PDF extraction gateway", "path": "extract-text-from-pdf-express-server/.cursor/architecture/010-pdf-extraction-gateway.md" },
+    { "label": "Extraction AI ledger", "path": "extract-text-from-pdf-express-server/.cursor/architecture/011-extraction-ai-ledger.md" },
+    { "label": "Credits, API keys and v1 extract", "path": "extract-text-from-pdf-express-server/.cursor/architecture/012-credits-api-keys-and-v1-extract.md" },
+    { "label": "Stripe one-time checkout", "path": "extract-text-from-pdf-express-server/.cursor/architecture/009-stripe-checkout-one-time-payment.md" },
+    { "label": "Extraction workspace (web)", "path": "extract-text-from-pdf-web/.cursor/architecture/015-extraction-workspace.md" },
+    { "label": "Browser Supabase auth", "path": "extract-text-from-pdf-web/.cursor/architecture/013-browser-supabase-auth.md" }
+  ]
+}

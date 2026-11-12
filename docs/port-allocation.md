@@ -10,10 +10,7 @@
 
 ## Project preferred ports (3010+)
 
-Projects use **preferred** API and web ports defined in:
-
-- [`data/projects.registry.json`](../data/projects.registry.json)
-- [`luckee-hub/src/config/hub-catalog.ts`](../../luckee-hub/src/config/hub-catalog.ts) (web mirror)
+Projects use **preferred** API and web ports defined in [`data/projects.registry.json`](../data/projects.registry.json), the only project catalog. The hub web app reads it through `GET /api/projects`.
 
 Ports are assigned in catalog order (+2 per full-stack app). There is **no maximum** — append new projects at the end (e.g. after 3043 → 3044 API / 3045 web).
 
@@ -34,7 +31,7 @@ Run `npm run suggest:ports` to print the next suggested pair.
 ## Adding a new project
 
 1. `npm run suggest:ports` — get next API/web pair
-2. Add entry to `projects.registry.json` and `hub-catalog.ts`
+2. Add entry to `projects.registry.json`
 3. Add paths to `hub.local.json.example` and your local `hub.local.json`
 4. `npm run validate:ports` — must pass (no duplicates, no hub collision)
 

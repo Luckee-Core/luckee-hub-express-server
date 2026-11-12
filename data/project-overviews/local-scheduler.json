@@ -1,0 +1,121 @@
+{
+  "projectId": "local-scheduler",
+  "updatedAt": "2026-11-12",
+  "tagline": "A local cron daemon for your other Express apps — it wakes a worker up, calls its endpoint on schedule, and keeps a run history.",
+  "summary": [
+    "Local Scheduler runs scheduled HTTP tasks against worker Express apps on your Mac — the Gmail Manager inbox jobs, the Philly AI Consulting email queue and similar. Each task has a schedule (daily at a time, or every N minutes inside a weekday/hour window), a worker to call and an endpoint path.",
+    "On each tick it checks the worker's health; if the worker isn't running it starts it, calls the endpoint with the worker's cron secret, records the run, and stops the worker again if it was the one that started it. Tasks and runs live in local Postgres; the dashboard lets you add tasks, toggle them, run them now and browse history."
+  ],
+  "audience": [
+    "You have local Express apps with cron-style endpoints (queues, inbox processing) that must run on a schedule.",
+    "You don't want those apps running all day just to be available for a few jobs.",
+    "You're happy keeping a small daemon running on your Mac (optionally as a launchd login item)."
+  ],
+  "notFor": [
+    "Cloud or multi-machine scheduling — it binds to 127.0.0.1 and runs only while your Mac is awake.",
+    "Running arbitrary shell commands — tasks are HTTP calls to worker Express apps.",
+    "Exposure on a network — there's no auth on the API by design."
+  ],
+  "capabilities": [
+    { "title": "Tasks table", "detail": "`/` lists scheduled tasks with enabled toggles; `/task-detail-page` edits one." },
+    { "title": "Create tasks", "detail": "`/task-create-page` (or `POST /api/tasks`, `?upsert=true` to update by id; `scripts/register-task.sh` from another repo)." },
+    { "title": "Daily and interval schedules", "detail": "Daily at hour:minute, or every N minutes between `hourStart` and `hourEnd` on chosen weekdays, in a timezone." },
+    { "title": "Run now", "detail": "`POST /api/tasks/:id/run-now` triggers a task immediately." },
+    { "title": "Run history", "detail": "`/runs` shows every run with status and timing (`scheduler_runs`)." },
+    { "title": "Worker lifecycle", "detail": "Health-probe the worker; spawn it with nvm if it's down; `SIGTERM` it afterwards only if the scheduler started it. PIDs and logs go under `SCHEDULER_WORKERS_DIR`." },
+    { "title": "launchd install", "detail": "`scripts/install-launchd.sh` keeps the daemon running at login." }
+  ],
+  "components": [
+    {
+      "repoName": "local-scheduler-web",
+      "name": "Dashboard",
+      "stack": "Next.js, Redux Toolkit",
+      "runsOn": "Your machine (README default 4121; Hub port 3023)",
+      "owns": "Tasks table, create/detail pages and run history. Calls the API at `NEXT_PUBLIC_API_URL`.",
+      "doesNotOwn": "Scheduling — closing the dashboard doesn't stop jobs.",
+      "inHub": true
+    },
+    {
+      "repoName": "local-scheduler-express-server",
+      "name": "Scheduler daemon",
+      "stack": "Express + TypeScript, `node-cron`, Luxon, `pg`",
+      "runsOn": "Your machine, `127.0.0.1` only (README default 4120; registry 3022)",
+      "owns": "Task CRUD, the in-process cron engine, worker spawn/stop, run history, `scheduler.local.json` worker paths, `sql/migrations/`.",
+      "doesNotOwn": "The work itself — each worker app does the job when called.",
+      "inHub": true
+    }
+  ],
+  "dataFlow": [
+    "Tasks are stored in `scheduled_tasks` (seeded from `data/tasks.registry.json` with `npm run db:seed`).",
+    "On boot and after every task change, the daemon registers a 5-field `node-cron` job per enabled task.",
+    "On a tick it probes the worker's `healthPath`; if down, it spawns the worker from `scheduler.local.json` (`expressDir`, `port`, `nvmSh`).",
+    "It calls the task's endpoint with the secret named by the task's `authEnvKey` (e.g. `GMAIL_MANAGER_CRON_SECRET`) and writes a `scheduler_runs` row.",
+    "If it started the worker, it stops it when the task finishes."
+  ],
+  "trust": [
+    { "title": "Dashboard", "detail": "Only the API URL." },
+    { "title": "Daemon (your machine)", "detail": "Holds `DATABASE_URL` and each worker's cron secret. Binds to 127.0.0.1; no API auth." },
+    { "title": "Workers", "detail": "Accept scheduled calls only with their own `CRON_SECRET`, which must match the daemon's env value." }
+  ],
+  "commonTasks": [
+    {
+      "title": "First-time setup",
+      "when": "Fresh clone.",
+      "steps": [
+        "Run **Setup** in Hub.",
+        "On the **API Express** repo, **Set up local database** (creates `local_scheduler` and applies `sql/migrations/`).",
+        "Copy `scheduler.local.json.example` to `scheduler.local.json` and fill in absolute `expressDir` paths and ports for each worker.",
+        "Add the worker secrets (`GMAIL_MANAGER_CRON_SECRET`, `PHILLY_AI_CONSULTING_CRON_SECRET`, …) to the API's Environment step.",
+        "Run `npm run db:seed` for the default tasks, then **Run**."
+      ]
+    },
+    {
+      "title": "Add a task for another app",
+      "when": "A worker gets a new cron endpoint.",
+      "steps": [
+        "Add the worker to `scheduler.local.json` if it isn't there.",
+        "Create the task on `/task-create-page` (schedule, worker, path, auth env key) or `./scripts/register-task.sh ./task.json`.",
+        "Use **Run now** once and check `/runs`."
+      ]
+    },
+    {
+      "title": "Pause a job",
+      "when": "A worker is misbehaving.",
+      "steps": [
+        "Toggle the task off on `/` — the cron job is unregistered immediately."
+      ]
+    },
+    {
+      "title": "Keep it running after reboot",
+      "when": "You rely on the jobs daily.",
+      "steps": [
+        "Run `./scripts/install-launchd.sh` in the express repo."
+      ]
+    }
+  ],
+  "troubleshooting": [
+    { "symptom": "A task runs every minute instead of every N minutes", "fix": "A 6-field cron expression slipped in. Expressions must be 5-field (see ADR 009); check the task's schedule." },
+    { "symptom": "Runs fail with 401/403 from the worker", "fix": "The cron secret in the daemon's env doesn't match the worker's `CRON_SECRET`, or the task's `authEnvKey` names the wrong variable." },
+    { "symptom": "Worker never starts", "fix": "Wrong `expressDir`/`port`/`nvmSh` in `scheduler.local.json`; check logs under `SCHEDULER_WORKERS_DIR` (default `/tmp/local-scheduler/workers/`)." },
+    { "symptom": "Some ticks are skipped", "fix": "A previous task was still running (`tickInProgress`). Spread schedules out or shorten the job." },
+    { "symptom": "Dashboard can't load tasks", "fix": "`NEXT_PUBLIC_API_URL` must match the daemon's `PORT` (4120 standalone)." }
+  ],
+  "glossary": [
+    { "term": "Worker", "definition": "An Express app the scheduler calls (e.g. my-gmail-manager-express-server)." },
+    { "term": "Interval schedule", "definition": "Every N minutes within an hour window on chosen weekdays." },
+    { "term": "authEnvKey", "definition": "Name of the env var holding the secret sent to that task's worker." },
+    { "term": "scheduler.local.json", "definition": "Gitignored file with machine-specific worker paths and ports." }
+  ],
+  "hubNotes": [
+    "The READMEs use ports 4120 (API) / 4121 (web), but the registry gives 3022 / 3023. Keep `NEXT_PUBLIC_API_URL` in sync with whichever the API really uses.",
+    "The registry's `expectedTables` include `scheduler_project` and `scheduler_project_repo`, which no migration creates — only `scheduled_tasks` and `scheduler_runs` exist.",
+    "Seeded tasks target philly-ai-consulting-express-server and my-gmail-manager-express-server; neither will run unless those repos are cloned and listed in `scheduler.local.json`.",
+    "Running the daemon from Hub stops scheduling when Hub stops it; use launchd for always-on."
+  ],
+  "links": [
+    { "label": "Local scheduler service", "path": "local-scheduler-express-server/.cursor/architecture/009-local-scheduler-service.md" },
+    { "label": "API README", "path": "local-scheduler-express-server/README.md" },
+    { "label": "Seed tasks", "path": "local-scheduler-express-server/data/tasks.registry.json" },
+    { "label": "Worker paths example", "path": "local-scheduler-express-server/scheduler.local.json.example" }
+  ]
+}

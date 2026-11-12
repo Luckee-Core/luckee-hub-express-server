@@ -1,0 +1,133 @@
+{
+  "projectId": "code-your-resume",
+  "updatedAt": "2026-11-12",
+  "tagline": "A job-search CRM with AI studios that turn your projects, skills and voice into tailored resumes, cover letters and application answers — designed as TSX you can edit.",
+  "summary": [
+    "Code Your Resume tracks the job hunt — companies, jobs, applications, employment history and application questions — and keeps the material an AI needs to write about you: projects with notes, a technical skills list, LinkedIn history and a voice/tone note.",
+    "From any job it generates job-specific graphics: resumes, skills components and US Letter cover letters as TSX that open in the Graphics Studio for live preview and PNG export. **Quick apply** on the dashboard takes a company URL and a job listing URL, scrapes both, creates the CRM rows and queues resume generation in one step. Everything is stored in local Postgres through the Express API."
+  ],
+  "audience": [
+    "You're actively job-hunting and applying to many roles that each need a tailored resume and cover letter.",
+    "You want your work history captured once (projects, skills, voice) and reused by AI for every application.",
+    "You're comfortable with code-defined documents (TSX + Tailwind) and running Postgres locally."
+  ],
+  "notFor": [
+    "Recruiters managing candidates — it's a single job-seeker's CRM with no multi-user auth.",
+    "A hosted resume builder — it runs locally; AI generation needs your own Anthropic and Cursor keys.",
+    "Applying on your behalf — it prepares materials; you still submit applications."
+  ],
+  "capabilities": [
+    { "title": "Job-search CRM", "detail": "`/companies`, `/jobs`, `/job-questions` and their detail pages track companies, employees, jobs, applications and employment (`/api/data/<entity>/<action>`)." },
+    { "title": "Job Studio", "detail": "`/job-detail-page` shows listing bullets, an **At a glance** summary, job-scoped graphics, the applications log and a coach chat." },
+    { "title": "Quick apply", "detail": "On `/dashboard`, paste a company URL and job URL; `POST /api/data/quick-apply/run` scrapes both, creates rows and queues resume generation." },
+    { "title": "Graphics Studio", "detail": "`/studio` edits TSX graphics (resumes, cover letters) with in-browser compile, live preview and PNG export." },
+    { "title": "Cover letters", "detail": "**Generate cover letter** on a job produces an 816×1056 TSX letter via a Cursor Cloud Agent and saves it as a graphic." },
+    { "title": "Experience studios", "detail": "`/experience/projects` (projects + notes, AI-synthesized), `/experience/studio` (technical skills with coach chat) and `/experience/voice` (tone notes) feed every generation." },
+    { "title": "My LinkedIn", "detail": "`/my-linkedin` syncs your profile, jobs, education and certifications via Apify." },
+    { "title": "Job newsletters", "detail": "`/job-newsletters` pulls job emails from Email Manager and extracts listings with AI." },
+    { "title": "AI prompts, costs and docs", "detail": "`/ai-prompts`, `/ai-costs`, and `/docs` (getting started, TSX security, API reference from `GET /api-docs.json`)." }
+  ],
+  "components": [
+    {
+      "repoName": "code-your-resume-open-source",
+      "name": "Web app",
+      "stack": "Next.js, Redux Toolkit, Tailwind, `@babel/standalone`, `html2canvas`, Sonner",
+      "runsOn": "Your machine (Hub port 3015)",
+      "owns": "Marketing landing, the CRM and studio UIs, TSX preview/export and in-app docs. Next rewrites `/api/data/*`, `/api/technical-skills/*`, `/api/voice-style/*` and `/api/job-studio/*` to Express.",
+      "doesNotOwn": "Database or AI keys.",
+      "inHub": true
+    },
+    {
+      "repoName": "code-your-resume-open-source-express-server",
+      "name": "API",
+      "stack": "Express + TypeScript, `pg`, Anthropic SDK",
+      "runsOn": "Your machine (default port 3053)",
+      "owns": "Local Postgres `code_your_resume` (`migrations/setup.sql`), all CRM and studio CRUD, AI extraction/research/coach chat (Anthropic), cover letter and skills generation (Cursor Cloud Agents), LinkedIn sync (Apify), job newsletter ingest, error log and AI ledgers.",
+      "doesNotOwn": "Auth — optional `CRM_API_SECRET` header gate only.",
+      "inHub": true
+    }
+  ],
+  "dataFlow": [
+    "Create `code_your_resume` and run `migrations/setup.sql`; Express connects with `DATABASE_URL`.",
+    "The browser calls same-origin `/api/*`; Next rewrites to Express (`EXPRESS_API_URL`, default `http://127.0.0.1:3053`).",
+    "Quick apply and job import scrape the listing and company site, and Anthropic extracts bullets and an At-a-glance summary.",
+    "Resume/cover letter generation builds context from projects, notes, skills and voice, then asks a Cursor Cloud Agent working in `CURSOR_TARGET_REPO` to write the TSX, which is saved as an image graphic.",
+    "LinkedIn sync calls Apify; job newsletters are pulled from Email Manager (`EMAIL_MANAGER_EXPRESS_URL`)."
+  ],
+  "trust": [
+    { "title": "Browser", "detail": "No secrets. TSX in the studio is compiled and run in your browser — treat it as trusted code (see `/docs/security/tsx-preview`)." },
+    { "title": "Express (your machine)", "detail": "Holds `DATABASE_URL`, `ANTHROPIC_API_KEY`, `CURSOR_API_KEY`, `APIFY_API_TOKEN`. Binds to 127.0.0.1 locally. No auth unless `CRM_API_SECRET` is set." },
+    { "title": "Third parties", "detail": "Anthropic gets listing text and your background; Cursor gets generation prompts and writes to your target repo; Apify fetches your LinkedIn profile." }
+  ],
+  "commonTasks": [
+    {
+      "title": "First-time setup",
+      "when": "Fresh clone.",
+      "steps": [
+        "Run **Setup** in Hub.",
+        "On the **API Express** repo, **Set up local database** (or `createdb code_your_resume && psql \"$DATABASE_URL\" -f migrations/setup.sql`).",
+        "Set `DATABASE_URL`, and optionally `ANTHROPIC_API_KEY`, `CURSOR_API_KEY` + `CURSOR_TARGET_REPO`, `APIFY_API_TOKEN` in the API's Environment step.",
+        "On the **Web** repo, set `EXPRESS_API_URL` to the API's port if it isn't 3053.",
+        "Press **Run** and open `/dashboard`."
+      ]
+    },
+    {
+      "title": "Fill in your background",
+      "when": "Before generating anything.",
+      "steps": [
+        "Add projects with notes at `/experience/projects`.",
+        "Build your skills list with the coach at `/experience/studio`.",
+        "Write tone notes at `/experience/voice`, and optionally sync `/my-linkedin`.",
+        "Generation requires at least projects or a voice note."
+      ]
+    },
+    {
+      "title": "Apply to a job",
+      "when": "You found a posting.",
+      "steps": [
+        "Use **Quick apply** on `/dashboard` with the company and job URLs, or create the job by hand and paste the description.",
+        "Open the job, review the bullets and At a glance summary.",
+        "Generate a resume and cover letter, then fine-tune them in the Graphics Studio and export PNGs.",
+        "Log the application on the job."
+      ]
+    },
+    {
+      "title": "Enable Cursor-based generation",
+      "when": "Generate resume / cover letter buttons fail.",
+      "steps": [
+        "Create a Cursor API key at cursor.com/settings and set `CURSOR_API_KEY`.",
+        "Set `CURSOR_TARGET_REPO` to the **web** repo (it has the `.cursor/architecture` the agent follows), install the Cursor GitHub App on it.",
+        "Long runs can take up to 20 minutes (`CURSOR_AGENT_MAX_WAIT_MS`)."
+      ]
+    }
+  ],
+  "troubleshooting": [
+    { "symptom": "Every page errors / API unreachable", "fix": "Express isn't on the port Next expects. Default is 3053; set `EXPRESS_API_URL` on the web if Hub runs the API elsewhere." },
+    { "symptom": "API fails at boot or data routes 500", "fix": "`DATABASE_URL` missing or migrations not applied. Run `migrations/setup.sql`." },
+    { "symptom": "401 on `/api/data/*`", "fix": "`CRM_API_SECRET` is set on Express but not on Next (or they differ)." },
+    { "symptom": "Generation says no narrative context", "fix": "Add at least one project or a voice note." },
+    { "symptom": "Cover letter generation times out", "fix": "Check the Cursor key, repo authorization and GitHub App; the Next proxy allows 300s, the agent poll up to 20 min." },
+    { "symptom": "LinkedIn sync fails", "fix": "Set `APIFY_API_TOKEN` and save your profile URL first." }
+  ],
+  "glossary": [
+    { "term": "Graphic", "definition": "A TSX document (resume, cover letter, skills component) stored in `image_graphics` and edited in the studio." },
+    { "term": "Job Studio", "definition": "The job detail page: listing bullets, graphics, applications and coach chat." },
+    { "term": "Quick apply", "definition": "One-shot pipeline from two URLs to CRM rows plus queued resume generation." },
+    { "term": "Voice style", "definition": "A single tone note (`voice_style`) included in every AI generation." },
+    { "term": "Tenant profile", "definition": "Your own LinkedIn profile row (`is_tenant`)." }
+  ],
+  "hubNotes": [
+    "The API defaults to port 3053 but the registry says `defaultApiPort: 3014`. The web falls back to 3053 when `EXPRESS_API_URL` is unset — set it if Hub runs the API on 3014.",
+    "The web README and several web ADRs (008, 013, 014, 021) still describe Supabase; the API moved to local Postgres (express ADR 012). Trust the express README.",
+    "The registry has no `localDatabase` entry, so **Set up local database** may not be offered — create `code_your_resume` and run `migrations/setup.sql` by hand.",
+    "Job newsletters need the Email Manager express running (`EMAIL_MANAGER_EXPRESS_URL`, default port 3051)."
+  ],
+  "links": [
+    { "label": "Wire contract", "path": "code-your-resume-open-source/docs/wire-contract.md" },
+    { "label": "Local Postgres data layer", "path": "code-your-resume-open-source-express-server/.cursor/architecture/012-local-postgres-data-layer.md" },
+    { "label": "Job Studio", "path": "code-your-resume-open-source/.cursor/architecture/013-job-studio.md" },
+    { "label": "Quick apply pipeline", "path": "code-your-resume-open-source/.cursor/architecture/023-quick-apply-pipeline.md" },
+    { "label": "Cover letter generation", "path": "code-your-resume-open-source/.cursor/architecture/014-cover-letter-generation.md" },
+    { "label": "Release readiness", "path": "code-your-resume-open-source-express-server/docs/oss/release-readiness-score.md" }
+  ]
+}

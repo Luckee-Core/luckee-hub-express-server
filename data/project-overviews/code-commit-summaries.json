@@ -1,0 +1,151 @@
+{
+  "projectId": "code-commit-summaries",
+  "updatedAt": "2026-11-12",
+  "tagline": "Turn your GitHub commits into per-project weekly summaries, a weekly coding recap, and a ready-to-film Instagram Reel script.",
+  "summary": [
+    "Code Commit Summaries syncs repositories and commits from the GitHub owners you allow into local Postgres, then uses AI to explain what you actually built. On a project's page you generate a project code week summary for a date range; the Coding Summary hub combines the overlapping project summaries into one weekly coding summary with a period recap, a feature/topic inventory and a short video script that's broken into Instagram Reel shots.",
+    "Projects aren't defined here anymore. Since the Code Control cutover, project names, descriptions and repo lists come from Code Control's software systems (through the studio gateway); this app stores only the operational data — commits, summaries, overviews — keyed by `software_system_id`. Data lives either in local Postgres or, in remote mode, behind a storage Express on the studio machine."
+  ],
+  "audience": [
+    "You commit across many repos and orgs and want a weekly narrative of what changed without reading `git log`.",
+    "You post build-in-public content and want a script and shot list generated from real commits.",
+    "You already run Code Control (and ideally the studio gateway) as the catalog of your software systems."
+  ],
+  "notFor": [
+    "Team analytics or productivity metrics — it summarizes one author's commits (`GITHUB_DEFAULT_AUTHOR`).",
+    "GitLab or Bitbucket — GitHub only, through a classic PAT.",
+    "Managing projects by itself — local `content_project` CRUD returns 403; projects are managed in Code Control."
+  ],
+  "capabilities": [
+    { "title": "GitHub catalog", "detail": "`/repos` and `/sources` sync orgs, repos and README text from `GITHUB_ALLOWED_OWNERS` into Postgres (`POST /api/github/repos/sync`)." },
+    { "title": "Commit browser", "detail": "`/commits` and `/commit-detail-page` list stored commits per repo and date window." },
+    { "title": "Projects from Code Control", "detail": "`/projects` lists software systems from Code Control with commit counts; a sync modal links, creates or skips unlinked projects." },
+    { "title": "Project week summaries", "detail": "On `/project-detail-page`, generate a summary of a project's commits for a date range (Anthropic). Opens in `/project-summary-detail-page`." },
+    { "title": "Weekly coding summary", "detail": "`/coding-summary` → **New script run** combines completed project summaries into a period recap, a feature inventory (stats from stored commits, not the model) and a video script (Gemini)." },
+    { "title": "Instagram Reel plan", "detail": "Each weekly summary gets a shot list capped at 70s (`instagram_reel` / `instagram_reel_shot`); **Regenerate from script** rebuilds it." },
+    { "title": "Doc-backed project overview", "detail": "`/project-overview-detail-page` synthesizes READMEs, getting-started docs and landing page source into one product narrative." },
+    { "title": "AI prompts and costs", "detail": "`/ai-prompts` edits the prompt per AI flow; `/ai-costs` shows the exchange ledger (tokens and cost per call)." },
+    { "title": "Public read API", "detail": "`GET /api/public/v1/projects` (+ `/:projectId`, `/:projectId/commits`) — no auth, localhost-only by default." }
+  ],
+  "components": [
+    {
+      "repoName": "code-commit-summaries-web",
+      "name": "Web app",
+      "stack": "Next.js, Redux Toolkit, Tailwind",
+      "runsOn": "Your machine (port 3047)",
+      "owns": "Landing page, dashboard and all screens. Next.js API routes under `src/app/api/*` proxy to Express and add `SERVICES_API_KEY` server-side.",
+      "doesNotOwn": "Database, GitHub or AI keys.",
+      "inHub": true
+    },
+    {
+      "repoName": "code-commit-summaries-express-server",
+      "name": "API",
+      "stack": "Express + TypeScript, `pg`, Anthropic SDK, Google Generative AI",
+      "runsOn": "Your machine (port 3046)",
+      "owns": "GitHub sync, summary generation (Anthropic per project, Gemini for weekly scripts), reel shot building, the public API, and the Code Control gateway calls. `/api/*` is gated by `SERVICES_API_KEY` when set.",
+      "doesNotOwn": "Project identity (Code Control). In remote mode it doesn't touch Postgres directly.",
+      "inHub": true
+    },
+    {
+      "repoName": "code-commit-summaries-storage-express-server",
+      "name": "Storage server",
+      "stack": "Express + TypeScript, `pg`",
+      "runsOn": "The machine that owns the `commit_summaries` Postgres (port 3079), usually the studio, reached through the on-device dispatcher",
+      "owns": "Canonical CRUD via `POST /api/storage/v1/invoke`, migrations, seed export/import, and the dispatcher exposed-endpoints list.",
+      "doesNotOwn": "GitHub, AI or HTTP for the browser.",
+      "inHub": true
+    }
+  ],
+  "dataFlow": [
+    "Express syncs repos and commits from GitHub with `GITHUB_PERSONAL_ACCESS_TOKEN` (scopes `repo` + `read:org`) and stores them.",
+    "Storage is either local (`DATABASE_URL` → `commit_summaries`) or remote (`STORAGE_MODE=remote` → `STORAGE_EXPRESS_URL`, usually the studio gateway with `DISPATCHER_GATE_SECRET`).",
+    "Project lists come from Code Control through `MAIN_GATEWAY_URL` (`getAllSoftwareSystems`, `getAllSoftwareSystemRepos`).",
+    "Generating a project summary sends that project's commits to Anthropic; each call is logged to an exchanges table with its cost.",
+    "A weekly script run sends the overlapping project summaries to Gemini, then builds the reel shots in code.",
+    "The browser only talks to Next.js API routes, which proxy to Express."
+  ],
+  "trust": [
+    { "title": "Browser", "detail": "Talks only to Next.js routes. `SERVICES_API_KEY` is added server-side and never shipped to the client." },
+    { "title": "Express (your machine)", "detail": "Holds the GitHub PAT, `ANTHROPIC_API_KEY`, `GEMINI_API_KEY` and the gateway secret." },
+    { "title": "Storage host", "detail": "The only place with `DATABASE_URL` in remote mode; accepts calls carrying the shared storage/dispatcher secret." },
+    { "title": "GitHub / Anthropic / Google", "detail": "Commit messages and diffs-derived text are sent to the AI providers when you generate summaries." }
+  ],
+  "commonTasks": [
+    {
+      "title": "First-time setup (local storage)",
+      "when": "Running everything on one machine.",
+      "steps": [
+        "Run **Setup** in Hub.",
+        "Open the **Storage Express** repo → **Set up local database** to create `commit_summaries` and apply `migrations/`.",
+        "In the API's **Environment** step set `GITHUB_PERSONAL_ACCESS_TOKEN`, `GITHUB_ALLOWED_OWNERS`, `GITHUB_DEFAULT_AUTHOR`, `ANTHROPIC_API_KEY`, `GEMINI_API_KEY` and `DATABASE_URL`.",
+        "Make sure `SERVICES_API_KEY` matches on web and API (or leave both empty locally).",
+        "Press **Run**, open the web app and sync repos from `/sources`."
+      ]
+    },
+    {
+      "title": "Use the studio's storage (remote mode)",
+      "when": "The canonical database lives on the studio machine.",
+      "steps": [
+        "Pick the **remote** data plane in the API's Environment step (`STORAGE_MODE=remote`).",
+        "Set `STORAGE_EXPRESS_URL` to the studio gateway (e.g. `http://<studio-ip>:3010/code-commit-summaries`) and `DISPATCHER_GATE_SECRET`.",
+        "Restart and check that `/projects` loads."
+      ]
+    },
+    {
+      "title": "Write this week's summary",
+      "when": "End of the week.",
+      "steps": [
+        "Sync commits (`/sources` or `/repos`).",
+        "Open each active project on `/projects` and generate a project summary for the week.",
+        "Go to `/coding-summary` → **New script run** for the same range.",
+        "Open the run to read the recap, feature inventory and the **Instagram Reel** tab."
+      ]
+    },
+    {
+      "title": "Link projects to Code Control",
+      "when": "A software system is missing or `/projects` is empty.",
+      "steps": [
+        "Set `MAIN_GATEWAY_URL` and `DISPATCHER_GATE_SECRET` on the API.",
+        "Open the sync modal on `/projects` and choose **Link**, **Create** or **Skip** for each unlinked project.",
+        "New projects should be created in Code Control itself."
+      ]
+    },
+    {
+      "title": "Tune an AI prompt",
+      "when": "Summaries are too long, too vague or off-tone.",
+      "steps": [
+        "Open `/ai-prompts`, pick the flow (e.g. `summary_run_project`) and edit the prompt.",
+        "Regenerate, then check token cost in `/ai-costs`."
+      ]
+    }
+  ],
+  "troubleshooting": [
+    { "symptom": "Private repos or org repos are missing", "fix": "The PAT needs `repo` + `read:org`, and SSO must be authorized for each org at github.com/settings/tokens. The owner must also be in `GITHUB_ALLOWED_OWNERS`." },
+    { "symptom": "`/projects` is empty or errors", "fix": "Projects come from Code Control. Check `MAIN_GATEWAY_URL`, `DISPATCHER_GATE_SECRET` and that the studio gateway and Code Control are running." },
+    { "symptom": "Every API call returns 401", "fix": "`SERVICES_API_KEY` differs between the web `.env.local` and the API `.env`." },
+    { "symptom": "Remote mode times out", "fix": "The studio dispatcher or storage server is asleep or unreachable. Hit `<gateway>/code-commit-summaries/api/storage/health`, or raise `STORAGE_REQUEST_TIMEOUT_MS`." },
+    { "symptom": "Creating a project returns 403", "fix": "Expected — local project CRUD is disabled after the Code Control cutover. Create the software system in Code Control." },
+    { "symptom": "Weekly script generate fails", "fix": "Check `GEMINI_API_KEY` and `GEMINI_TWITTER_MODEL`, and that at least one completed project summary overlaps the chosen range." }
+  ],
+  "glossary": [
+    { "term": "Project code week summary", "definition": "AI summary of one project's commits for a date range (`project_code_week_summary`)." },
+    { "term": "Weekly coding summary", "definition": "A script run combining project summaries into a recap, feature inventory and video script." },
+    { "term": "Software system", "definition": "Code Control's record of a product and its repos — the source of truth for projects here." },
+    { "term": "Exchange", "definition": "One logged AI call with prompt, response, tokens and cost." },
+    { "term": "Remote mode", "definition": "`STORAGE_MODE=remote`: Express sends CRUD to the storage server instead of Postgres." }
+  ],
+  "hubNotes": [
+    "hub.local.json has no `storageExpressDir` for this project, even though `code-commit-summaries-storage-express-server` is cloned next to the other two — add it so Hub can run and configure storage.",
+    "The registry's database setup targets the storage repo (`envRepo: storage-express`); the API only needs `DATABASE_URL` in local mode.",
+    "Code Control sync depends on the studio gateway (port 3010) and the code-control project being up.",
+    "Both web and API READMEs are still the template's; the ADRs in `.cursor/architecture/` are the real docs."
+  ],
+  "links": [
+    { "label": "Local Postgres data layer", "path": "code-commit-summaries-express-server/.cursor/architecture/010-local-postgres-data-layer.md" },
+    { "label": "Project summaries and scripts", "path": "code-commit-summaries-express-server/.cursor/architecture/014-project-summaries-and-instagram-scripts.md" },
+    { "label": "Public API", "path": "code-commit-summaries-express-server/.cursor/architecture/019-public-external-api-local-v1.md" },
+    { "label": "Storage remote mode", "path": "code-commit-summaries-express-server/.cursor/architecture/020-storage-express-remote.md" },
+    { "label": "Code Control as source of truth", "path": "code-commit-summaries-express-server/.cursor/architecture/022-code-control-project-source-of-truth.md" },
+    { "label": "Landing (local-first)", "path": "code-commit-summaries-web/.cursor/architecture/021-landing-local-first.md" }
+  ]
+}
