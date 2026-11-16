@@ -1,0 +1,11 @@
+{
+  "favoriteProjectIds": [
+    "code-control",
+    "on-device-dispatcher",
+    "speech-therapy-tracker"
+  ],
+  "projectSectionOverrides": {
+    "qr-code-generator": "active",
+    "reddit-scraper": "active"
+  }
+}

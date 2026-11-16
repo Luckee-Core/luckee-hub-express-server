@@ -117,6 +117,15 @@ export type HubLocalConfig = {
   /** Override default `Luckee-Core` when repos live under another org. */
   githubOrg?: string;
   projects?: Record<string, ProjectLocalEntry>;
+  /** @deprecated UI preferences now live in committed data/ui-preferences.json (read once to migrate). */
+  uiPreferences?: HubUiPreferences;
+};
+
+export type ProjectCatalogTier = 'active' | 'finalSteps' | 'almostReady' | 'workInProgress';
+
+export type HubUiPreferences = {
+  favoriteProjectIds: string[];
+  projectSectionOverrides: Record<string, ProjectCatalogTier>;
 };
 
 export type HubProject = {

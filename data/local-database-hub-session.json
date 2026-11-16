@@ -2,6 +2,7 @@
   "startedByHub": [],
   "activeConsumers": [
     "speech-therapy-tracker",
-    "my-vercel-analytics"
+    "my-vercel-analytics",
+    "code-control"
   ]
 }

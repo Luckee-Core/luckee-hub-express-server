@@ -8,6 +8,8 @@ import { getHubConfigHandler } from './routes/get-hub-config-handler';
 import { listProjectsHandler } from './routes/list-projects-handler';
 import { pickHubConfigFolderHandler } from './routes/pick-hub-config-folder-handler';
 import { putHubConfigHandler } from './routes/put-hub-config-handler';
+import { getUiPreferencesHandler } from './routes/get-ui-preferences-handler';
+import { putUiPreferencesHandler } from './routes/put-ui-preferences-handler';
 
 /**
  * Projects router factory.
@@ -18,6 +20,8 @@ export const createProjectsRouter = (): Router => {
   router.get('/hub-config', getHubConfigHandler);
   router.put('/hub-config', putHubConfigHandler);
   router.post('/hub-config/pick-folder', pickHubConfigFolderHandler);
+  router.get('/ui-preferences', getUiPreferencesHandler);
+  router.put('/ui-preferences', putUiPreferencesHandler);
   router.use('/:id/local-database', createLocalDatabaseRouter());
   router.use('/:id/supabase', createSupabaseConfigRouter());
   router.use('/:id/overview', createProjectOverviewRouter());
