@@ -13,6 +13,8 @@ export type TerminalSessionRecord = TerminalSessionInfo & {
   pty: import('node-pty').IPty;
   createdAt: string;
   getReplay: () => string;
+  /** Timestamped PTY output; use instead of `pty.onData` so live and replayed lines match. */
+  onOutput: (listener: (data: string) => void) => { dispose: () => void };
   kind: TerminalSessionKind;
   port: number;
 };

@@ -26,14 +26,14 @@ export const attachTerminalWebSocket = (server: http.Server): void => {
     }
 
     wss.handleUpgrade(request, socket, head, (ws) => {
-      const { pty, getReplay } = session;
+      const { pty, getReplay, onOutput } = session;
 
       const replay = getReplay();
       if (replay.length > 0) {
         ws.send(replay);
       }
 
-      const dataDisposable = pty.onData((data: string) => {
+      const dataDisposable = onOutput((data: string) => {
         if (ws.readyState === ws.OPEN) {
           ws.send(data);
         }

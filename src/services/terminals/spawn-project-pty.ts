@@ -1,6 +1,7 @@
 import * as pty from 'node-pty';
 
 import { ensureSpawnHelperExecutable } from '../../utils/terminals/ensure-spawn-helper';
+import { createLineTimestamper } from '../../utils/terminals/create-line-timestamper';
 import { readEnvKey } from '../../utils/supabase-config/upsert-env-keys';
 import { buildNvmShellPrefix, shellEscape } from '../../utils/projects/build-nvm-shell-prefix';
 import { detectApiRuntime } from '../../utils/projects/detect-api-runtime';
@@ -236,7 +237,14 @@ export const spawnProjectPty = (input: SpawnProjectPtyInput): TerminalSessionInf
   let outputLen = 0;
   const maxOutput = 512_000;
 
-  ptyProcess.onData((data: string) => {
+  const timestamp = createLineTimestamper();
+  const outputListeners = new Set<(data: string) => void>();
+
+  ptyProcess.onData((raw: string) => {
+    const data = timestamp(raw);
+    for (const listener of outputListeners) {
+      listener(data);
+    }
     outputChunks.push(data);
     outputLen += data.length;
     while (outputLen > maxOutput && outputChunks.length > 0) {
@@ -255,6 +263,10 @@ export const spawnProjectPty = (input: SpawnProjectPtyInput): TerminalSessionInf
     pty: ptyProcess,
     createdAt: new Date().toISOString(),
     getReplay: (): string => outputChunks.join(''),
+    onOutput: (listener: (data: string) => void) => {
+      outputListeners.add(listener);
+      return { dispose: () => outputListeners.delete(listener) };
+    },
     kind: input.kind ?? 'dev',
     port: input.port,
   };
