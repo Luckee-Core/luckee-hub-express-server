@@ -35,9 +35,10 @@
         "001_workspaces_and_projects.sql"
       ],
       "expectedTables": [
-        "customers",
-        "customer_projects",
-        "customer_project_repos"
+        "software_systems",
+        "software_system_repos",
+        "data_model_proposals",
+        "data_model_deliveries"
       ],
       "envRepo": "storage-express",
       "postgres": {
