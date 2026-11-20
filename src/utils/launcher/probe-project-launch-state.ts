@@ -7,7 +7,7 @@ import {
 } from '../projects';
 import { listListeningTcpPorts, portOwnedByDir } from '../projects/port-probes';
 import { getPreferredApiPort } from '../projects/resolve-project-ports';
-import { findOwnedNextWebUrl, isExpressHealthy } from '../projects/wait-for-project-ready';
+import { findOwnedNextWebUrl, isApiRunning } from '../projects/wait-for-project-ready';
 
 const API_PORT_SCAN_START = 3000;
 const API_PORT_SCAN_END = 3999;
@@ -73,11 +73,7 @@ export const probeProjectLaunchState = (merged: MergedProjectConfig): ProjectLau
     const storagePort = storageRepo?.defaultApiPort ?? 0;
     storageOk =
       storagePort > 0 &&
-      isExpressHealthy(
-        storagePort,
-        storageRepo?.healthPath ?? '/api/storage/health',
-        merged.storageExpressDir,
-      );
+      isApiRunning(storagePort, merged.storageExpressDir);
   }
 
   return { expressOk, apiPort, webUrl, storageNeeded, storageOk };

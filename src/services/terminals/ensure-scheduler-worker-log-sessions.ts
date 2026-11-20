@@ -1,6 +1,6 @@
 import { fetchSchedulerWorkers } from '../../utils/local-scheduler/fetch-scheduler-workers';
 import { mergeProjectConfig, readLocalConfig, readRegistry } from '../../utils/projects';
-import { isExpressHealthy } from '../../utils/projects/wait-for-project-ready';
+import { isApiRunning } from '../../utils/projects/wait-for-project-ready';
 import { hasProjectRole, isRoleSuppressed } from './session-registry';
 import { buildSchedulerWorkerLogPtyCommand, spawnProjectPty } from './spawn-project-pty';
 import type { TerminalSessionInfo } from './types';
@@ -52,11 +52,7 @@ export const ensureSchedulerWorkerLogSessions = async (
     return [];
   }
 
-  const schedulerHealthy = isExpressHealthy(
-    schedulerMerged.apiPort,
-    schedulerMerged.healthPath,
-    schedulerMerged.expressDir,
-  );
+  const schedulerHealthy = isApiRunning(schedulerMerged.apiPort, schedulerMerged.expressDir);
   if (!schedulerHealthy) {
     return [];
   }

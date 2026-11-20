@@ -8,7 +8,7 @@ import {
 } from '../../utils/projects';
 import {
   findOwnedNextWebUrl,
-  isExpressHealthy,
+  isApiRunning,
 } from '../../utils/projects/wait-for-project-ready';
 import { hasProjectRole, isRoleSuppressed } from './session-registry';
 import { buildRunningStatusPtyCommand, spawnProjectPty } from './spawn-project-pty';
@@ -37,11 +37,7 @@ export const ensureProjectTerminalSessions = (
   const orphan = input.orphan ?? false;
 
   if (projectHasExpressRepo(input.entry) && merged.expressDir) {
-    const expressHealthy = isExpressHealthy(
-      merged.apiPort,
-      merged.healthPath,
-      merged.expressDir,
-    );
+    const expressHealthy = isApiRunning(merged.apiPort, merged.expressDir);
     if (
       expressHealthy &&
       !hasProjectRole(input.entry.id, 'express') &&
@@ -64,12 +60,7 @@ export const ensureProjectTerminalSessions = (
   if (projectHasStorageExpressRepo(input.entry) && merged.storageExpressDir) {
     const storageRepo = getStorageExpressRegistryRepo(input.entry);
     const storagePort = storageRepo?.defaultApiPort ?? 3010;
-    const storageHealthPath = storageRepo?.healthPath ?? '/api/storage/health';
-    const storageHealthy = isExpressHealthy(
-      storagePort,
-      storageHealthPath,
-      merged.storageExpressDir,
-    );
+    const storageHealthy = isApiRunning(storagePort, merged.storageExpressDir);
     if (
       storageHealthy &&
       !hasProjectRole(input.entry.id, 'storage-express') &&

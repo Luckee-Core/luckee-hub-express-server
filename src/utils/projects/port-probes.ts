@@ -1,7 +1,8 @@
 import { execSync } from 'child_process';
 import path from 'path';
 
-const PROBE_CURL_MAX_SECONDS = 0.5;
+/** Next.js HEAD probe timeout (sync curl — keep short so the hub event loop is not held). */
+const PROBE_CURL_MAX_SECONDS = 2;
 
 /**
  * True when something is listening on the TCP port.
@@ -160,26 +161,28 @@ const curlProbe = (args: string): string | null => {
 };
 
 /**
- * True when Express health responds on the configured API port.
- * When `ownerDir` is set, the listener cwd must belong to that project directory.
+ * True when an API process is listening on the port (cwd under `ownerDir` when set).
+ * A process check from `lsof`, not an HTTP call: an API's health route may do slow dependency
+ * checks, and "slow" must never read as "not running" (that started duplicate APIs on the next port).
  */
-export const isExpressHealthOk = (
-  apiPort: number,
-  healthPath: string,
-  ownerDir?: string,
-): boolean => {
-  if (!portListening(apiPort)) {
+export const isApiProcessListening = (apiPort: number, ownerDir?: string): boolean =>
+  portListening(apiPort) && portOwnedByDir(apiPort, ownerDir);
+
+/** How long one HTTP health call may take before it counts as failed. */
+export const API_HEALTH_TIMEOUT_MS = 10_000;
+
+/**
+ * One async HTTP health call (any 2xx counts). Does not block the hub event loop.
+ */
+export const fetchApiHealth = async (apiPort: number, healthPath: string): Promise<boolean> => {
+  try {
+    const response = await fetch(`http://127.0.0.1:${apiPort}${healthPath}`, {
+      signal: AbortSignal.timeout(API_HEALTH_TIMEOUT_MS),
+    });
+    return response.ok;
+  } catch {
     return false;
   }
-  if (!portOwnedByDir(apiPort, ownerDir)) {
-    return false;
-  }
-  const url = `http://127.0.0.1:${apiPort}${healthPath}`;
-  const out = curlProbe(`"${url}"`);
-  if (out && out.includes('"status"') && out.includes('"ok"')) {
-    return true;
-  }
-  return curlProbe(`-o /dev/null "${url}"`) !== null;
 };
 
 /**

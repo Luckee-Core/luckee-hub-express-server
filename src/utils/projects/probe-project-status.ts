@@ -7,7 +7,7 @@ import type {
   ProjectLocalEntry,
 } from '../../services/projects/types';
 import { resolveLiveApiPort } from './resolve-project-ports';
-import { findOwnedNextWebUrl, isExpressHealthy } from './wait-for-project-ready';
+import { findOwnedNextWebUrl, isApiRunning } from './wait-for-project-ready';
 import { apiDepsInstalled, detectApiRuntime } from './detect-api-runtime';
 import {
   getExpressRegistryRepo,
@@ -137,18 +137,16 @@ export const probeProjectStatus = (
   }
 
   const registryApiPort = expressRepo?.defaultApiPort ?? 0;
-  const healthPath = expressRepo?.healthPath ?? '/api/health';
   const resolvedApiPort = hasExpress
-    ? resolveLiveApiPort(registry.id, registryApiPort, healthPath, local.expressDir)
+    ? resolveLiveApiPort(registry.id, registryApiPort, local.expressDir)
     : undefined;
   const apiRunning = !hasExpress || resolvedApiPort !== undefined;
 
   const storagePort = storageRepo?.defaultApiPort ?? 0;
-  const storageHealthPath = storageRepo?.healthPath ?? '/api/storage/health';
   const storageRunning =
     !hasStorage ||
     (storagePort > 0 &&
-      isExpressHealthy(storagePort, storageHealthPath, local.storageExpressDir));
+      isApiRunning(storagePort, local.storageExpressDir));
 
   const webUrl = hasWeb ? findOwnedNextWebUrl(local.webDir) : undefined;
   const webRunning = hasWeb && !!webUrl;

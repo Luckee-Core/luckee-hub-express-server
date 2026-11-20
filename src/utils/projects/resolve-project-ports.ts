@@ -2,11 +2,11 @@ import fs from 'fs';
 import path from 'path';
 
 import type { MergedProjectConfig } from '../../services/projects/types';
-import { isExpressHealthOk, portListening } from './port-probes';
+import { isApiProcessListening, portListening } from './port-probes';
 import {
   findFirstFreePort,
   findOwnedNextPort,
-  isExpressHealthy,
+  isApiRunning,
   resolveApiPortForRun,
   WEB_PORT_WALK_END,
   WEB_PORT_WALK_START,
@@ -73,22 +73,21 @@ export const getPreferredApiPort = (
 
 /**
  * Live-list API port: preferred (ports file or registry), then registry if different.
- * Two health checks at most — do not scan a range (stalls the Express event loop).
+ * Process checks only (`isApiProcessListening`), two at most.
  */
 export const resolveLiveApiPort = (
   projectId: string,
   registryApiPort: number,
-  healthPath: string,
   ownerDir?: string,
 ): number | undefined => {
   const preferred = getPreferredApiPort(projectId, registryApiPort);
-  if (preferred > 0 && isExpressHealthOk(preferred, healthPath, ownerDir)) {
+  if (preferred > 0 && isApiProcessListening(preferred, ownerDir)) {
     return preferred;
   }
   if (
     registryApiPort > 0 &&
     registryApiPort !== preferred &&
-    isExpressHealthOk(registryApiPort, healthPath, ownerDir)
+    isApiProcessListening(registryApiPort, ownerDir)
   ) {
     return registryApiPort;
   }
@@ -96,12 +95,11 @@ export const resolveLiveApiPort = (
 };
 
 /**
- * Scan API ports for a healthy Express instance (resolved preferred + scan range).
+ * Scan API ports for this project's running API process (resolved preferred + scan range).
  */
 export const findExpressApiPort = (
   projectId: string,
   registryApiPort: number,
-  healthPath: string,
   scanMax = 10,
   ownerDir?: string,
 ): number | undefined => {
@@ -110,7 +108,7 @@ export const findExpressApiPort = (
     return undefined;
   }
   for (let port = start; port < start + scanMax; port += 1) {
-    if (isExpressHealthOk(port, healthPath, ownerDir)) {
+    if (isApiProcessListening(port, ownerDir)) {
       return port;
     }
   }
@@ -130,7 +128,7 @@ export const resolveProjectPortsForRun = (
 
   const catalogHeldByThisProject =
     merged.apiPort > 0 &&
-    isExpressHealthy(merged.apiPort, merged.healthPath, merged.expressDir);
+    isApiRunning(merged.apiPort, merged.expressDir);
   const catalogFree =
     merged.apiPort > 0 &&
     !portListening(merged.apiPort) &&
@@ -146,7 +144,6 @@ export const resolveProjectPortsForRun = (
     const start = merged.apiPort > 0 ? merged.apiPort : 3010;
     apiPort = resolveApiPortForRun(
       start,
-      merged.healthPath,
       20,
       merged.expressDir,
       [webPortStart],

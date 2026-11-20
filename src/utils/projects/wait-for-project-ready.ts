@@ -1,6 +1,7 @@
 import {
+  fetchApiHealth,
   findWebUrlOnPorts,
-  isExpressHealthOk,
+  isApiProcessListening,
   isNextDevServerOnPort,
   listListeningTcpPorts,
   portListening,
@@ -28,17 +29,18 @@ const isNextWebUrlReady = (url: string, ownerDir?: string): boolean => {
 };
 
 /**
- * True when Express is listening and health returns ok.
+ * True when this project's API process is listening on the port (see isApiProcessListening).
  * When `ownerDir` is set, ignore another project's process on the same port.
  */
-export const isExpressHealthy = (
-  apiPort: number,
-  healthPath: string,
-  ownerDir?: string,
-): boolean => portListening(apiPort) && isExpressHealthOk(apiPort, healthPath, ownerDir);
+export const isApiRunning = (apiPort: number, ownerDir?: string): boolean =>
+  isApiProcessListening(apiPort, ownerDir);
+
+/** Gap between HTTP health calls while waiting for a freshly started API. */
+export const API_HEALTH_RETRY_MS = 15_000;
 
 /**
- * Wait until Express health responds (up to maxSeconds).
+ * Wait for a freshly started API (up to maxSeconds): poll the port every second (process check),
+ * then confirm with an HTTP health call — at most one every 15 s, each allowed 10 s.
  */
 export const waitForExpressHealth = async (
   apiPort: number,
@@ -46,11 +48,22 @@ export const waitForExpressHealth = async (
   maxSeconds = 180,
   ownerDir?: string,
 ): Promise<boolean> => {
-  for (let i = 0; i < maxSeconds; i += 1) {
-    if (isExpressHealthy(apiPort, healthPath, ownerDir)) {
+  const deadline = Date.now() + maxSeconds * 1000;
+  let lastHealthCallAt = 0;
+  while (Date.now() < deadline) {
+    if (!isApiRunning(apiPort, ownerDir)) {
+      await sleep(1000);
+      continue;
+    }
+    const sinceLastCall = Date.now() - lastHealthCallAt;
+    if (sinceLastCall < API_HEALTH_RETRY_MS) {
+      await sleep(Math.min(API_HEALTH_RETRY_MS - sinceLastCall, Math.max(deadline - Date.now(), 0)));
+      continue;
+    }
+    lastHealthCallAt = Date.now();
+    if (await fetchApiHealth(apiPort, healthPath)) {
       return true;
     }
-    await sleep(1000);
   }
   return false;
 };
@@ -85,12 +98,11 @@ export const findAvailableApiPort = (
 ): number => findFirstFreePort(apiPortStart, scanMax, avoid);
 
 /**
- * Resolve API port for Run: reuse healthy Express on preferred, else first free slot.
+ * Resolve API port for Run: reuse this project's running API on preferred, else first free slot.
  * `avoid` keeps the API off a port the web walk is about to use.
  */
 export const resolveApiPortForRun = (
   preferredApiPort: number,
-  healthPath: string,
   scanMax = 10,
   ownerDir?: string,
   avoid: number[] = [],
@@ -101,7 +113,7 @@ export const resolveApiPortForRun = (
   }
   if (
     !blocked.has(preferredApiPort) &&
-    isExpressHealthy(preferredApiPort, healthPath, ownerDir)
+    isApiRunning(preferredApiPort, ownerDir)
   ) {
     return preferredApiPort;
   }

@@ -41,10 +41,21 @@ It returns **400** when:
 
 ### Probe (`probeProjectLaunchState`)
 
-- **API up:** a listener whose cwd is under `expressDir`, found on the preferred port (from the ports file), the registry port, or any port from 3000–3999.
-  - This checks **ownership, not HTTP health.** Some APIs' `/api/health` makes a gateway round trip that exceeds the hub's 0.5 s probe timeout, and a false "down" would restart a running API.
+- **API up:** a listener whose cwd is under `expressDir`, found on the preferred port (from the ports file), the registry port, or any port from 3000–3999. This is the process check from "Running vs healthy" below.
 - **Web up:** `findOwnedNextWebUrl(webDir)`.
 - **Storage:** needed only when the project has a storage repo **and** its data plane (`dataPlane.modeKey` in the API `.env`) is `direct`. It is then checked with `isExpressHealthy` on the catalog port.
+
+### Running vs healthy (hub-wide)
+
+"Is the API running?" is a **process check** everywhere in the hub: something is listening on the port and its cwd is under the repo directory (`isApiProcessListening` / `isApiRunning`, via `lsof`). This covers project status, port choice for Run, terminal status sessions and launch links.
+
+It is **not** an HTTP call. Health routes can check slow dependencies. The old 0.5 s curl probe read "slow" as "down": Run then started a second API on the next port, and once-a-second polling piled requests onto the API until it stopped responding.
+
+HTTP health is used only while **waiting for a freshly started API** (`waitForExpressHealth`):
+- the hub polls the port every second;
+- once a process listens, it makes one async `fetch` health call (10 s timeout, any 2xx), and **at most one every 15 s**, until `maxSeconds`.
+
+Next.js detection keeps its HEAD probe; its timeout is now 2 s.
 
 ### Start rules (`processLaunchProject`)
 

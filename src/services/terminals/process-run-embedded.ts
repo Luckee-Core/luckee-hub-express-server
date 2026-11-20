@@ -17,7 +17,7 @@ import {
 } from '../../utils/projects';
 import {
   findOwnedNextWebUrl,
-  isExpressHealthy,
+  isApiRunning,
   waitForExpressHealth,
   waitForOwnedNextWebUrl,
 } from '../../utils/projects/wait-for-project-ready';
@@ -305,7 +305,7 @@ export const processRunEmbedded = (
 
   const expressHealthy =
     !runMerged.expressDir ||
-    isExpressHealthy(runMerged.apiPort, runMerged.healthPath, runMerged.expressDir);
+    isApiRunning(runMerged.apiPort, runMerged.expressDir);
 
   let needsExpressWait = false;
   if (wantsExpress) {
