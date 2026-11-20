@@ -28,3 +28,8 @@ export type LauncherJob = {
   steps?: SetupJobStep[];
   updatedAt: string;
 };
+
+/** POST /api/launcher/projects/:id/launch (ADR 035). */
+export type LaunchProjectResult =
+  | { status: 'ready'; webUrl: string }
+  | { status: 'starting'; jobId: string; message: string };

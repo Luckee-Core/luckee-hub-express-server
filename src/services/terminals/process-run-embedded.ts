@@ -52,6 +52,7 @@ const completeEmbeddedJob = async (
   webPortStart: number,
   apiUrl: string,
   targets: ProjectRunTarget[],
+  openChrome: boolean,
 ): Promise<void> => {
   const wantsWeb = runTargetsInclude(targets, 'web');
   const wantsExpress = runTargetsInclude(targets, 'express');
@@ -155,7 +156,7 @@ const completeEmbeddedJob = async (
       });
     }
 
-    if (webUrl) {
+    if (webUrl && openChrome) {
       openInChrome(applyWebOpenPath(webUrl, merged.registry.webOpenPath));
     }
 
@@ -191,6 +192,8 @@ const completeEmbeddedJob = async (
 
 type ProcessRunEmbeddedOptions = {
   targets?: ProjectRunTarget[];
+  /** Open Chrome at the web URL when Web is ready (default true). Launch links pass false — ADR 035. */
+  openChrome?: boolean;
 };
 
 /**
@@ -358,6 +361,7 @@ export const processRunEmbedded = (
     webPortStart,
     apiUrl,
     targets,
+    options.openChrome ?? true,
   ).catch(
     (error: unknown) => {
       const message = error instanceof Error ? error.message : 'Embedded run failed';

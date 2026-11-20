@@ -33,6 +33,10 @@ app.use('/api/projects', createProjectsRouter());
 app.use('/api/launcher', createLauncherRouter());
 app.use('/api/terminals', createTerminalsRouter());
 
+// Launch links: open a project at a path on its live port, starting it if needed (ADR 035)
+import { createLaunchPageRouter } from './src/services/launch-page';
+app.use('/launch', createLaunchPageRouter());
+
 // Error handling middleware (must be after all routes)
 import { setupErrorHandling } from './src/services/middleware';
 setupErrorHandling(app);

@@ -3,6 +3,7 @@ import { Router } from 'express';
 import { closeProjectHandler } from './routes/close-project-handler';
 import { closeStorageExpressHandler } from './routes/close-storage-express-handler';
 import { getJobHandler } from './routes/get-job-handler';
+import { launchProjectHandler } from './routes/launch-project-handler';
 import { openChromeHandler } from './routes/open-chrome-handler';
 import { openCursorHandler } from './routes/open-cursor-handler';
 import { openRepoFolderHandler } from './routes/open-repo-folder-handler';
@@ -16,6 +17,7 @@ import { setupProjectHandler } from './routes/setup-project-handler';
 export const createLauncherRouter = (): Router => {
   const router = Router();
   router.post('/projects/:id/run', runProjectHandler);
+  router.post('/projects/:id/launch', launchProjectHandler);
   router.post('/projects/:id/run-storage-express', runStorageExpressHandler);
   router.post('/projects/:id/setup', setupProjectHandler);
   router.post('/projects/:id/close', closeProjectHandler);

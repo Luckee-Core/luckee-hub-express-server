@@ -1,0 +1,1 @@
+export { createLaunchPageRouter } from './router';

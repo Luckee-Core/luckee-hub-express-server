@@ -13,3 +13,6 @@ export {
   getSetupWorkspaceStepId,
   writeSetupJobStep,
 } from './setup-job';
+export { validateLaunchPath } from './validate-launch-path';
+export { probeProjectLaunchState } from './probe-project-launch-state';
+export type { ProjectLaunchState } from './probe-project-launch-state';

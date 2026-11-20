@@ -51,6 +51,8 @@ curl http://localhost:3000
 
 - `GET /` - Health check
 - `GET /api/health` - Health check with detailed info
+- `GET /launch/:projectId?path=/page` - Launch page: redirects to the project's live web port, starting it first if needed (ADR 035)
+- `POST /api/launcher/projects/:id/launch` - `{ status: 'ready', webUrl }` or `{ status: 'starting', jobId }` (ADR 035)
 
 ## Project Structure
 
