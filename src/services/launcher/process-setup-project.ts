@@ -95,6 +95,39 @@ const existingDirectory = (dir: string | undefined): string | undefined =>
   dir && fs.existsSync(dir) ? dir : undefined;
 
 /**
+ * Find a checkout cloned by hand at `{luckeeParent}/{projectId}/` (outside luckee/)
+ * that contains at least one registry repo folder.
+ */
+const findManualProjectRoot = (
+  luckeeParent: string,
+  registry: ProjectRegistryEntry,
+): string | undefined => {
+  const root = path.join(luckeeParent, registry.id);
+  const hasRepo = registry.repos.some((repo) => fs.existsSync(path.join(root, repo.repoName)));
+  return hasRepo ? root : undefined;
+};
+
+/**
+ * Find an existing `.code-workspace` directly inside the project folder.
+ * Prefers `{projectId}.code-workspace`, otherwise the only workspace present.
+ */
+const findWorkspaceInProjectRoot = (projectRoot: string, projectId: string): string | undefined => {
+  const preferred = resolveProjectWorkspaceFilePath(projectRoot, projectId);
+  if (fs.existsSync(preferred)) {
+    return preferred;
+  }
+  try {
+    const found = fs
+      .readdirSync(projectRoot)
+      .filter((name) => name.endsWith('.code-workspace'))
+      .map((name) => path.join(projectRoot, name));
+    return found.length === 1 ? found[0] : undefined;
+  } catch {
+    return undefined;
+  }
+};
+
+/**
  * Prefer checkouts already recorded in hub.local.json.
  * Fresh projects still clone under `{luckeeParent}/luckee/{projectId}/`.
  */
@@ -119,14 +152,20 @@ const resolveSetupPaths = (
     (!!existingWebDir || !!existingExpressDir || !!existingStorageExpressDir);
 
   if (!usingExistingCheckout) {
+    const manualRoot = findManualProjectRoot(luckeeParent, registry);
+    const projectRoot = manualRoot ?? cloned.projectRoot;
+    const inRoot = (dir: string | undefined): string | undefined =>
+      dir ? path.join(projectRoot, path.basename(dir)) : undefined;
+    const existingWorkspace = findWorkspaceInProjectRoot(projectRoot, projectId);
+
     return {
-      luckeeRoot: cloned.luckeeRoot,
-      projectRoot: cloned.projectRoot,
-      webDir: cloned.webDir,
-      expressDir: cloned.expressDir,
-      storageExpressDir: cloned.storageExpressDir,
-      workspaceFile: resolveProjectWorkspaceFilePath(cloned.projectRoot, projectId),
-      preserveWorkspaceFile: false,
+      luckeeRoot: path.dirname(projectRoot),
+      projectRoot,
+      webDir: inRoot(cloned.webDir),
+      expressDir: inRoot(cloned.expressDir),
+      storageExpressDir: inRoot(cloned.storageExpressDir),
+      workspaceFile: existingWorkspace ?? resolveProjectWorkspaceFilePath(projectRoot, projectId),
+      preserveWorkspaceFile: !!existingWorkspace,
     };
   }
 
@@ -136,7 +175,8 @@ const resolveSetupPaths = (
   const projectRoot = path.dirname(
     webDir ?? expressDir ?? storageExpressDir ?? cloned.projectRoot,
   );
-  const existingWorkspace = existingDirectory(existing?.workspaceFile);
+  const existingWorkspace =
+    existingDirectory(existing?.workspaceFile) ?? findWorkspaceInProjectRoot(projectRoot, projectId);
 
   return {
     luckeeRoot: path.dirname(projectRoot),

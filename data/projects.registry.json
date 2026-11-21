@@ -1269,5 +1269,93 @@
         }
       ]
     }
+  },
+  {
+    "id": "my-business-context",
+    "name": "My Business Context",
+    "description": "Structured business context (ICP, market, competitors, owners) grouped by department, with entries and snapshots",
+    "webOpenPath": "/dashboard",
+    "repos": [
+      {
+        "repoType": "storage-express",
+        "repoName": "my-business-context-storage-express-server",
+        "defaultApiPort": 3086,
+        "healthPath": "/api/storage/health",
+        "role": "storage"
+      },
+      {
+        "repoType": "express",
+        "repoName": "my-business-context-express-server",
+        "defaultApiPort": 3085,
+        "healthPath": "/api/health",
+        "role": "express"
+      },
+      {
+        "repoType": "nextjs",
+        "repoName": "my-business-context-web",
+        "defaultWebPortStart": 3087,
+        "role": "web"
+      }
+    ],
+    "localDatabase": {
+      "kind": "postgres",
+      "databaseName": "my_business_context",
+      "migrationsDir": "migrations",
+      "migrationFiles": [
+        "001_extensions.sql",
+        "002_dispatcher_exposed_endpoints.sql",
+        "003_create_context_areas.sql",
+        "004_create_context_area_fields.sql",
+        "005_create_context_entries.sql",
+        "006_create_context_entry_values.sql",
+        "007_create_context_snapshots.sql",
+        "008_create_context_areas.sql",
+        "009_create_context_area_fields.sql",
+        "010_create_context_entries.sql",
+        "011_create_context_entry_values.sql",
+        "012_create_context_snapshots.sql"
+      ],
+      "expectedTables": [
+        "context_areas",
+        "context_area_fields",
+        "context_entries",
+        "context_entry_values",
+        "context_snapshots",
+        "dispatcher_exposed_endpoints"
+      ],
+      "envRepo": "storage-express",
+      "postgres": {
+        "host": "127.0.0.1",
+        "port": 5432,
+        "formula": "postgresql@16",
+        "installCommand": "brew install postgresql@16",
+        "startCommand": "brew services start postgresql@16",
+        "stopCommand": "brew services stop postgresql@16"
+      }
+    },
+    "dataPlane": {
+      "modeKey": "CANONICAL_DATA_ACCESS_MODE",
+      "options": [
+        {
+          "id": "direct",
+          "label": "Direct storage",
+          "value": "direct",
+          "keys": [
+            "STORAGE_URL",
+            "STORAGE_SECRET"
+          ]
+        },
+        {
+          "id": "gateway",
+          "label": "Studio gateway",
+          "value": "gateway",
+          "keys": [
+            "MAIN_GATEWAY_URL",
+            "MAIN_GATEWAY_PROJECT_ID",
+            "DISPATCHER_GATE_SECRET"
+          ]
+        }
+      ]
+    }
   }
 ]
