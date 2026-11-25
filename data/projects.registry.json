@@ -1357,5 +1357,77 @@
         }
       ]
     }
+  },
+  {
+    "id": "my-bookkeeping-agent",
+    "name": "My Bookkeeping Agent",
+    "description": "QuickBooks Online sidecar: Friday weekly-review prompts written back to QBO (one deployment + Supabase per customer)",
+    "webOpenPath": "/dashboard",
+    "repos": [
+      {
+        "repoType": "storage-express",
+        "repoName": "my-bookkeeping-agent-storage-express-server",
+        "defaultApiPort": 3098,
+        "healthPath": "/api/storage/health",
+        "role": "storage"
+      },
+      {
+        "repoType": "express",
+        "repoName": "my-bookkeeping-agent-express-server",
+        "defaultApiPort": 3099,
+        "healthPath": "/api/health",
+        "role": "express"
+      },
+      {
+        "repoType": "nextjs",
+        "repoName": "my-bookkeeping-agent-web",
+        "defaultWebPortStart": 3100,
+        "role": "web"
+      }
+    ],
+    "localDatabase": {
+      "kind": "postgres",
+      "databaseName": "my_bookkeeping_agent",
+      "migrationsDir": "migrations",
+      "migrationFiles": [
+        "001_extensions.sql",
+        "002_dispatcher_exposed_endpoints.sql",
+        "003_create_qbo_connections.sql",
+        "004_create_weekly_reviews.sql",
+        "005_create_weekly_review_prompts.sql",
+        "006_create_qbo_write_operations.sql",
+        "007_enable_rls_and_constraints.sql"
+      ],
+      "expectedTables": [
+        "qbo_connections",
+        "weekly_reviews",
+        "weekly_review_prompts",
+        "qbo_write_operations",
+        "dispatcher_exposed_endpoints"
+      ],
+      "envRepo": "storage-express",
+      "postgres": {
+        "host": "127.0.0.1",
+        "port": 5432,
+        "formula": "postgresql@16",
+        "installCommand": "brew install postgresql@16",
+        "startCommand": "brew services start postgresql@16",
+        "stopCommand": "brew services stop postgresql@16"
+      }
+    },
+    "dataPlane": {
+      "modeKey": "CANONICAL_DATA_ACCESS_MODE",
+      "options": [
+        {
+          "id": "direct",
+          "label": "Direct storage",
+          "value": "direct",
+          "keys": [
+            "STORAGE_URL",
+            "STORAGE_SECRET"
+          ]
+        }
+      ]
+    }
   }
 ]
