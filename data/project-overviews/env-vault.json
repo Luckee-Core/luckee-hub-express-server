@@ -1,0 +1,84 @@
+{
+  "projectId": "env-vault",
+  "updatedAt": "2026-11-26",
+  "tagline": "Type each third-party key once on the studio; the vault hands it only to the projects you've granted it to.",
+  "summary": [
+    "Env Vault is a self-built credential vault for vendor keys such as `ANTHROPIC_API_KEY` and `GITHUB_TOKEN`. You enter each value once in the admin UI. The vault then delivers it to gateway-spawned workers and to API/storage servers started by Luckee Hub, with a managed `.env` block as a last resort. Nobody copies keys between `.env` files anymore.",
+    "A key reaches a project only when the project requests it **and** a person has granted it. Values are encrypted with AES-256-GCM under keys held in the macOS Keychain, and `resolve` is reachable only over a `0600` Unix domain socket. Status: design is done (`docs/vault/`); Phase 1 (vault core) hasn't started, so both repos are still the starter templates."
+  ],
+  "audience": [
+    "You run several Luckee projects on the studio and are tired of copying vendor keys into each `.env`.",
+    "You want to see in Hub which keys each project needs and whether they're set."
+  ],
+  "notFor": [
+    "Platform/runtime secrets (`*_DISPATCHER_*`, `STORAGE_SECRET`) or non-secrets like `PORT`. Only vendor keys.",
+    "Replacing it with 1Password, Doppler, HashiCorp Vault or Infisical. Building our own is a final decision.",
+    "Remote access. Values never leave the studio over TCP."
+  ],
+  "capabilities": [
+    { "title": "Write-only key entry", "detail": "Add and rotate values in env-vault-web; values are versioned from day one (planned, Phase 2)." },
+    { "title": "Per-project grants", "detail": "`resolve(project, names)` returns only requested ∩ granted names; the rest are reported as `not_granted` / `missing`, names only (planned, Phase 1)." },
+    { "title": "Audit log", "detail": "Every resolve, grant, revoke, put, rotate, reveal, export and unlock is logged, never with a value (planned)." },
+    { "title": "Encrypted backup", "detail": "`export` writes a bundle re-wrapped under a recovery key shown once at setup (planned)." },
+    { "title": "Hub key status", "detail": "Hub shows which vendor keys each project needs, whether they're set, and how they're delivered (planned; see `05-luckee-hub-status.md`)." }
+  ],
+  "components": [
+    {
+      "repoName": "env-vault-express-server",
+      "name": "Vault core",
+      "stack": "Express + TypeScript, Node `crypto`, macOS Keychain",
+      "runsOn": "The studio (Hub port 3101 for health/admin only)",
+      "owns": "Encrypted secret storage, grants, the audit log, `resolve` over the Unix socket, backup/restore.",
+      "doesNotOwn": "The admin UI, or deciding which keys a project requests.",
+      "inHub": true
+    },
+    {
+      "repoName": "env-vault-web",
+      "name": "Admin UI",
+      "stack": "Next.js, Redux Toolkit, Tailwind",
+      "runsOn": "The studio (Hub port 3102)",
+      "owns": "Adding/rotating keys (write-only), grants per project, audit log view, backup export, lock/unlock.",
+      "doesNotOwn": "Secret values: it never receives one back.",
+      "inHub": true
+    }
+  ],
+  "dataFlow": [
+    "You enter a key in env-vault-web; it goes to the vault over the local admin channel and is stored encrypted.",
+    "You grant the key to one or more projects.",
+    "When Hub or the gateway starts a project, it calls `resolve` over the Unix socket with the names the project requests and injects only the granted values into the child environment."
+  ],
+  "trust": [
+    { "title": "Browser", "detail": "Never sees a stored value. Reveal requires fresh re-auth." },
+    { "title": "Vault", "detail": "Holds ciphertext; data keys are wrapped by a key in the macOS Keychain. No TCP listener returns values." },
+    { "title": "Projects", "detail": "Receive only keys they requested and a person granted." }
+  ],
+  "commonTasks": [
+    {
+      "title": "Start building Phase 1",
+      "when": "Picking up the project.",
+      "steps": [
+        "Read `env-vault-express-server/CLAUDE.md`, then `docs/vault/` in order.",
+        "Follow `07-build-plan.md` Phase 1 (vault core)."
+      ]
+    }
+  ],
+  "troubleshooting": [
+    { "symptom": "Web can't reach the API", "fix": "The web `.env.example` still points at 3009; Hub Run injects `NEXT_PUBLIC_API_URL` for port 3101." }
+  ],
+  "glossary": [
+    { "term": "Grant", "definition": "A person's approval for one project to receive one key. Requesting a key never grants it." },
+    { "term": "resolve", "definition": "The socket-only call that returns granted values to a process being started." }
+  ],
+  "hubNotes": [
+    "Both repos are still starter templates; Run only gives you the health endpoint and a blank page.",
+    "Repos live at `~/github/env-vault/`, outside the `luckee/` folder.",
+    "Per the threat model, the Express port must stay health/admin only. `resolve` belongs on the Unix socket."
+  ],
+  "links": [
+    { "label": "Agent start (CLAUDE.md)", "path": "env-vault-express-server/CLAUDE.md" },
+    { "label": "Vault design index", "path": "env-vault-express-server/docs/vault/README.md" },
+    { "label": "Threat model", "path": "env-vault-express-server/docs/vault/02-threat-model.md" },
+    { "label": "Luckee Hub status design", "path": "env-vault-express-server/docs/vault/05-luckee-hub-status.md" },
+    { "label": "Build plan", "path": "env-vault-express-server/docs/vault/07-build-plan.md" }
+  ]
+}

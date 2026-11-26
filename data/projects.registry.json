@@ -1429,5 +1429,25 @@
         }
       ]
     }
+  },
+  {
+    "id": "env-vault",
+    "name": "Env Vault",
+    "description": "Self-built credential vault for third-party API keys, granted per project",
+    "repos": [
+      {
+        "repoType": "express",
+        "repoName": "env-vault-express-server",
+        "defaultApiPort": 3101,
+        "healthPath": "/api/health",
+        "role": "express"
+      },
+      {
+        "repoType": "nextjs",
+        "repoName": "env-vault-web",
+        "defaultWebPortStart": 3102,
+        "role": "web"
+      }
+    ]
   }
 ]

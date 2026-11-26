@@ -262,6 +262,12 @@
       "expressDir": "/Users/matthewruiz/github/estimate-and-proposals/estimate-and-proposals-express-server",
       "storageExpressDir": "/Users/matthewruiz/github/estimate-and-proposals/estimate-and-proposals-storage-express-server",
       "webPortStart": 3096
+    },
+    "env-vault": {
+      "enabled": true,
+      "webDir": "/Users/matthewruiz/github/luckee/env-vault/env-vault-web",
+      "expressDir": "/Users/matthewruiz/github/luckee/env-vault/env-vault-express-server",
+      "webPortStart": 3102
     }
   }
 }
