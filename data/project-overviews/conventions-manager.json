@@ -1,0 +1,110 @@
+{
+  "projectId": "conventions-manager",
+  "updatedAt": "2026-11-27",
+  "tagline": "One place for every Luckee coding convention: apps read snapshots through the dispatcher and send change requests instead of editing rules.",
+  "summary": [
+    "Conventions Manager is the single source of truth for how Luckee apps are structured, named and filed: data models, APIs, web, mobile, auth and security. These rules are moving here out of Code Control. Code Control (building), coding-review-agents (reviewing) and Luckee Hub (checking existing projects) all read the same conventions from one place.",
+    "Consumers fetch a **snapshot**: the rendered active conventions for one domain and role, with a content hash. Each fetch is recorded. Outside apps never edit conventions. They submit **change requests**, which this app's agent reviews and gives a verdict on (new, refines, conflicts, duplicate, wrong scope). It also publishes versioned markdown and JSON documents (ADRs, cursor rules) that projects keep in their repos. Status: the data model is designed (v2) and is being delivered through Code Control; all five repos are still starter templates."
+  ],
+  "audience": [
+    "You build or review Luckee projects and want one set of rules behind Code Control, the review agents and the repo docs.",
+    "You run the studio stack: the main gateway on port 3010 and project dispatchers."
+  ],
+  "notFor": [
+    "Software systems, repos, template repos or template PRs. Code Control keeps those.",
+    "Review agents and review findings. coding-review-agents keeps those.",
+    "Checking which document version each project has. Luckee Hub does that."
+  ],
+  "capabilities": [
+    { "title": "Conventions", "detail": "Domains, topics, roles, severity, checks, examples and sources. Conventions are deprecated, never deleted (planned)." },
+    { "title": "Snapshots over the dispatcher", "detail": "Other apps read the active conventions for a domain and role through the main gateway. Every fetch is logged with the consumer and its record id (planned)." },
+    { "title": "Change requests", "detail": "Code Control, coding-review-agents or a person submits a request; the agent reviews it and you can override the verdict (planned)." },
+    { "title": "Change log", "detail": "Every change records its before and after values, reason, origin and source app, including history imported from Code Control (planned)." },
+    { "title": "Versioned documents", "detail": "ADR markdown, cursor rules and JSON convention files, versioned with content hashes for Luckee Hub to compare (planned)." }
+  ],
+  "components": [
+    {
+      "repoName": "conventions-manager-storage-express-server",
+      "name": "Storage server",
+      "stack": "Express + TypeScript, `pg`",
+      "runsOn": "The machine with the `conventions_manager` database (Hub port 3104)",
+      "owns": "Migrations and all SQL behind `POST /api/storage/v1/invoke`.",
+      "doesNotOwn": "HTTP for browsers or the agent.",
+      "inHub": true
+    },
+    {
+      "repoName": "conventions-manager-express-server",
+      "name": "API",
+      "stack": "Express + TypeScript",
+      "runsOn": "Studio or laptop (Hub port 3105)",
+      "owns": "Convention, snapshot, change request and document routes (`/api/data/*`), and the review agent.",
+      "doesNotOwn": "SQL. It calls storage's `invoke` directly or through the gateway.",
+      "inHub": true
+    },
+    {
+      "repoName": "conventions-manager-web",
+      "name": "Web app",
+      "stack": "Next.js, Redux Toolkit, Tailwind",
+      "runsOn": "Your machine (Hub port 3106)",
+      "owns": "Browsing conventions, reviewing change requests and overriding verdicts, viewing documents and the change log.",
+      "doesNotOwn": "Data of its own.",
+      "inHub": true
+    },
+    {
+      "repoName": "conventions-manager-express-dispatcher-server",
+      "name": "Project dispatcher",
+      "stack": "Express + TypeScript",
+      "runsOn": "Studio (Hub port 3107; Code Control assigns the gateway ports)",
+      "owns": "Being spawned by the main gateway, spawning storage and the API, and proxying only the endpoints in `dispatcher_exposed_endpoints`.",
+      "doesNotOwn": "Business logic.",
+      "inHub": true
+    },
+    {
+      "repoName": "conventions-manager-dispatcher-web",
+      "name": "Dispatcher console",
+      "stack": "Next.js",
+      "runsOn": "Studio (Hub port 3108)",
+      "owns": "Viewing the dispatcher's services and exposed endpoints.",
+      "doesNotOwn": "Proxying.",
+      "inHub": true
+    }
+  ],
+  "dataFlow": [
+    "Before Code Control generates code, it fetches a snapshot for the domain and role through the main gateway and this project's dispatcher.",
+    "coding-review-agents and Code Control submit change requests; the agent reviews them, and accepted requests become logged convention changes and new snapshots.",
+    "Changes publish new document versions, which Luckee Hub compares with each project's repo."
+  ],
+  "trust": [
+    { "title": "Other apps", "detail": "Reach the API only through the main gateway and the project dispatcher, limited to the exposed endpoints." },
+    { "title": "Agent", "detail": "Gives verdicts on change requests; you can override any verdict." }
+  ],
+  "commonTasks": [
+    {
+      "title": "Build the first version",
+      "when": "The repos are still starter templates.",
+      "steps": [
+        "In Code Control, approve the conventions-manager data model (v2).",
+        "Press Build all on the software system page and merge any PRs it pauses on.",
+        "Update this registry entry's `migrationFiles` and `expectedTables` with the delivered migrations."
+      ]
+    }
+  ],
+  "troubleshooting": [
+    { "symptom": "Local database setup only creates `dispatcher_exposed_endpoints`", "fix": "The registry lists only the template migrations until Code Control delivers the data model." }
+  ],
+  "glossary": [
+    { "term": "Snapshot", "definition": "The rendered active conventions for one domain and role, identified by its content hash." },
+    { "term": "Change request", "definition": "A proposed new or changed convention from another app or a person. Only this app turns it into a change." },
+    { "term": "Role", "definition": "A kind of codebase a convention applies to: storage, express, web, mobile." }
+  ],
+  "hubNotes": [
+    "All five repos are still starter templates, so Run only gives you health endpoints and blank pages.",
+    "Repos live at `~/github/conventions-manager/`, outside the `luckee/` folder.",
+    "Hub ports (3104–3108) are for local runs. On the studio, Code Control's dispatcher plan assigns the gateway ports (3200+ block)."
+  ],
+  "links": [
+    { "label": "Storage agent start (CLAUDE.md)", "path": "conventions-manager-storage-express-server/CLAUDE.md" },
+    { "label": "API agent start (CLAUDE.md)", "path": "conventions-manager-express-server/CLAUDE.md" },
+    { "label": "Web agent start (CLAUDE.md)", "path": "conventions-manager-web/CLAUDE.md" }
+  ]
+}
