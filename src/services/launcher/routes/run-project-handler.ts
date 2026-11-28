@@ -24,6 +24,9 @@ export const runProjectHandler = (req: Request, res: Response): void => {
     return;
   }
 
+  // Restart from the repo header passes false so a Web restart does not open another Chrome tab.
+  const openChrome = (req.body as { openChrome?: unknown } | undefined)?.openChrome !== false;
+
   const hubRoot = getHubRoot();
   const entry = readRegistry(hubRoot).find((project) => project.id === projectId);
   if (!entry) {
@@ -40,9 +43,10 @@ export const runProjectHandler = (req: Request, res: Response): void => {
   console.log('📥 [launcher.runProjectHandler] Request received', {
     projectId,
     targets: resolvedTargets,
+    openChrome,
   });
   try {
-    const result = processRunProject(projectId, resolvedTargets);
+    const result = processRunProject(projectId, resolvedTargets, openChrome);
     if (!result) {
       console.log('📤 [launcher.runProjectHandler] Sending response', { statusCode: 400 });
       res.status(400).json({ success: false, error: 'Project not configured' });

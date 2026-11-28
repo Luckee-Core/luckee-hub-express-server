@@ -13,4 +13,5 @@ export type RunProjectResult = {
 export const processRunProject = (
   projectId: string,
   targets?: ProjectRunTarget[],
-): RunProjectResult | null => processRunEmbedded(projectId, { targets });
+  openChrome = true,
+): RunProjectResult | null => processRunEmbedded(projectId, { targets, openChrome });
