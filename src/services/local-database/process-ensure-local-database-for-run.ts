@@ -29,6 +29,12 @@ export const processEnsureLocalDatabaseForRun = (
     return { success: true, message: 'No local database configured' };
   }
 
+  // Storage-owned databases belong to the storage Express server, which list Run never starts
+  // (ADR 021) and which usually lives on another Mac. The API reaches it over HTTP, not Postgres.
+  if (resolved.localDatabase.envRepo === 'storage-express') {
+    return { success: true, message: 'Database is owned by storage Express — skipped for Run' };
+  }
+
   console.log('🚀 [local-database.processEnsureLocalDatabaseForRun] Ensuring database', {
     projectId,
   });
