@@ -268,6 +268,17 @@
       "webDir": "/Users/matthewruiz/github/luckee/env-vault/env-vault-web",
       "expressDir": "/Users/matthewruiz/github/luckee/env-vault/env-vault-express-server",
       "webPortStart": 3102
+    },
+    "conventions-manager": {
+      "enabled": true,
+      "webDir": "/Users/matthewruiz/github/conventions-manager/conventions-manager-web",
+      "expressDir": "/Users/matthewruiz/github/conventions-manager/conventions-manager-express-server",
+      "storageExpressDir": "/Users/matthewruiz/github/conventions-manager/conventions-manager-storage-express-server",
+      "dispatcherDir": "/Users/matthewruiz/github/conventions-manager/conventions-manager-express-dispatcher-server",
+      "repoDirs": {
+        "conventions-manager-dispatcher-web": "/Users/matthewruiz/github/conventions-manager/conventions-manager-dispatcher-web"
+      },
+      "webPortStart": 3106
     }
   }
 }

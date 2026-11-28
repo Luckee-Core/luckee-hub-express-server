@@ -1449,5 +1449,90 @@
         "role": "web"
       }
     ]
+  },
+  {
+    "id": "conventions-manager",
+    "name": "Conventions Manager",
+    "description": "Single source of coding conventions for every Luckee app: snapshots over the dispatcher, change requests, versioned md/json documents",
+    "repos": [
+      {
+        "repoType": "storage-express",
+        "repoName": "conventions-manager-storage-express-server",
+        "defaultApiPort": 3104,
+        "healthPath": "/api/storage/health",
+        "role": "storage"
+      },
+      {
+        "repoType": "express",
+        "repoName": "conventions-manager-express-server",
+        "defaultApiPort": 3105,
+        "healthPath": "/api/health",
+        "role": "express"
+      },
+      {
+        "repoType": "nextjs",
+        "repoName": "conventions-manager-web",
+        "defaultWebPortStart": 3106,
+        "role": "web"
+      },
+      {
+        "repoType": "express",
+        "repoName": "conventions-manager-express-dispatcher-server",
+        "role": "dispatcher",
+        "defaultApiPort": 3107,
+        "healthPath": "/api/health"
+      },
+      {
+        "repoType": "nextjs",
+        "repoName": "conventions-manager-dispatcher-web",
+        "defaultWebPortStart": 3108,
+        "role": "dispatcher-web"
+      }
+    ],
+    "localDatabase": {
+      "kind": "postgres",
+      "databaseName": "conventions_manager",
+      "migrationsDir": "migrations",
+      "migrationFiles": [
+        "001_extensions.sql",
+        "002_dispatcher_exposed_endpoints.sql"
+      ],
+      "expectedTables": [
+        "dispatcher_exposed_endpoints"
+      ],
+      "envRepo": "storage-express",
+      "postgres": {
+        "host": "127.0.0.1",
+        "port": 5432,
+        "formula": "postgresql@16",
+        "installCommand": "brew install postgresql@16",
+        "startCommand": "brew services start postgresql@16",
+        "stopCommand": "brew services stop postgresql@16"
+      }
+    },
+    "dataPlane": {
+      "modeKey": "CANONICAL_DATA_ACCESS_MODE",
+      "options": [
+        {
+          "id": "direct",
+          "label": "Direct storage",
+          "value": "direct",
+          "keys": [
+            "STORAGE_URL",
+            "STORAGE_SECRET"
+          ]
+        },
+        {
+          "id": "gateway",
+          "label": "Studio gateway",
+          "value": "gateway",
+          "keys": [
+            "MAIN_GATEWAY_URL",
+            "MAIN_GATEWAY_PROJECT_ID",
+            "DISPATCHER_GATE_SECRET"
+          ]
+        }
+      ]
+    }
   }
 ]
